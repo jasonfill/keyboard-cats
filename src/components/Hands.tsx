@@ -4,9 +4,11 @@ interface Props {
   activeFinger?: Finger | null
 }
 
-// Left hand fingers left-to-right: pinky, ring, middle, index. Right mirrored.
+// Fingers are drawn left-to-right as pinky, ring, middle, index (index nearest
+// the thumb). The right hand uses the same order and is mirrored via `flip`, so
+// its index lands next to the thumb toward the center.
 const LEFT: Finger[] = ['L-pinky', 'L-ring', 'L-middle', 'L-index']
-const RIGHT: Finger[] = ['R-index', 'R-middle', 'R-ring', 'R-pinky']
+const RIGHT: Finger[] = ['R-pinky', 'R-ring', 'R-middle', 'R-index']
 
 // Relative finger heights (index/middle tallest) for a natural hand shape.
 const HEIGHTS: Record<string, number> = {
