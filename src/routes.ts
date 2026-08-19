@@ -1,3 +1,4 @@
+import type { DirectionSetting, StudyMode } from './lib/quiz/session'
 import type { ActivityId } from './lib/spelling/activities'
 import type { SessionMode } from './lib/spelling/session'
 
@@ -32,6 +33,19 @@ export type Route =
       listId?: string
       customListId?: string
       size?: number
+    }
+  // Quiz (Quiz Cats)
+  | { name: 'quiz' }
+  | { name: 'quiz-deck'; deckId: string }
+  /** No deckId means "start a new deck". */
+  | { name: 'quiz-edit'; deckId?: string }
+  | {
+      name: 'quiz-play'
+      mode: StudyMode
+      /** Absent in review mode, which draws from every deck at once. */
+      deckId?: string
+      size?: number
+      direction?: DirectionSetting
     }
 
 export type Navigate = (route: Route) => void

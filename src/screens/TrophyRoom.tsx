@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { GameApi } from '../hooks/useGameState'
 import { ACHIEVEMENTS } from '../data/achievements'
+import { QUIZ_ACHIEVEMENTS } from '../data/quizAchievements'
 import { SPELLING_ACHIEVEMENTS } from '../data/spellingAchievements'
 import { useProgress } from '../lib/progress/ProgressProvider'
 import { Button, Card } from '../components/ui'
@@ -18,7 +19,9 @@ export default function TrophyRoom({ game, navigate }: Props) {
   const [tab, setTab] = useState<Tab>('scores')
   const { state } = game
   const { snapshot } = useProgress()
-  const spellingUnlocked = new Set(snapshot.achievements.map((a) => a.achievementId))
+  // Every subject's badges are unlocked out of the same table, so one set
+  // covers spelling and quiz alike.
+  const unlockedIds = new Set(snapshot.achievements.map((a) => a.achievementId))
 
   return (
     <div className="mx-auto w-full max-w-3xl py-4">
@@ -80,7 +83,12 @@ export default function TrophyRoom({ game, navigate }: Props) {
           <BadgeGrid
             title="Spelling 🐈‍⬛"
             badges={SPELLING_ACHIEVEMENTS}
-            unlocked={(id) => spellingUnlocked.has(id)}
+            unlocked={(id) => unlockedIds.has(id)}
+          />
+          <BadgeGrid
+            title="Quiz 🃏"
+            badges={QUIZ_ACHIEVEMENTS}
+            unlocked={(id) => unlockedIds.has(id)}
           />
         </div>
       )}

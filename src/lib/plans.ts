@@ -9,6 +9,8 @@ export type PlanId = 'free' | 'pro'
 export interface PlanLimits {
   /** Custom word lists a learner can save. */
   customLists: number
+  /** Study decks a learner can save. */
+  decks: number
   /** How far back the progress dashboard will look. */
   historyDays: number
   printableReports: boolean
@@ -39,9 +41,11 @@ export const PLANS: Record<PlanId, PlanDef> = {
       'Adaptive practice and spaced review',
       'Progress that follows you across devices',
       'One saved custom word list',
+      'Three study decks, and every starter deck',
     ],
     limits: {
       customLists: 1,
+      decks: 3,
       historyDays: 30,
       printableReports: false,
       detailedWordReport: false,
@@ -57,6 +61,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
     perks: [
       'Everything in Free',
       'Unlimited custom word lists — paste this week’s class list',
+      'Unlimited study decks for any subject you like',
       'Full progress history instead of the last 30 days',
       'Word-by-word mastery report with every miss the learner made',
       'Printable weekly progress sheets',
@@ -64,6 +69,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
     ],
     limits: {
       customLists: 50,
+      decks: 200,
       historyDays: Number.POSITIVE_INFINITY,
       printableReports: true,
       detailedWordReport: true,

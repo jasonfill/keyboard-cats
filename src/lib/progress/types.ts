@@ -1,9 +1,9 @@
 // Types shared by every learning objective in the suite. Adding a subject means
 // adding a string here, not a new set of tables.
 
-export type Subject = 'spelling' | 'typing'
+export type Subject = 'spelling' | 'typing' | 'quiz'
 
-export const SUBJECTS: Subject[] = ['spelling', 'typing']
+export const SUBJECTS: Subject[] = ['spelling', 'typing', 'quiz']
 
 /** ISO calendar day, e.g. '2026-08-19'. */
 export type DayString = string
@@ -117,6 +117,44 @@ export interface DailyActivityRow {
   sessions: number
 }
 
+/**
+ * One side-by-side pair on a study deck. `term` is the prompt side and
+ * `definition` the answer side, but every activity can run the pair backwards,
+ * so neither is privileged beyond which one shows first.
+ */
+export interface QuizCard {
+  id: string
+  term: string
+  definition: string
+  hint: string | null
+  /**
+   * Roughly 1-5, on the same scale as the learner's quiz ability. Derived from
+   * the answer's shape when a deck is saved rather than asked of the author,
+   * because nobody making a deck at 10pm wants to rate 40 cards by hand.
+   */
+  difficulty: number
+}
+
+/**
+ * A study set. Decks are content, not progress: what the learner *knows* about
+ * each card lives in `mastery` under the item key `deckId:cardId`, which is why
+ * a deck can be edited without resetting anything the learner has earned.
+ */
+export interface QuizDeck {
+  id: string
+  title: string
+  description: string
+  tags: string[]
+  cards: QuizCard[]
+  /** Starter decks ship with the app and are copied, not edited, in place. */
+  source: 'user' | 'starter'
+  /** What to call each side, e.g. 'Spanish' / 'English'. Purely cosmetic. */
+  termLabel: string
+  definitionLabel: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface CustomWordList {
   id: string
   title: string
@@ -136,6 +174,7 @@ export interface ProgressSnapshot {
   daily: DailyActivityRow[]
   sessions: SessionRecord[] // most recent first, capped
   customLists: CustomWordList[]
+  decks: QuizDeck[]
 }
 
 export function masteryKey(subject: Subject, itemKey: string): string {
@@ -144,6 +183,15 @@ export function masteryKey(subject: Subject, itemKey: string): string {
 
 export function listKey(subject: Subject, listId: string): string {
   return `${subject}:${listId}`
+}
+
+/**
+ * The mastery key for one card. Deck-scoped on purpose: the same term on two
+ * different decks is two different things to learn, and merging them would let
+ * a card the learner has never seen arrive pre-mastered.
+ */
+export function cardKey(deckId: string, cardId: string): string {
+  return `${deckId}:${cardId}`
 }
 
 export function emptySnapshot(): ProgressSnapshot {
@@ -156,15 +204,17 @@ export function emptySnapshot(): ProgressSnapshot {
     daily: [],
     sessions: [],
     customLists: [],
+    decks: [],
   }
 }
 
 export function defaultSkillState(subject: Subject): SkillState {
   return {
     subject,
-    // Spelling starts the learner at second grade, as requested; typing has no
-    // grade band so it just tracks a relative ability number.
-    ability: subject === 'spelling' ? 2.0 : 1.0,
+    // Spelling starts the learner at second grade, as requested; typing and
+    // quiz have no grade band so they just track a relative ability number.
+    // Quiz starts mid-scale because deck difficulty is relative to the deck.
+    ability: subject === 'spelling' ? 2.0 : subject === 'quiz' ? 2.0 : 1.0,
     abilitySd: 1.2,
     levelIndex: 0,
     placed: false,

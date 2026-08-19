@@ -1,11 +1,13 @@
 # 🐱 Cat Academy — a learning suite for kids, disguised as a cat game
 
-Two subjects so far, one account, one progress record:
+Three subjects so far, one account, one progress record:
 
 - **🐈‍⬛ Spelling Cats** — adaptive spelling from 2nd through 8th grade. The app
   works out what a learner can actually spell and keeps them at the edge of it.
 - **⌨️ Keyboard Cats** — the original gamified touch-typing course: worlds,
   lessons, arcade modes, and a cat card collection.
+- **🃏 Quiz Cats** — flashcards for anything else. Build a deck (or paste one
+  in) and study it four ways, on the same adaptive engine as the spelling.
 
 Free, ad-free, and playable with no account at all.
 
@@ -148,6 +150,49 @@ random typos: dropped halves of doubled consonants, `ie`/`ei` swaps, `-able`
 for `-ible`, silent letters lost, `ph` written as `f`, schwa vowels guessed
 wrong, apostrophes misplaced in contractions.
 
+## Quiz Cats
+
+Quizlet-shaped, but running on the engine above rather than a plain shuffle.
+A deck is a list of two-sided cards — vocabulary, capitals, dates, formulas,
+anything with a question and an answer.
+
+| Mode | What it does | Counts toward level |
+| --- | --- | --- |
+| 🃏 Flashcards | Flip at your own pace, then say whether you knew it | no |
+| 🧠 Learn | Multiple choice at first, written recall once you are ready | written answers only |
+| ⚡ Match | Race the clock pairing every card with its answer | no |
+| 📝 Test | A mixed paper — choice, true/false, and written — with no hints | written answers only |
+
+Three things make this more than a card shuffler:
+
+**Learn escalates per card, not per round.** A card you have never met is asked
+as multiple choice, because recognition is where recall starts. Once you are
+answering it reliably, the same card comes back as free writing, which is the
+only format that proves you can produce the answer unaided. One deck can hold
+forty cards at forty different stages and every question still lands at the
+right level.
+
+**Only unaided recall moves your ability.** Recognising an answer among four is
+evidence about that card, so it updates the card's mastery and its review
+schedule — but it never moves the learner's ability estimate. A run of lucky
+four-way guesses should not read as getting cleverer.
+
+**Review crosses decks.** Every card carries its own due date, so the home
+screen offers one queue drawn from every deck you own, ordered by what you are
+closest to forgetting.
+
+Typed answers are graded with a tolerance that scales with the answer's length:
+one slip in a four-letter word is probably a different word, one slip in a
+fifteen-letter word is a typo. Near misses are marked "so close", shown the
+correct spelling, and credited — penalising a transposed letter on a biology
+deck tests typing, not biology. Answers written as `couch / sofa` accept
+either, and a leading article is always optional.
+
+Decks are built by hand or pasted in whole. The importer auto-detects whether
+the two sides are separated by a tab, comma, dash, or colon, handles
+definitions that run over several lines, and reports the rows it could not
+parse instead of quietly mangling them.
+
 ## The curriculum
 
 420 words across 42 lists, 2nd through 8th grade, each with an example sentence
@@ -180,8 +225,11 @@ an optional sentence after a tab, a `|`, or a `-`.
 The whole curriculum is free, on purpose: a spelling app that paywalls fourth
 grade is not much use to the kid who needs fourth grade. **Family Pro** pays for
 the reporting and list-building tools grown-ups ask for — unlimited custom
-lists, full history instead of the last 30 days, the word-by-word mastery
-report, printable sheets, CSV export.
+lists and study decks, full history instead of the last 30 days, the
+word-by-word mastery report, printable sheets, CSV export.
+
+Free keeps three study decks of your own; the starter decks that ship with the
+app never count against that.
 
 Plans are modelled end to end in the schema and gated in the UI. No payment
 processor is connected yet; wiring Stripe in means a webhook that updates
@@ -199,14 +247,17 @@ src/
   auth/         AuthProvider (email + Google), sign-in screen
   data/
     spelling/   grade 2-8 word lists, difficulty model
+    quiz/       starter decks that ship with the app
     lessons.ts  typing curriculum
   lib/
     adaptive.ts       ability estimation, spaced repetition, promotion
     plans.ts          free vs pro limits
     progress/         storage boundary: types, local repo, cloud repo, merge
+    quiz/             decks and import, question generation, study planner
     spelling/         session planner, activities, speech, selectors
-  hooks/        useSpellingSession, useGameState, useTypingEngine
+  hooks/        useSpellingSession, useQuizSession, useGameState, useTypingEngine
   screens/
+    quiz/       deck list, deck detail, editor, and the four study modes
     spelling/   spelling home, play, results, list browser
     suite/      hub, progress dashboard, account, plans, custom lists
 scripts/        curriculum validation, adaptive-engine simulation

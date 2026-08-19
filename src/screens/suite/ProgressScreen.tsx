@@ -6,6 +6,9 @@ import { Button, Card, Pill } from '../../components/ui'
 import { ALL_WORDS, GRADES } from '../../data/spelling'
 import type { GameApi } from '../../hooks/useGameState'
 import { limitsFor } from '../../lib/plans'
+import { STARTER_DECKS } from '../../data/quiz/starterDecks'
+import { allDecks, deckStats } from '../../lib/quiz/decks'
+import { MODES } from '../../lib/quiz/session'
 import { ACTIVITIES } from '../../lib/spelling/activities'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { addDays, todayString } from '../../lib/progress/types'
@@ -19,6 +22,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
   const spelling = skill('spelling')
   const typing = skill('typing')
+  const quiz = skill('quiz')
   const overall = breakdown(snapshot, ALL_WORDS)
   const trouble = troubleWords(snapshot, 15)
   const turnaround = turnaroundWords(snapshot, 8)
@@ -33,6 +37,22 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const hiddenSessions = snapshot.sessions.length - visibleSessions.length
 
   const last14 = useMemo(() => buildStreakStrip(snapshot.daily), [snapshot.daily])
+
+  const quizTotals = useMemo(() => {
+    const today = todayString()
+    return allDecks(snapshot, STARTER_DECKS).reduce(
+      (acc, deck) => {
+        const s = deckStats(snapshot, deck, today)
+        return {
+          cards: acc.cards + s.total,
+          mastered: acc.mastered + s.mastered,
+          due: acc.due + s.due,
+          started: acc.started + (s.seen > 0 ? 1 : 0),
+        }
+      },
+      { cards: 0, mastered: 0, due: 0, started: 0 },
+    )
+  }, [snapshot])
 
   const totalMinutes = Math.round(
     snapshot.daily.reduce((n, d) => n + d.seconds, 0) / 60,
@@ -50,7 +70,11 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
       {/* Headline numbers */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Day streak" value={`${Math.max(spelling.streakDays, typing.streakDays)}`} emoji="🔥" />
+        <StatCard
+          label="Day streak"
+          value={`${Math.max(spelling.streakDays, typing.streakDays, quiz.streakDays)}`}
+          emoji="🔥"
+        />
         <StatCard label="Words mastered" value={`${overall.mastered}`} emoji="📚" />
         <StatCard label="Practice time" value={`${totalMinutes}m`} emoji="⏱️" />
         <StatCard label="Best WPM" value={`${bestWpm}`} emoji="⌨️" />
@@ -198,6 +222,25 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
         </Button>
       </Card>
 
+      {/* Quiz decks */}
+      <Card className="mb-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-extrabold text-grape">Quiz decks 🃏</h2>
+          <div className="flex flex-wrap gap-2">
+            <Pill className="bg-emerald-100 text-emerald-700">
+              {quizTotals.mastered}/{quizTotals.cards} cards mastered
+            </Pill>
+            <Pill className="bg-slate-100 text-slate-500">{quizTotals.started} decks started</Pill>
+            {quizTotals.due > 0 && (
+              <Pill className="bg-amber-100 text-amber-700">🔁 {quizTotals.due} due</Pill>
+            )}
+          </div>
+        </div>
+        <Button variant="ghost" onClick={() => navigate({ name: 'quiz' })}>
+          Open Quiz Cats →
+        </Button>
+      </Card>
+
       {/* Session log */}
       <Card>
         <h2 className="mb-3 text-xl font-extrabold text-grape">Recent sessions</h2>
@@ -207,8 +250,10 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           <ul className="divide-y divide-slate-100">
             {visibleSessions.slice(0, 15).map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-2 py-2">
-                <span className="text-lg">{s.subject === 'spelling' ? '🐈‍⬛' : '⌨️'}</span>
-                <span className="font-extrabold text-grape">{activityLabel(s.activity)}</span>
+                <span className="text-lg">{SUBJECT_EMOJI[s.subject] ?? '⌨️'}</span>
+                <span className="font-extrabold text-grape">
+                  {activityLabel(s.activity, s.subject)}
+                </span>
                 <span className="font-bold text-slate-500">
                   {s.itemsCorrect}/{s.itemsTotal} · {Math.round(s.accuracy)}%
                 </span>
@@ -240,7 +285,23 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 }
 
 /** Session rows store the raw activity id; show the name a person would use. */
-function activityLabel(activity: string): string {
+const SUBJECT_EMOJI: Record<string, string> = {
+  spelling: '🐈‍⬛',
+  typing: '⌨️',
+  quiz: '🃏',
+}
+
+/**
+ * Subject matters here: both spelling and quiz have an activity called 'test',
+ * and looking the id up without it would label a quiz round "Spelling Test".
+ */
+function activityLabel(activity: string, subject: string): string {
+  if (subject === 'quiz') {
+    const quizMode = MODES.find((m) => m.id === activity)
+    if (quizMode) return quizMode.name
+    if (activity === 'review') return 'Card review'
+    return activity
+  }
   const known = ACTIVITIES.find((a) => a.id === activity)
   if (known) return known.name
   if (activity === 'lesson') return 'Typing lesson'

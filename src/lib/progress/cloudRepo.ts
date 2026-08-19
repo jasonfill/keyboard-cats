@@ -16,6 +16,7 @@ import {
   type ItemMastery,
   type ListProgress,
   type ProgressSnapshot,
+  type QuizDeck,
   type SessionRecord,
   type SkillState,
   type Subject,
@@ -136,6 +137,35 @@ function toSession(row: any): SessionRecord {
   }
 }
 
+function toDeck(row: any): QuizDeck {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? '',
+    tags: row.tags ?? [],
+    cards: row.cards ?? [],
+    source: 'user',
+    termLabel: row.term_label ?? 'Term',
+    definitionLabel: row.definition_label ?? 'Definition',
+    createdAt: Date.parse(row.created_at),
+    updatedAt: Date.parse(row.updated_at),
+  }
+}
+
+function fromDeck(userId: string, d: QuizDeck) {
+  return {
+    id: d.id,
+    user_id: userId,
+    title: d.title,
+    description: d.description,
+    tags: d.tags,
+    cards: d.cards,
+    term_label: d.termLabel,
+    definition_label: d.definitionLabel,
+    updated_at: new Date().toISOString(),
+  }
+}
+
 function toCustomList(row: any): CustomWordList {
   return {
     id: row.id,
@@ -162,7 +192,7 @@ export class CloudProgressRepo implements ProgressRepo {
   ) {}
 
   async load(): Promise<ProgressSnapshot> {
-    const [skills, mastery, lists, achievements, highScores, daily, sessions, customLists] =
+    const [skills, mastery, lists, achievements, highScores, daily, sessions, customLists, decks] =
       await Promise.all([
         this.client.from('skill_states').select('*').eq('user_id', this.userId),
         this.client.from('item_mastery').select('*').eq('user_id', this.userId),
@@ -187,6 +217,11 @@ export class CloudProgressRepo implements ProgressRepo {
           .order('ended_at', { ascending: false })
           .limit(SESSION_FETCH_LIMIT),
         this.client.from('word_lists').select('*').eq('user_id', this.userId),
+        this.client
+          .from('decks')
+          .select('*')
+          .eq('user_id', this.userId)
+          .order('updated_at', { ascending: false }),
       ])
 
     const snapshot = emptySnapshot()
@@ -230,6 +265,7 @@ export class CloudProgressRepo implements ProgressRepo {
     )
     snapshot.sessions = (sessions.data ?? []).map(toSession)
     snapshot.customLists = (customLists.data ?? []).map(toCustomList)
+    snapshot.decks = (decks.data ?? []).map(toDeck)
 
     this.snapshot = snapshot
     return snapshot
@@ -403,6 +439,8 @@ export class CloudProgressRepo implements ProgressRepo {
         : Promise.resolve(),
     ])
 
+    if (snapshot.decks.length) await this.saveDecks(snapshot.decks)
+
     this.snapshot = snapshot
   }
 
@@ -427,6 +465,23 @@ export class CloudProgressRepo implements ProgressRepo {
     await this.client.from('word_lists').delete().eq('id', id).eq('user_id', this.userId)
   }
 
+  /**
+   * Decks are written whole rather than diffed. A deck is small, edits are
+   * rare, and replacing the row keeps deleted cards from lingering — which
+   * matters because a stale card id would keep showing up in study rounds.
+   */
+  async saveDecks(decks: QuizDeck[]): Promise<QuizDeck[]> {
+    const { data } = await this.client
+      .from('decks')
+      .upsert(decks.map((d) => fromDeck(this.userId, d)))
+      .select()
+    return (data ?? []).map(toDeck)
+  }
+
+  async deleteDeck(id: string): Promise<void> {
+    await this.client.from('decks').delete().eq('id', id).eq('user_id', this.userId)
+  }
+
   async reset(): Promise<void> {
     const tables = [
       'attempts',
@@ -437,6 +492,7 @@ export class CloudProgressRepo implements ProgressRepo {
       'daily_activity',
       'high_scores',
       'skill_states',
+      'decks',
     ]
     await Promise.allSettled(
       tables.map((t) => this.client.from(t).delete().eq('user_id', this.userId)),

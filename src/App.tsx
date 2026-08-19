@@ -10,6 +10,10 @@ import type { Navigate, Route } from './routes'
 import CatRainScreen from './screens/CatRainScreen'
 import LessonScreen from './screens/LessonScreen'
 import PracticeScreen from './screens/PracticeScreen'
+import DeckEditor from './screens/quiz/DeckEditor'
+import DeckScreen from './screens/quiz/DeckScreen'
+import QuizHome from './screens/quiz/QuizHome'
+import QuizPlay from './screens/quiz/QuizPlay'
 import SettingsScreen from './screens/SettingsScreen'
 import SpellingHome from './screens/spelling/SpellingHome'
 import SpellingLists from './screens/spelling/SpellingLists'
@@ -108,6 +112,27 @@ function Router() {
           listId={route.listId}
           customListId={route.customListId}
           size={route.size}
+          navigate={navigate}
+        />
+      )
+
+    // Quiz
+    case 'quiz':
+      return <QuizHome navigate={navigate} />
+    case 'quiz-deck':
+      return <DeckScreen deckId={route.deckId} navigate={navigate} />
+    case 'quiz-edit':
+      return <DeckEditor deckId={route.deckId} navigate={navigate} />
+    case 'quiz-play':
+      return (
+        <QuizPlay
+          // Same reasoning as spelling: a parameter change starts a fresh
+          // round rather than resuming a half-played one under new rules.
+          key={`${route.mode}:${route.deckId ?? 'all'}:${route.direction ?? 'term-first'}`}
+          mode={route.mode}
+          deckId={route.deckId}
+          size={route.size}
+          direction={route.direction}
           navigate={navigate}
         />
       )

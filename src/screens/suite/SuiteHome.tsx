@@ -8,6 +8,9 @@ import { useProgress } from '../../lib/progress/ProgressProvider'
 import { dueWords, levelSnapshot, totalCurriculumWords } from '../../lib/spelling/stats'
 import { breakdown } from '../../lib/spelling/stats'
 import { ALL_WORDS } from '../../data/spelling'
+import { STARTER_DECKS } from '../../data/quiz/starterDecks'
+import { allDecks, deckStats } from '../../lib/quiz/decks'
+import { todayString } from '../../lib/progress/types'
 import type { Navigate } from '../../routes'
 
 export default function SuiteHome({ game, navigate }: { game: GameApi; navigate: Navigate }) {
@@ -20,6 +23,15 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
   const due = dueWords(snapshot).length
 
   const typingLessons = Object.values(game.state.lessons).filter((l) => l.plays > 0).length
+
+  const today = todayString()
+  const quizTotals = allDecks(snapshot, STARTER_DECKS).reduce(
+    (acc, deck) => {
+      const s = deckStats(snapshot, deck, today)
+      return { cards: acc.cards + s.total, mastered: acc.mastered + s.mastered, due: acc.due + s.due }
+    },
+    { cards: 0, mastered: 0, due: 0 },
+  )
   const greeting = profile?.displayName || game.state.playerName
 
   return (
@@ -37,7 +49,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           Cat Academy
         </h1>
         <p className="text-center text-lg font-bold text-slate-500">
-          {greeting ? `Welcome back, ${greeting}! 🐾` : 'Learn to type and spell — with cats. 🐾'}
+          {greeting ? `Welcome back, ${greeting}! 🐾` : 'Type, spell, and quiz yourself — with cats. 🐾'}
         </p>
         {sync === 'merging' && (
           <Pill className="mt-2 bg-amber-100 text-amber-700">
@@ -73,9 +85,22 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           cta="Keep typing"
           onClick={() => navigate({ name: 'typing' })}
         />
+        <SubjectCard
+          emoji="🃏"
+          title="Quiz Cats"
+          tagline="Flashcards for anything at all."
+          gradient="from-emerald-300 to-teal-400"
+          stats={[
+            { label: 'My decks', value: String(snapshot.decks.length) },
+            { label: 'Cards mastered', value: `${quizTotals.mastered}/${quizTotals.cards}` },
+            ...(quizTotals.due > 0 ? [{ label: 'Due for review', value: String(quizTotals.due) }] : []),
+          ]}
+          cta={snapshot.decks.length ? 'Keep studying' : 'Make a deck'}
+          onClick={() => navigate({ name: 'quiz' })}
+        />
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Button variant="ghost" onClick={() => navigate({ name: 'progress' })}>
           📊 Progress
         </Button>
@@ -84,6 +109,9 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         </Button>
         <Button variant="ghost" onClick={() => navigate({ name: 'custom-lists' })}>
           ✏️ My lists
+        </Button>
+        <Button variant="ghost" onClick={() => navigate({ name: 'quiz' })}>
+          🃏 My decks
         </Button>
         <Button variant="ghost" onClick={() => navigate({ name: 'settings' })}>
           ⚙️ Settings

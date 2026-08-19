@@ -1,0 +1,270 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button, Card, Pill } from '../../components/ui'
+import type { QuizItemResult, QuizSessionApi } from '../../hooks/useQuizSession'
+import { gradeWritten, type Grade } from '../../lib/quiz/questions'
+import { REASON_LABEL } from '../../lib/quiz/session'
+import { sfx } from '../../lib/sound'
+
+/**
+ * Runs the graded modes: Learn and Test.
+ *
+ * Feedback is immediate in both. Holding results back to the end is how a real
+ * exam works, but nobody learns from a paper handed back cold — and the whole
+ * point of Learn is that the next question already knows how the last one went.
+ */
+export default function QuestionRunner({
+  session,
+  strict,
+  onFinish,
+}: {
+  session: QuizSessionApi
+  /** Test mode shows the answer but never lets you try again. */
+  strict: boolean
+  onFinish: (results: QuizItemResult[]) => void
+}) {
+  const { plan, index, current, currentQuestion, results, beginItem, submit, advance } = session
+
+  const [typed, setTyped] = useState('')
+  const [hintsUsed, setHintsUsed] = useState(0)
+  const [feedback, setFeedback] = useState<QuizItemResult | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setTyped('')
+    setHintsUsed(0)
+    setFeedback(null)
+    beginItem()
+    // Autofocus written questions so a learner can type straight away without
+    // reaching for the mouse between every card.
+    const id = window.setTimeout(() => inputRef.current?.focus(), 40)
+    return () => window.clearTimeout(id)
+  }, [index, beginItem])
+
+  const answer = useCallback(
+    (given: string, grade: Grade) => {
+      const result = submit(given, grade, hintsUsed)
+      if (!result) return
+      if (result.correct) sfx.correct()
+      else sfx.wrong()
+      setFeedback(result)
+    },
+    [hintsUsed, submit],
+  )
+
+  const next = useCallback(() => {
+    if (!feedback) return
+    const all = [...results]
+    if (index >= plan.length - 1) onFinish(all)
+    else advance()
+  }, [advance, feedback, index, onFinish, plan.length, results])
+
+  // Enter moves on once an answer is in, so a whole round can be done from the
+  // keyboard without ever leaving the home row.
+  useEffect(() => {
+    if (!feedback) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        next()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [feedback, next])
+
+  if (!current || !currentQuestion) return null
+
+  const q = currentQuestion
+  const reason = REASON_LABEL[current.reason]
+  const revealed = feedback !== null
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill className="bg-purple-100 text-grape">
+            {reason.emoji} {reason.label}
+          </Pill>
+          <Pill className="bg-slate-100 text-slate-500">
+            {q.kind === 'multiple-choice'
+              ? 'Pick the answer'
+              : q.kind === 'true-false'
+                ? 'True or false'
+                : 'Write it out'}
+          </Pill>
+        </div>
+        <span className="font-bold text-slate-400">
+          {index + 1} of {plan.length}
+        </span>
+      </div>
+
+      <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
+          style={{ width: `${(index / plan.length) * 100}%` }}
+        />
+      </div>
+
+      <Card className="mb-4">
+        <p className="mb-1 text-xs font-extrabold uppercase tracking-widest text-slate-400">
+          {q.kind === 'true-false' ? 'Does this match?' : 'Question'}
+        </p>
+        <p className="text-2xl font-extrabold text-grape md:text-3xl">{q.prompt}</p>
+        {q.kind === 'true-false' && (
+          <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-xl font-bold text-slate-600">
+            {q.claim}
+          </p>
+        )}
+        {hintsUsed > 0 && current.card.hint && (
+          <p className="mt-3 font-bold text-amber-600">💡 {current.card.hint}</p>
+        )}
+      </Card>
+
+      {/* --- The answer controls, by question kind --- */}
+
+      {q.kind === 'multiple-choice' && (
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {q.choices?.map((choice) => {
+            const isAnswer = choice === q.answer
+            const picked = feedback?.given === choice
+            const style = !revealed
+              ? 'bg-white/85 text-grape ring-purple-100 hover:-translate-y-0.5 hover:shadow-lg'
+              : isAnswer
+                ? 'bg-emerald-100 text-emerald-800 ring-emerald-300'
+                : picked
+                  ? 'bg-rose-100 text-rose-700 ring-rose-300'
+                  : 'bg-white/60 text-slate-400 ring-slate-200'
+            return (
+              <button
+                key={choice}
+                disabled={revealed}
+                onClick={() => answer(choice, isAnswer ? 'correct' : 'wrong')}
+                className={`rounded-2xl px-5 py-4 text-left text-lg font-bold shadow ring-1 transition-all ${style}`}
+              >
+                {choice}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {q.kind === 'true-false' && (
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          {[true, false].map((value) => {
+            const correct = value === q.claimIsTrue
+            const picked = feedback ? feedback.given === String(value) : false
+            const style = !revealed
+              ? 'bg-white/85 text-grape ring-purple-100 hover:-translate-y-0.5 hover:shadow-lg'
+              : correct
+                ? 'bg-emerald-100 text-emerald-800 ring-emerald-300'
+                : picked
+                  ? 'bg-rose-100 text-rose-700 ring-rose-300'
+                  : 'bg-white/60 text-slate-400 ring-slate-200'
+            return (
+              <button
+                key={String(value)}
+                disabled={revealed}
+                onClick={() => answer(String(value), correct ? 'correct' : 'wrong')}
+                className={`rounded-2xl px-5 py-5 text-xl font-extrabold shadow ring-1 transition-all ${style}`}
+              >
+                {value ? '✅ True' : '❌ False'}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {q.kind === 'written' && (
+        <form
+          className="mb-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (revealed || !typed.trim()) return
+            answer(typed, gradeWritten(typed, q.answer))
+          }}
+        >
+          <input
+            ref={inputRef}
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            disabled={revealed}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="Type the answer…"
+            className="mb-3 w-full rounded-2xl border-2 border-purple-200 px-5 py-4 text-xl font-bold text-grape focus:border-grape focus:outline-none disabled:bg-slate-50"
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={revealed || !typed.trim()}>
+              Check it
+            </Button>
+            {!revealed && !strict && (
+              <>
+                {current.card.hint && hintsUsed === 0 && (
+                  <Button type="button" variant="ghost" onClick={() => setHintsUsed(1)}>
+                    💡 Hint
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => answer('', 'wrong')}
+                  title="Show me — this one counts as missed"
+                >
+                  I do not know
+                </Button>
+              </>
+            )}
+          </div>
+          {hintsUsed > 0 && (
+            <p className="mt-2 text-xs font-bold text-slate-400">
+              Hinted cards still count toward review, but not toward your level.
+            </p>
+          )}
+        </form>
+      )}
+
+      {/* --- Feedback --- */}
+
+      {feedback && (
+        <Card
+          className={
+            feedback.grade === 'correct'
+              ? 'ring-emerald-200'
+              : feedback.grade === 'close'
+                ? 'ring-amber-200'
+                : 'ring-rose-200'
+          }
+        >
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-2xl">
+              {feedback.grade === 'correct' ? '🎉' : feedback.grade === 'close' ? '😼' : '😿'}
+            </span>
+            <h3 className="text-xl font-extrabold text-grape">
+              {feedback.grade === 'correct'
+                ? 'Correct!'
+                : feedback.grade === 'close'
+                  ? 'So close — spelling slipped'
+                  : 'Not this time'}
+            </h3>
+          </div>
+
+          {feedback.grade !== 'correct' && (
+            <p className="mb-3 text-lg font-bold text-slate-600">
+              The answer is <span className="text-emerald-700">{q.answer}</span>
+            </p>
+          )}
+          {feedback.grade === 'close' && (
+            <p className="mb-3 font-bold text-slate-500">
+              Counted as correct — you knew it. Worth a second look at the spelling.
+            </p>
+          )}
+
+          <Button className="w-full" onClick={next} autoFocus>
+            {index >= plan.length - 1 ? 'See how I did →' : 'Next card →'}
+          </Button>
+        </Card>
+      )}
+    </div>
+  )
+}

@@ -18,6 +18,7 @@ import {
   emptySnapshot,
   type CustomWordList,
   type ProgressSnapshot,
+  type QuizDeck,
   type SkillState,
   type Subject,
 } from './types'
@@ -34,6 +35,8 @@ interface ProgressContextValue {
   commit: (change: ProgressChange) => Promise<void>
   saveCustomLists: (lists: CustomWordList[]) => Promise<void>
   deleteCustomList: (id: string) => Promise<void>
+  saveDeck: (deck: QuizDeck) => Promise<void>
+  deleteDeck: (id: string) => Promise<void>
   reset: () => Promise<void>
 }
 
@@ -167,6 +170,36 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [commit, snapshot.customLists],
   )
 
+  const saveDeck = useCallback(
+    async (deck: QuizDeck) => {
+      const repo = repoRef.current
+      if (repo instanceof CloudProgressRepo) {
+        const saved = await repo.saveDecks([deck])
+        setSnapshot((prev) => {
+          const byId = new Map(prev.decks.map((d) => [d.id, d]))
+          for (const d of saved.length ? saved : [deck]) byId.set(d.id, d)
+          return { ...prev, decks: [...byId.values()] }
+        })
+        return
+      }
+      const byId = new Map(snapshot.decks.map((d) => [d.id, d]))
+      byId.set(deck.id, deck)
+      await commit({ decks: [...byId.values()] })
+    },
+    [commit, snapshot.decks],
+  )
+
+  const deleteDeck = useCallback(
+    async (id: string) => {
+      const repo = repoRef.current
+      if (repo instanceof CloudProgressRepo) await repo.deleteDeck(id)
+      const remaining = snapshot.decks.filter((d) => d.id !== id)
+      setSnapshot((prev) => ({ ...prev, decks: remaining }))
+      if (!(repo instanceof CloudProgressRepo)) await commit({ decks: remaining })
+    },
+    [commit, snapshot.decks],
+  )
+
   const reset = useCallback(async () => {
     await repoRef.current.reset()
     setSnapshot(emptySnapshot())
@@ -182,9 +215,22 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       commit,
       saveCustomLists,
       deleteCustomList,
+      saveDeck,
+      deleteDeck,
       reset,
     }),
-    [snapshot, mode, sync, skill, commit, saveCustomLists, deleteCustomList, reset],
+    [
+      snapshot,
+      mode,
+      sync,
+      skill,
+      commit,
+      saveCustomLists,
+      deleteCustomList,
+      saveDeck,
+      deleteDeck,
+      reset,
+    ],
   )
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>

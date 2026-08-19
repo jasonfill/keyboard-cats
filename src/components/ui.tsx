@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
 
 const variants: Record<Variant, string> = {
   primary:
@@ -10,6 +10,8 @@ const variants: Record<Variant, string> = {
   ghost: 'bg-white/70 text-grape hover:bg-white border-2 border-purple-200',
   danger:
     'bg-red-500 text-white hover:bg-red-600 shadow-[0_5px_0_#991b1b] active:translate-y-0.5 active:shadow-[0_2px_0_#991b1b]',
+  success:
+    'bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_5px_0_#047857] active:translate-y-0.5 active:shadow-[0_2px_0_#047857]',
 }
 
 interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {

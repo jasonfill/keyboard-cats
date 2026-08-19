@@ -14,6 +14,7 @@ import {
   type ItemMastery,
   type ListProgress,
   type ProgressSnapshot,
+  type QuizDeck,
   type SessionRecord,
   type SkillState,
   type Subject,
@@ -32,6 +33,8 @@ export interface ProgressChange {
   daily?: { subject: Subject; seconds: number; items: number; correct: number }
   /** Full replacement of the learner's custom lists. */
   customLists?: CustomWordList[]
+  /** Full replacement of the learner's study decks. */
+  decks?: QuizDeck[]
 }
 
 export interface ProgressRepo {
@@ -103,6 +106,10 @@ export function applyChange(
 
   if (change.customLists) {
     next.customLists = change.customLists
+  }
+
+  if (change.decks) {
+    next.decks = change.decks
   }
 
   return next
@@ -232,6 +239,16 @@ export function mergeSnapshots(
     .slice(0, SESSION_HISTORY_LIMIT)
 
   out.customLists = [...cloud.customLists, ...local.customLists]
+
+  // Decks are keyed by a client-generated id, so a deck the learner made as a
+  // guest and then edited after signing in converges on the newer copy rather
+  // than appearing twice.
+  const deckIndex = new Map<string, QuizDeck>()
+  for (const deck of [...cloud.decks, ...local.decks]) {
+    const existing = deckIndex.get(deck.id)
+    if (!existing || deck.updatedAt > existing.updatedAt) deckIndex.set(deck.id, deck)
+  }
+  out.decks = [...deckIndex.values()].sort((a, b) => b.updatedAt - a.updatedAt)
 
   return out
 }

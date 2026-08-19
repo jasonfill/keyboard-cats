@@ -14,14 +14,17 @@ Budget about ten minutes.
    it for the app, only for direct psql access).
 3. Wait for the project to finish provisioning.
 
-## 2. Run the migration
+## 2. Run the migrations
 
 Open **SQL Editor → New query** in the dashboard, paste the whole contents of
-[`migrations/0001_init.sql`](./migrations/0001_init.sql), and run it.
+[`migrations/0001_init.sql`](./migrations/0001_init.sql), and run it. Then do
+the same with [`migrations/0002_quiz_decks.sql`](./migrations/0002_quiz_decks.sql),
+which adds the study-deck table behind Quiz Cats.
 
-That one script creates every table, the Row Level Security policies, the
-signup trigger that creates a profile row, and two helper functions. It is
-idempotent — re-running it is safe.
+The first script creates every core table, the Row Level Security policies, the
+signup trigger that creates a profile row, and two helper functions. Both are
+idempotent — re-running them is safe, and running them in order matters only
+because the second assumes `auth.users` policies already exist.
 
 If you prefer the CLI:
 
