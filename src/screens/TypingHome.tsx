@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import type { GameApi } from '../hooks/useGameState'
 import CatMascot from '../components/CatMascot'
+import ScreenHeader from '../components/suite/ScreenHeader'
 import { Button, Card } from '../components/ui'
 import { TOTAL_LESSONS } from '../data/lessons'
-import type { Route } from '../App'
+import type { GameApi } from '../hooks/useGameState'
+import type { Navigate } from '../routes'
 
 interface Props {
   game: GameApi
-  navigate: (r: Route) => void
+  navigate: Navigate
 }
 
-export default function HomeScreen({ game, navigate }: Props) {
+export default function TypingHome({ game, navigate }: Props) {
   const { state, setPlayerName } = game
   const [name, setName] = useState(state.playerName)
 
@@ -18,18 +19,19 @@ export default function HomeScreen({ game, navigate }: Props) {
   const doneLessons = Object.values(state.lessons).filter((l) => l.plays > 0).length
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 py-6">
-      <div className="flex flex-col items-center">
-        <div className="flex items-end gap-2">
-          <CatMascot mood="excited" size={130} className="animate-floaty" />
-          <CatMascot mood="happy" color="#94a3b8" size={90} className="animate-floaty" />
-        </div>
-        <h1 className="mt-2 text-center text-5xl font-extrabold text-grape drop-shadow-sm md:text-6xl">
-          Keyboard Cats
-        </h1>
-        <p className="text-center text-lg font-bold text-slate-500">
-          Learn to type &amp; collect cats! 🐾
-        </p>
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 py-4">
+      <div className="w-full">
+        <ScreenHeader
+          title="Keyboard Cats ⌨️"
+          subtitle="Learn to type &amp; collect cats!"
+          onBack={() => navigate({ name: 'home' })}
+          backLabel="← Academy"
+        />
+      </div>
+
+      <div className="flex items-end gap-2">
+        <CatMascot mood="excited" size={120} className="animate-floaty" />
+        <CatMascot mood="happy" color="#94a3b8" size={84} className="animate-floaty" />
       </div>
 
       <Card className="w-full max-w-md">
@@ -47,7 +49,12 @@ export default function HomeScreen({ game, navigate }: Props) {
         />
 
         <div className="grid grid-cols-1 gap-3">
-          <Button onClick={() => { commitName(); navigate({ name: 'map' }) }}>
+          <Button
+            onClick={() => {
+              commitName()
+              navigate({ name: 'map' })
+            }}
+          >
             🎓 Start Learning
           </Button>
           <div className="grid grid-cols-2 gap-3">

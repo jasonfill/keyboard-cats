@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { GameApi } from '../hooks/useGameState'
+import { useProgress } from '../lib/progress/ProgressProvider'
 import { Button, Card } from '../components/ui'
 import { setSoundEnabled, sfx } from '../lib/sound'
 import type { Route } from '../App'
@@ -11,6 +12,7 @@ interface Props {
 
 export default function SettingsScreen({ game, navigate }: Props) {
   const { state, setSetting, reset } = game
+  const { reset: resetProgress, mode } = useProgress()
   const [confirmReset, setConfirmReset] = useState(false)
 
   return (
@@ -58,7 +60,10 @@ export default function SettingsScreen({ game, navigate }: Props) {
                   variant="danger"
                   className="flex-1"
                   onClick={() => {
+                    // Both stores: the typing game's own save and the shared
+                    // progress record behind the whole suite.
                     reset()
+                    void resetProgress()
                     setConfirmReset(false)
                   }}
                 >
@@ -73,7 +78,8 @@ export default function SettingsScreen({ game, navigate }: Props) {
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-400">
-          Keyboard Cats · progress is saved on this device.
+          Cat Academy · progress is saved{' '}
+          {mode === 'cloud' ? 'to your account' : 'on this device'}.
         </p>
       </Card>
     </div>

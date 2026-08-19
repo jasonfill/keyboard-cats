@@ -25,3 +25,7 @@ dist-ssr
 
 # Test artifacts
 test-report.md
+
+# Local env
+.env
+.env.local

@@ -23,7 +23,7 @@ export default function WorldMap({ game, navigate }: Props) {
     <div className="mx-auto w-full max-w-4xl py-4">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-3xl font-extrabold text-grape">Choose a Level 🗺️</h1>
-        <Button variant="ghost" onClick={() => navigate({ name: 'home' })}>
+        <Button variant="ghost" onClick={() => navigate({ name: 'typing' })}>
           ← Home
         </Button>
       </div>

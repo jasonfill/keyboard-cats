@@ -52,9 +52,20 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   )
 }
 
-export function Pill({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function Pill({
+  children,
+  className = '',
+  title,
+}: {
+  children: ReactNode
+  className?: string
+  title?: string
+}) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold ${className}`}>
+    <span
+      title={title}
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold ${className}`}
+    >
       {children}
     </span>
   )

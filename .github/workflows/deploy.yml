@@ -26,7 +26,15 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run validate:words
+      - run: npm run simulate:adaptive
       - run: npm run build
+        env:
+          # Optional. Without them the deployed build runs in guest mode
+          # (localStorage only) rather than failing. Both are public values —
+          # the anon key is only useful through Row Level Security.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/configure-pages@v5
         with:
           enablement: true

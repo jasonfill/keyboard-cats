@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { GameApi } from '../hooks/useGameState'
 import { ACHIEVEMENTS } from '../data/achievements'
+import { SPELLING_ACHIEVEMENTS } from '../data/spellingAchievements'
+import { useProgress } from '../lib/progress/ProgressProvider'
 import { Button, Card } from '../components/ui'
 import CatPhoto from '../components/CatPhoto'
 import type { Route } from '../App'
@@ -15,6 +17,8 @@ type Tab = 'scores' | 'badges' | 'cats'
 export default function TrophyRoom({ game, navigate }: Props) {
   const [tab, setTab] = useState<Tab>('scores')
   const { state } = game
+  const { snapshot } = useProgress()
+  const spellingUnlocked = new Set(snapshot.achievements.map((a) => a.achievementId))
 
   return (
     <div className="mx-auto w-full max-w-3xl py-4">
@@ -67,26 +71,17 @@ export default function TrophyRoom({ game, navigate }: Props) {
       )}
 
       {tab === 'badges' && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {ACHIEVEMENTS.map((a) => {
-            const got = state.achievements.includes(a.id)
-            return (
-              <div
-                key={a.id}
-                className={`flex items-center gap-3 rounded-2xl p-4 ring-1 ${
-                  got ? 'bg-white ring-purple-200' : 'bg-slate-100 opacity-70 ring-slate-200'
-                }`}
-              >
-                <span className={`text-3xl ${got ? '' : 'grayscale'}`}>{a.emoji}</span>
-                <div>
-                  <div className="font-extrabold text-slate-700">
-                    {got ? a.name : '???'}
-                  </div>
-                  <div className="text-sm text-slate-500">{a.description}</div>
-                </div>
-              </div>
-            )
-          })}
+        <div className="space-y-5">
+          <BadgeGrid
+            title="Typing ⌨️"
+            badges={ACHIEVEMENTS}
+            unlocked={(id) => state.achievements.includes(id)}
+          />
+          <BadgeGrid
+            title="Spelling 🐈‍⬛"
+            badges={SPELLING_ACHIEVEMENTS}
+            unlocked={(id) => spellingUnlocked.has(id)}
+          />
         </div>
       )}
 
@@ -132,4 +127,45 @@ function TabButton({
 
 function Empty({ text }: { text: string }) {
   return <p className="py-8 text-center font-bold text-slate-400">{text}</p>
+}
+
+function BadgeGrid({
+  title,
+  badges,
+  unlocked,
+}: {
+  title: string
+  badges: Array<{ id: string; name: string; emoji: string; description: string }>
+  unlocked: (id: string) => boolean
+}) {
+  const earned = badges.filter((b) => unlocked(b.id)).length
+  return (
+    <div>
+      <h2 className="mb-2 flex items-baseline gap-2 text-xl font-extrabold text-grape">
+        {title}
+        <span className="text-sm font-bold text-slate-400">
+          {earned}/{badges.length}
+        </span>
+      </h2>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {badges.map((a) => {
+          const got = unlocked(a.id)
+          return (
+            <div
+              key={a.id}
+              className={`flex items-center gap-3 rounded-2xl p-4 ring-1 ${
+                got ? 'bg-white ring-purple-200' : 'bg-slate-100 opacity-70 ring-slate-200'
+              }`}
+            >
+              <span className={`text-3xl ${got ? '' : 'grayscale'}`}>{a.emoji}</span>
+              <div>
+                <div className="font-extrabold text-slate-700">{got ? a.name : '???'}</div>
+                <div className="text-sm text-slate-500">{a.description}</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }

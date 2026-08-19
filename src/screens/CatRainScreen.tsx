@@ -228,7 +228,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Button onClick={start}>▶ Start</Button>
-            <Button variant="ghost" onClick={() => navigate({ name: 'home' })}>
+            <Button variant="ghost" onClick={() => navigate({ name: 'typing' })}>
               ← Home
             </Button>
           </div>
@@ -259,7 +259,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
           title="Cat Rain"
           soundOn={soundOn}
           onReplay={start}
-          onMenu={() => navigate({ name: 'home' })}
+          onMenu={() => navigate({ name: 'typing' })}
         />
       </div>
     )

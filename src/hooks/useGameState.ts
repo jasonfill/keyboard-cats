@@ -9,6 +9,9 @@ import {
 import { ACHIEVEMENTS, type Achievement } from '../data/achievements'
 import { starRating } from '../lib/stats'
 import type { RoundResult } from '../lib/stats'
+import { useProgress } from '../lib/progress/ProgressProvider'
+import { updateStreak } from '../lib/adaptive'
+import { todayString, type SessionRecord } from '../lib/progress/types'
 
 export interface LessonOutcome extends RoundResult {
   lessonId: string
@@ -22,10 +25,28 @@ function recomputeTotals(s: GameState): GameState {
   return { ...s, totalStars }
 }
 
+function newSessionId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `t-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+/**
+ * Typing ability on the shared 0-12 scale, so the suite dashboard can put it
+ * next to spelling. Roughly: 10 WPM at full accuracy is a 1, 60 WPM is a 6.
+ */
+function typingAbilityFrom(wpm: number, accuracy: number): number {
+  return Math.max(0.5, Math.min(12, (wpm / 10) * (accuracy / 100)))
+}
+
 export function useGameState() {
   const [state, setState] = useState<GameState>(() => loadState())
   const stateRef = useRef(state)
   stateRef.current = state
+
+  // The typing game keeps its own localStorage save (it predates the database),
+  // but every finished round is also written to the shared progress store so
+  // streaks and the cross-subject dashboard see it.
+  const { commit, skill } = useProgress()
 
   useEffect(() => {
     saveState(state)
@@ -95,9 +116,63 @@ export function useGameState() {
         return next
       })
 
+      const previous = skill('typing')
+      const blended =
+        previous.totalAttempts > 0
+          ? previous.ability * 0.7 + typingAbilityFrom(result.wpm, result.accuracy) * 0.3
+          : typingAbilityFrom(result.wpm, result.accuracy)
+      const now = Date.now()
+      const session: SessionRecord = {
+        id: newSessionId(),
+        subject: 'typing',
+        activity: 'lesson',
+        listId: lessonId,
+        isTest: true,
+        itemsTotal: result.totalTyped,
+        itemsCorrect: result.correct,
+        accuracy: result.accuracy,
+        score: result.score,
+        wpm: result.wpm,
+        durationMs: result.elapsedMs,
+        abilityBefore: previous.ability,
+        abilityAfter: blended,
+        meta: { stars, maxCombo: result.maxCombo },
+        startedAt: now - result.elapsedMs,
+        endedAt: now,
+      }
+
+      void commit({
+        skill: updateStreak(
+          {
+            ...previous,
+            ability: blended,
+            totalAttempts: previous.totalAttempts + result.totalTyped,
+            totalCorrect: previous.totalCorrect + result.correct,
+          },
+          todayString(),
+        ),
+        session,
+        list: {
+          subject: 'typing',
+          listId: lessonId,
+          plays: 1,
+          testsTaken: 1,
+          bestScore: result.score,
+          bestAccuracy: result.accuracy,
+          stars,
+          masteredAt: stars >= 3 ? now : null,
+        },
+        daily: {
+          subject: 'typing',
+          seconds: Math.round(result.elapsedMs / 1000),
+          items: result.totalTyped,
+          correct: result.correct,
+        },
+      })
+
       return outcome
     },
-    [],
+    [commit, skill],
   )
 
   const addHighScore = useCallback((entry: HighScore): Achievement[] => {
@@ -116,8 +191,21 @@ export function useGameState() {
       }
       return next
     })
+
+    void commit({
+      highScore: {
+        id: newSessionId(),
+        subject: 'typing',
+        mode: entry.mode,
+        score: entry.score,
+        wpm: entry.wpm,
+        accuracy: entry.accuracy,
+        createdAt: entry.date,
+      },
+    })
+
     return unlocked
-  }, [])
+  }, [commit])
 
   const reset = useCallback(() => {
     resetState()

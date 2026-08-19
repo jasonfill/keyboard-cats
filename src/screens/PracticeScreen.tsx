@@ -82,7 +82,7 @@ export default function PracticeScreen({ game, navigate }: Props) {
             setResult(null)
             setPhase('play')
           }}
-          onMenu={() => navigate({ name: 'home' })}
+          onMenu={() => navigate({ name: 'typing' })}
         />
       </div>
     )
@@ -122,7 +122,7 @@ export default function PracticeScreen({ game, navigate }: Props) {
           <Button className="flex-1" onClick={() => { setAttempt((a) => a + 1); setPhase('play') }}>
             Start!
           </Button>
-          <Button variant="ghost" onClick={() => navigate({ name: 'home' })}>
+          <Button variant="ghost" onClick={() => navigate({ name: 'typing' })}>
             ← Home
           </Button>
         </div>
