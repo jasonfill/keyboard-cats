@@ -2,6 +2,7 @@ import { GRADES } from '../../data/spelling'
 import CatMascot from '../../components/CatMascot'
 import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
+import VoicePicker from '../../components/suite/VoicePicker'
 import { Button, Card, Pill } from '../../components/ui'
 import { expectedCorrect } from '../../lib/adaptive'
 import { useProgress } from '../../lib/progress/ProgressProvider'
@@ -108,6 +109,7 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
             </div>
           </>
         )}
+        <VoicePicker className="mt-4 border-t border-purple-100 pt-4" />
       </Card>
 
       {/* Activities */}

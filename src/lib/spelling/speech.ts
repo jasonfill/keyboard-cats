@@ -5,8 +5,10 @@
 // `isSpeechAvailable()` lets the UI fall back to briefly flashing the word
 // instead of dictating it. The activity stays playable either way.
 
+const VOICE_KEY = 'cat-academy:voice:v1'
+
 let cachedVoice: SpeechSynthesisVoice | null = null
-let voicesLoaded = false
+let primed = false
 
 function synth(): SpeechSynthesis | null {
   if (typeof window === 'undefined') return null
@@ -57,33 +59,119 @@ export function whenVoicesReady(callback: (available: boolean) => void): () => v
   }
 }
 
-/** Prefer a natural English voice; fall back to whatever English exists. */
-function pickVoice(): SpeechSynthesisVoice | null {
-  const s = synth()
-  if (!s) return null
-  const voices = s.getVoices()
-  if (voices.length === 0) return null
+// Voice quality varies wildly by device, and the browser gives us nothing but a
+// name to judge it on. These lists encode what those names mean in practice.
 
+/** Novelty and robot voices. Fine for jokes, useless for dictation. */
+const NOVELTY = [
+  'Albert', 'Bad News', 'Bahh', 'Bells', 'Boing', 'Bubbles', 'Cellos', 'Good News',
+  'Jester', 'Junior', 'Kathy', 'Organ', 'Fred', 'Ralph', 'Superstar', 'Trinoids',
+  'Whisper', 'Wobble', 'Zarvox', 'Grandma', 'Grandpa', 'Eddy', 'Flo', 'Reed',
+  'Rocko', 'Sandy', 'Shelley',
+]
+
+/**
+ * Neural voices, best first. Apple ships the Siri voices (Nicky, Aaron, and the
+ * regional Arthur/Martha/Catherine/Gordon) to Safari and Chrome under plain
+ * first names with nothing marking them as higher quality — but they sound
+ * enormously better than Samantha, which is the 2010-era compact voice that
+ * every macOS browser reports as the default. Edge exposes Microsoft's neural
+ * voices with "Natural" in the name; Chrome's "Google" voices are cloud-backed
+ * and also well ahead of the local default.
+ */
+const PREFERRED = [
+  'Microsoft Ava', 'Microsoft Emma', 'Microsoft Andrew', 'Microsoft Aria',
+  'Ava (Premium)', 'Ava (Enhanced)', 'Zoe (Premium)', 'Zoe (Enhanced)',
+  'Allison (Premium)', 'Allison (Enhanced)', 'Samantha (Enhanced)',
+  'Nicky', 'Aaron', 'Arthur', 'Martha', 'Catherine', 'Gordon',
+  'Google US English', 'Google UK English Female', 'Google UK English Male',
+  'Ava', 'Allison', 'Susan', 'Zoe', 'Evan', 'Nathan',
+  'Samantha', 'Karen', 'Moira', 'Tessa', 'Daniel',
+]
+
+function isNovelty(v: SpeechSynthesisVoice): boolean {
+  return NOVELTY.some((n) => v.name === n || v.name.startsWith(`${n} (`))
+}
+
+/** Higher is better. Used for both the automatic pick and the picker's order. */
+function score(v: SpeechSynthesisVoice): number {
+  const name = v.name
+  if (isNovelty(v)) return -100
+  let s = 0
+  // Explicit quality markers, wherever a platform bothers to provide them.
+  if (/natural|neural/i.test(name)) s += 60
+  if (/premium/i.test(name)) s += 50
+  if (/enhanced/i.test(name)) s += 40
+  const rank = PREFERRED.findIndex((n) => name === n || name.startsWith(`${n} `) || name.includes(n))
+  if (rank >= 0) s += 100 - rank
+  const lang = v.lang?.toLowerCase() ?? ''
+  if (lang.startsWith('en-us')) s += 8
+  else if (lang.startsWith('en')) s += 4
+  return s
+}
+
+/**
+ * Every English voice worth offering, best first. This is what the voice picker
+ * shows, so novelty voices are dropped rather than merely ranked last.
+ */
+export function listVoices(): SpeechSynthesisVoice[] {
+  const s = synth()
+  if (!s) return []
+  const voices = s.getVoices()
   const english = voices.filter((v) => v.lang?.toLowerCase().startsWith('en'))
   const pool = english.length ? english : voices
-  const preferred = ['Samantha', 'Google US English', 'Microsoft Aria', 'Karen', 'Daniel']
-  for (const name of preferred) {
-    const match = pool.find((v) => v.name.includes(name))
+  return pool.filter((v) => !isNovelty(v)).sort((a, b) => score(b) - score(a))
+}
+
+/** The learner's saved choice, if they made one and the device still has it. */
+export function savedVoiceURI(): string | null {
+  try {
+    return localStorage.getItem(VOICE_KEY)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Remember a voice, or pass null to go back to picking automatically. Takes
+ * effect on the next utterance.
+ */
+export function setVoice(uri: string | null): void {
+  try {
+    if (uri) localStorage.setItem(VOICE_KEY, uri)
+    else localStorage.removeItem(VOICE_KEY)
+  } catch {
+    // Private browsing with storage denied: the choice just will not persist.
+  }
+  cachedVoice = pickVoice()
+}
+
+/** The saved voice if it is still installed, otherwise the best one available. */
+function pickVoice(): SpeechSynthesisVoice | null {
+  const ranked = listVoices()
+  if (ranked.length === 0) return null
+  const saved = savedVoiceURI()
+  if (saved) {
+    const match = ranked.find((v) => v.voiceURI === saved)
     if (match) return match
   }
-  return pool.find((v) => v.localService) ?? pool[0]
+  return ranked[0]
+}
+
+/** The voice dictation will actually use right now. */
+export function currentVoice(): SpeechSynthesisVoice | null {
+  return cachedVoice ?? pickVoice()
 }
 
 /** Voices load asynchronously in most browsers; warm them up on first use. */
 export function primeVoices(): void {
   const s = synth()
-  if (!s || voicesLoaded) return
+  if (!s || primed) return
+  primed = true
   cachedVoice = pickVoice()
-  if (cachedVoice) voicesLoaded = true
-  s.onvoiceschanged = () => {
+  s.addEventListener('voiceschanged', () => {
     cachedVoice = pickVoice()
-    voicesLoaded = !!cachedVoice
-  }
+  })
 }
 
 export interface SpeakOptions {
@@ -100,7 +188,7 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   }
   s.cancel()
   const utterance = new SpeechSynthesisUtterance(text)
-  utterance.voice = cachedVoice ?? pickVoice()
+  utterance.voice = currentVoice()
   utterance.lang = utterance.voice?.lang ?? 'en-US'
   // Slower than conversational — this is dictation for a child.
   utterance.rate = opts.rate ?? 0.85
