@@ -1,3 +1,4 @@
+-- @applied-if: select to_regclass('public.word_lists') is not null
 -- ============================================================================
 -- Cat Academy — core schema
 --

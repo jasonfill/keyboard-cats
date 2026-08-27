@@ -1,0 +1,46 @@
+{
+  "name": "@whizzo/api",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json && npm run copy:migrations",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "smoke": "node scripts/smoke.mjs",
+    "copy:migrations": "node scripts/copy-migrations.mjs",
+    "migrate": "node dist/cli/migrate.js up",
+    "migrate:status": "node dist/cli/migrate.js status",
+    "migrate:dev": "tsx src/cli/migrate.ts",
+    "predev": "node ../../scripts/free-port.mjs",
+    "prestart": "node ../../scripts/free-port.mjs",
+    "purge:users": "node scripts/purge-users.mjs"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@fastify/helmet": "^12.0.1",
+    "@fastify/rate-limit": "^10.2.1",
+    "@supabase/supabase-js": "^2.112.3",
+    "@whizzo/shared": "*",
+    "fastify": "^5.1.0",
+    "jose": "^5.9.6",
+    "pg": "^8.13.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/pg": "^8.11.10",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "pino-pretty": "^13.1.3",
+    "tsx": "^4.23.12",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20 <23"
+  }
+}

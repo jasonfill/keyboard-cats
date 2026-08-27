@@ -16,15 +16,37 @@ Budget about ten minutes.
 
 ## 2. Run the migrations
 
-Open **SQL Editor → New query** in the dashboard, paste the whole contents of
-[`migrations/0001_init.sql`](./migrations/0001_init.sql), and run it. Then do
-the same with [`migrations/0002_quiz_decks.sql`](./migrations/0002_quiz_decks.sql),
-which adds the study-deck table behind Quiz Cats.
+**The API applies these automatically at startup**, so on a normal deploy there
+is nothing to do here — see [apps/api/README.md](../apps/api/README.md). What
+follows is for setting up a project by hand, or for understanding what the
+runner is doing.
 
-The first script creates every core table, the Row Level Security policies, the
-signup trigger that creates a profile row, and two helper functions. Both are
-idempotent — re-running them is safe, and running them in order matters only
-because the second assumes `auth.users` policies already exist.
+A database migrated by hand is still fine: each migration declares an
+`@applied-if` predicate on its first line, and the runner records an
+already-present migration rather than replaying it. That matters because these
+files are idempotent individually but **not in sequence** — `0001` rewrites
+policies against a `user_id` column that `0003` renames.
+
+Open **SQL Editor → New query** in the dashboard and run each migration in
+order:
+
+1. [`0001_init.sql`](./migrations/0001_init.sql) — every core table, the Row
+   Level Security policies, the signup trigger, and two helper functions.
+2. [`0002_quiz_decks.sql`](./migrations/0002_quiz_decks.sql) — the study-deck
+   table behind Quiz Cats.
+3. [`0003_learners.sql`](./migrations/0003_learners.sql) — the learner
+   inversion described below. It backfills existing accounts, so it runs once
+   per project.
+4. [`0004_learner_auth_cleanup.sql`](./migrations/0004_learner_auth_cleanup.sql) —
+   lets an auth user actually be deleted; without it, removing an account a
+   learner signs in with fails on a check constraint.
+5. [`0005_grants.sql`](./migrations/0005_grants.sql) — states every table grant
+   the app needs. Row Level Security decides which *rows* a caller may touch;
+   a plain GRANT decides whether the role may touch the table at all, and
+   Postgres refuses on the grant before it ever consults a policy.
+
+All three are idempotent, so re-running is safe. Order matters: each assumes
+the one before it.
 
 If you prefer the CLI:
 
@@ -38,7 +60,11 @@ supabase db push
 
 | Table | Holds |
 | --- | --- |
-| `profiles` | One row per learner: display name, avatar, plan |
+| `profiles` | One row per **adult account**: display name, avatar, plan |
+| `learners` | One row per **learner**, owned by an adult |
+| `guardian_links` | Which adults may see which learners |
+| `link_invites` | Short-lived pairing codes |
+| `learner_credentials` | Provisioned sign-in codes and PIN hashes |
 | `skill_states` | The adaptive engine's per-subject state (ability, level, streak) |
 | `attempts` | Every single word attempted — the record everything else derives from |
 | `item_mastery` | Per-word mastery and the spaced-repetition schedule |
@@ -49,15 +75,62 @@ supabase db push
 | `high_scores` | Arcade leaderboard rows |
 | `word_lists` | Custom word lists a parent or teacher pastes in |
 
-Every table has Row Level Security on with a `user_id = auth.uid()` policy, so
-a learner can only ever read and write their own rows. The app never uses the
-service-role key — only the public anon key, which is safe to ship in a browser
-build precisely because RLS is doing the work.
+Every progress table has Row Level Security on, keyed by `learner_id` through
+`can_access_learner()`: you reach a learner's rows if you own that learner, if
+you are that learner, or if you have been linked as a guardian. Content tables
+(`decks`, `word_lists`) go one step further and write through
+`can_manage_learner_content()`, so a guardian linked as read-only can watch a
+child's progress without being able to rewrite their decks.
 
-One policy is worth calling out: `profiles_update_own` lets a learner change
-their name and avatar but **not** their `plan`. Billing state is only writable
-by something holding the service role, so nobody can promote themselves to Pro
-from the browser console.
+Two policies are worth calling out. `profiles_update_own` lets an adult change
+their name and avatar but **not** their `plan` — billing state is only writable
+by something holding the service role. And `learner_credentials` has RLS on with
+*no policies at all*, which makes it invisible to every browser session; only
+the service role and the SECURITY DEFINER functions can read a PIN hash.
+
+## The learner model
+
+A learner is a profile owned by an adult, not an auth user. This is what keeps
+the product out of COPPA's verifiable-consent regime: a child can have a full
+record without the app ever collecting an email address from them.
+
+An auth identity is optional, and `learners.auth_kind` says which shape it takes:
+
+| `auth_kind` | Who signs in | Collected from the child |
+| --- | --- | --- |
+| `none` | nobody — the child plays on a grown-up's signed-in device | nothing |
+| `provisioned` | the child, with a parent-minted code and PIN | nothing |
+| `self` | the child, with their own email or Google account | email, name, avatar |
+
+`self` is gated on age 13+, enforced by the `learners_guard` trigger rather than
+by the UI. An unknown birth year is treated as a refusal.
+
+### Pairing
+
+The learner's owner mints a code with `mint_link_invite()`; the other adult
+redeems it with `redeem_link_invite()`. Redemption is an RPC rather than a
+client-side insert because a redeemer must never be able to *read*
+`link_invites` — with read access a short code becomes enumerable.
+
+The same table with `purpose = 'self_login'` is how a 13+ learner attaches their
+own Google account: the parent mints, the teen redeems while signed in as
+themselves, and the age gate fires on the way through.
+
+### Provisioned sign-in needs an Edge Function
+
+`attach_provisioned_login()` and `authenticate_learner()` are revoked from
+`anon` and `authenticated` and granted only to `service_role`. They are meant to
+be called by an Edge Function that holds the admin API: creating the synthetic
+auth user, and exchanging a code + PIN for a session. Until that function
+exists, `auth_kind = 'provisioned'` is reachable from SQL but not from the app.
+
+## Tests
+
+[`tests/0003_learners_test.sql`](./tests/0003_learners_test.sql) pins the
+security properties — a stranger cannot read a child's record, an under-13
+cannot be given their own sign-in, a revoked guardian goes blind, credentials
+are unreadable. Run it against a scratch database that has all three migrations
+applied; any failure raises, so a non-zero exit means the schema regressed.
 
 ## 3. Turn on Google sign-in
 
@@ -78,7 +151,9 @@ under **Authentication → Providers → Email**.
 
 ## 4. Point the app at the project
 
-Copy the two public values from **Project Settings → API**:
+The browser needs these two only for *auth* — since the API gateway landed, all
+data goes through `/api` and the anon key never touches a table. Copy them from
+**Project Settings → API**:
 
 ```bash
 cp .env.example .env.local
@@ -92,23 +167,24 @@ VITE_SUPABASE_ANON_KEY=<your anon public key>
 Restart `npm run dev`. The account chip in the top right should now read
 "Sign in" instead of "Guest".
 
+The API needs more than this — a direct Postgres connection among other things.
+See [apps/api/.env.example](../apps/api/.env.example).
+
 ## 5. Deploy
 
-The GitHub Pages workflow reads the same two values from repository secrets.
-In **Settings → Secrets and variables → Actions**, add:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-
-Without them the deployed build simply runs in guest mode rather than failing.
+Deployment is one DigitalOcean App Platform app with two components, the SPA and
+the API, sharing a hostname; see [.do/app.yaml](../.do/app.yaml). The GitHub
+Pages workflow is manual-only now: Pages serves static files, and this app needs
+`/api` on the same origin.
 
 ## Notes
 
 - **Guest progress is merged on first sign-in.** A learner who practised before
   registering keeps everything: counters add, bests win, and the local copy is
   only cleared once the merge has been written. See `mergeSnapshots` in
-  `src/lib/progress/repo.ts`.
-- **`rebuild_item_mastery(subject)`** re-derives every mastery number straight
+  `src/lib/progress/repo.ts`. The merge marker is keyed by *learner*, so a
+  parent with two children cannot fold the same guest practice into both.
+- **`rebuild_item_mastery(learner_id, subject)`** re-derives every mastery number straight
   from the `attempts` log. If the cached values are ever doubted, that function
   is the answer — the attempt log is the source of truth, everything else is a
   cache.

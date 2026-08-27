@@ -1,0 +1,130 @@
+# DigitalOcean App Platform spec.
+#
+# One app, two components sharing a hostname: the SPA is served as a static
+# site and everything under /api is routed to the Node service. Same origin
+# means no CORS in production and no cross-site cookie rules to work around.
+#
+# Apply with:  doctl apps create --spec .do/app.yaml
+# Update with: doctl apps update <app-id> --spec .do/app.yaml
+name: whizzo
+region: nyc
+
+services:
+  - name: api
+    github:
+      repo: jasonfill/keyboard-cats
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: node-js
+    # The shared package has to be built before the API can resolve its types.
+    build_command: npm ci && npm run build --workspace @whizzo/shared && npm run build --workspace @whizzo/api
+    run_command: node apps/api/dist/server.js
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+    http_port: 8787
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 15
+      period_seconds: 20
+      failure_threshold: 3
+    envs:
+      # RUN_TIME only, deliberately: with NODE_ENV=production at build time
+      # `npm ci` skips devDependencies, and typescript is a devDependency, so
+      # the build command would fail looking for tsc.
+      - key: NODE_ENV
+        scope: RUN_TIME
+        value: production
+      - key: PORT
+        scope: RUN_TIME
+        value: "8787"
+      # Set these as encrypted secrets in the DO dashboard or via doctl; do not
+      # commit the values.
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_TIME
+        type: SECRET
+      # Stretches a child's PIN into their real Supabase password. Generate
+      # once with `openssl rand -base64 48` and never rotate it — rotating
+      # invalidates every provisioned child sign-in.
+      - key: CHILD_LOGIN_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      # On in production, deliberately: a deploy that ships a migration and the
+      # code that needs it must not have a window where only one is live. The
+      # instance refuses to start if migrations fail, so a healthy /api/health
+      # already means the schema is current.
+      - key: RUN_MIGRATIONS_ON_START
+        scope: RUN_TIME
+        value: "true"
+      - key: CHILD_EMAIL_DOMAIN
+        scope: RUN_TIME
+        value: no-reply.whizzo.app
+      # Migrations run at startup. Use the SESSION pooler (port 5432), not the
+      # transaction pooler on 6543 — the runner holds a pg_advisory_lock and
+      # advisory locks are session-scoped. Not the old db.<ref>.supabase.co host
+      # either: that is IPv6-only without the IPv4 add-on.
+      - key: MIGRATION_DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+
+static_sites:
+  - name: web
+    github:
+      repo: jasonfill/keyboard-cats
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: node-js
+    build_command: npm ci && npm run build --workspace @whizzo/shared && npm run build --workspace @whizzo/web
+    output_dir: apps/web/dist
+    # A single-page app: unknown paths are routes, not missing files.
+    catchall_document: index.html
+    envs:
+      # Public values, baked into the bundle at build time. Auth still runs in
+      # the browser against Supabase; data goes through the API.
+      - key: VITE_SUPABASE_URL
+        scope: BUILD_TIME
+        type: SECRET
+      - key: VITE_SUPABASE_ANON_KEY
+        scope: BUILD_TIME
+        type: SECRET
+
+ingress:
+  rules:
+    - match:
+        path:
+          prefix: /api
+      component:
+        name: api
+        # Without this App Platform strips the matched prefix before forwarding,
+        # so /api/learners would arrive at the service as /learners — and every
+        # route is registered under /api. Leaving it off 404s the entire API.
+        # It also keeps production identical to development, where Vite proxies
+        # /api straight through to the service.
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /
+      component:
+        name: web
+
+# Certificate issuance only succeeds once whizzo.app's DNS points at this app,
+# and it currently points at GitHub Pages. Bring the app up first, check it on
+# its own ondigitalocean.app URL, then move DNS — the domain sits pending in the
+# meantime without blocking anything.
+domains:
+  - domain: whizzo.app
+    type: PRIMARY
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED

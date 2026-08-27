@@ -1,8 +1,16 @@
 name: Deploy to GitHub Pages
 
+# Manual only, deliberately.
+#
+# The SPA now gets all of its data from the API at /api on the same origin.
+# GitHub Pages serves static files and nothing else, so a Pages build of this
+# app would load, show a sign-in screen, and then fail every request. Deployment
+# moved to DigitalOcean App Platform (see .do/app.yaml), which serves the SPA
+# and the API together under one hostname.
+#
+# This workflow is kept, rather than deleted, so the last static-only build can
+# still be produced by hand if the DO app has to be rolled back to it.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # Allow the workflow to publish to GitHub Pages.
@@ -28,7 +36,9 @@ jobs:
       - run: npm ci
       - run: npm run validate:words
       - run: npm run simulate:adaptive
-      - run: npm run build
+      # Workspaces: shared must be built before the web app can resolve it.
+      - run: npm run build --workspace @whizzo/shared
+      - run: npm run build --workspace @whizzo/web
         env:
           # Optional. Without them the deployed build runs in guest mode
           # (localStorage only) rather than failing. Both are public values —
@@ -40,7 +50,7 @@ jobs:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/web/dist
 
   deploy:
     needs: build

@@ -11,6 +11,35 @@ Three subjects so far, one account, one progress record:
 
 Free, ad-free, and playable with no account at all.
 
+## Architecture
+
+An npm workspace with three packages:
+
+| Package | What it is |
+| --- | --- |
+| `apps/web` | The React SPA. Holds a Supabase session for auth; gets all data from the API. |
+| `apps/api` | Fastify. The only thing that talks to Postgres. See [apps/api/README.md](apps/api/README.md). |
+| `packages/shared` | Domain types and the wire contract, imported by both. |
+
+A **learner** is a profile owned by an adult, not an auth user — that is what
+lets a child have a full record without the app collecting an email address from
+them. An auth identity is optional and comes in three shapes (`none`,
+`provisioned`, `self`), and `self` is gated on age 13+ in the database. See
+[supabase/README.md](supabase/README.md).
+
+Deployment is one DigitalOcean App Platform app serving the SPA and the API
+under one hostname ([.do/app.yaml](.do/app.yaml)).
+
+```bash
+npm install
+npm run dev:all    # the SPA and the API together
+npm test           # typecheck, lint, curriculum and adaptive-engine checks
+```
+
+For a fully local Postgres and Auth rather than developing against the hosted
+project, see [LOCAL.md](LOCAL.md).
+
+
 ## Run it
 
 Requires **Node 18+**.

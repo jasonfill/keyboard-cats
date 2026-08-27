@@ -1,3 +1,4 @@
+-- @applied-if: select to_regclass('public.decks') is not null
 -- ============================================================================
 -- Cat Academy — study decks (Quiz Cats)
 --

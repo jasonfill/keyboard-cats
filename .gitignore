@@ -29,3 +29,9 @@ test-report.md
 # Local env
 .env
 .env.local
+
+# Rendered app spec: contains live credentials
+.do/app.rendered.yaml
+
+# Local Supabase stack overrides (written by scripts/local-env.mjs)
+apps/web/.env.development.local

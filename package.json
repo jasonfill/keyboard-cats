@@ -1,35 +1,33 @@
 {
-  "name": "keyboard-cats",
+  "name": "whizzo",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "validate:words": "tsx scripts/validate-curriculum.ts",
-    "simulate:adaptive": "tsx scripts/simulate-adaptive.ts"
+    "dev": "npm run dev --workspace @whizzo/web",
+    "dev:api": "npm run dev --workspace @whizzo/api",
+    "build": "npm run build --workspace @whizzo/shared && npm run build --workspace @whizzo/web && npm run build --workspace @whizzo/api",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "validate:words": "npm run validate:words --workspace @whizzo/web",
+    "simulate:adaptive": "npm run simulate:adaptive --workspace @whizzo/web",
+    "test": "npm run typecheck && npm run lint && npm run validate:words && npm run simulate:adaptive",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status",
+    "local:env": "node scripts/local-env.mjs",
+    "dev:all": "concurrently -n api,web -c cyan,magenta \"npm run dev:api\" \"npm run dev\"",
+    "test:db": "node scripts/test-db.mjs"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+  "engines": {
+    "node": ">=20 <23"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-react-refresh": "^0.4.14",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "tsx": "^4.23.12",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "concurrently": "^10.0.5"
   }
 }
