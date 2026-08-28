@@ -6,6 +6,7 @@ import CatMascot from './components/CatMascot'
 import { useGameState } from './hooks/useGameState'
 import { LearnerProvider, useLearners } from './lib/learners/LearnerProvider'
 import { ProgressProvider, useProgress } from './lib/progress/ProgressProvider'
+import { ThemeProvider } from './lib/theme/ThemeProvider'
 import { setSoundEnabled } from './lib/sound'
 import type { Navigate, Route } from './routes'
 import CatRainScreen from './screens/CatRainScreen'
@@ -37,12 +38,17 @@ export default function App() {
   return (
     <AuthProvider>
       <LearnerProvider>
-        <ProgressProvider>
-          <Background />
-          <main className="min-h-full px-3 pb-10 pt-4 md:px-6">
-            <Router />
-          </main>
-        </ProgressProvider>
+        {/* Above progress, below learners: the theme is chosen per learner, so
+            it has to see who is active, and everything below it paints in the
+            colour it publishes. */}
+        <ThemeProvider>
+          <ProgressProvider>
+            <Background />
+            <main className="min-h-full px-3 pb-10 pt-4 md:px-6">
+              <Router />
+            </main>
+          </ProgressProvider>
+        </ThemeProvider>
       </LearnerProvider>
     </AuthProvider>
   )
