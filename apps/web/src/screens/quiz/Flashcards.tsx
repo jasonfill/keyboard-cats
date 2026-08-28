@@ -96,16 +96,16 @@ export default function Flashcards({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <Pill className="bg-purple-100 text-grape">
+        <Pill className="bg-wash text-ink">
           {reason.emoji} {reason.label}
         </Pill>
-        <span className="font-bold text-slate-400">
+        <span className="font-bold text-stone">
           {progress.retired} of {progress.total} put away
         </span>
       </div>
 
       {progress.pass > 1 && (
-        <p className="mb-3 text-center font-extrabold text-grape">
+        <p className="mb-3 text-center font-extrabold text-ink">
           🔁 Here it is again — try to get it this time.
         </p>
       )}
@@ -120,19 +120,19 @@ export default function Flashcards({
           className={`flex min-h-[16rem] flex-col items-center justify-center rounded-3xl p-8 text-center shadow-xl ring-1 backdrop-blur transition-colors ${
             flipped
               ? 'bg-emerald-50/90 ring-emerald-200'
-              : 'bg-white/90 ring-purple-100'
+              : 'bg-white/90 ring-hair'
           }`}
         >
-          <p className="mb-2 text-xs font-extrabold uppercase tracking-widest text-slate-400">
+          <p className="mb-2 text-xs font-extrabold uppercase tracking-widest text-stone">
             {flipped ? 'Answer' : 'Question'}
           </p>
-          <p className="text-3xl font-extrabold text-grape md:text-4xl">
+          <p className="text-3xl font-extrabold text-ink md:text-4xl">
             {flipped ? back : front}
           </p>
           {!flipped && current.card.hint && (
-            <p className="mt-3 font-bold text-slate-400">💡 {current.card.hint}</p>
+            <p className="mt-3 font-bold text-stone">💡 {current.card.hint}</p>
           )}
-          <p className="mt-6 text-sm font-bold text-slate-400">
+          <p className="mt-6 text-sm font-bold text-stone">
             {flipped ? 'Tap to see the question again' : 'Tap the card, or press space, to flip'}
           </p>
         </div>
@@ -167,7 +167,7 @@ export default function Flashcards({
         </div>
       ) : (
         <Card>
-          <p className="text-center font-bold text-slate-400">
+          <p className="text-center font-bold text-stone">
             Have a think, then turn the card over to see how you did.
           </p>
         </Card>

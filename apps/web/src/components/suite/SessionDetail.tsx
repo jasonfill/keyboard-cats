@@ -44,10 +44,10 @@ export default function SessionDetail({ session }: { session: SessionRecord }) {
   // branch below rather than inside the happy path.
   const header = (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold">
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">
+      <span className="rounded-full bg-wash px-2 py-0.5 text-muted">
         ⏱️ {formatDuration(session.durationMs)}
       </span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">
+      <span className="rounded-full bg-wash px-2 py-0.5 text-muted">
         {new Date(session.startedAt).toLocaleString()}
       </span>
       <EvidenceBadge session={session} />
@@ -66,7 +66,7 @@ export default function SessionDetail({ session }: { session: SessionRecord }) {
     return (
       <div className="py-2">
         {header}
-        <p className="font-bold text-slate-400">Loading the answers…</p>
+        <p className="font-bold text-stone">Loading the answers…</p>
       </div>
     )
   }
@@ -74,7 +74,7 @@ export default function SessionDetail({ session }: { session: SessionRecord }) {
     return (
       <div className="py-2">
         {header}
-        <p className="font-bold text-slate-400">
+        <p className="font-bold text-stone">
           {session.subject === 'typing'
             ? 'Typing rounds are recorded as a whole — there are no separate questions to show.'
             : 'No answers were kept for this round. Rounds played before this device started recording them show their score only.'}
@@ -103,12 +103,12 @@ export default function SessionDetail({ session }: { session: SessionRecord }) {
             >
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className="text-sm">{a.correct ? '✅' : '❌'}</span>
-                <span className="font-extrabold text-grape">{label.title}</span>
+                <span className="font-extrabold text-ink">{label.title}</span>
                 {label.detail && (
-                  <span className="text-sm font-bold text-slate-500">{label.detail}</span>
+                  <span className="text-sm font-bold text-muted">{label.detail}</span>
                 )}
                 {count > 1 && (
-                  <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-extrabold text-grape">
+                  <span className="rounded-full bg-wash px-2 py-0.5 text-[11px] font-extrabold text-ink">
                     try {count}
                   </span>
                 )}
@@ -121,15 +121,15 @@ export default function SessionDetail({ session }: { session: SessionRecord }) {
                   </span>
                 )}
                 {a.hintsUsed > 0 && (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold text-slate-500">
+                  <span className="rounded-full bg-wash px-2 py-0.5 text-[11px] font-extrabold text-muted">
                     💡 {a.hintsUsed}
                   </span>
                 )}
-                <span className="ml-auto text-xs font-bold text-slate-400">
+                <span className="ml-auto text-xs font-bold text-stone">
                   {formatMs(a.responseMs)}
                 </span>
               </div>
-              <p className="mt-0.5 text-sm font-bold text-slate-500">{answerLine(a)}</p>
+              <p className="mt-0.5 text-sm font-bold text-muted">{answerLine(a)}</p>
             </li>
           )
         })}
@@ -153,7 +153,7 @@ function EvidenceBadge({ session }: { session: SessionRecord }) {
   if (evidence === 'client') {
     return (
       <span
-        className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500"
+        className="rounded-full bg-wash px-2 py-0.5 text-muted"
         title="This kind of round is recorded as a whole rather than question by question."
       >
         whole-round score
@@ -162,7 +162,7 @@ function EvidenceBadge({ session }: { session: SessionRecord }) {
   }
   return (
     <span
-      className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500"
+      className="rounded-full bg-wash px-2 py-0.5 text-muted"
       title="Recorded before rounds started carrying their own evidence."
     >
       recorded earlier

@@ -17,7 +17,7 @@ export default function AccountChip({ onOpen }: { onOpen: () => void }) {
   return (
     <button
       onClick={onOpen}
-      className="flex items-center gap-2 rounded-full border-2 border-purple-200 bg-white/80 py-1.5 pl-2 pr-3 text-sm font-extrabold text-grape shadow-sm transition-colors hover:bg-white"
+      className="flex items-center gap-2 rounded-full border-2 border-edge bg-white/80 py-1.5 pl-2 pr-3 text-sm font-extrabold text-ink shadow-sm transition-colors hover:bg-white"
     >
       <span className="text-lg leading-none">{emoji}</span>
       <span className="max-w-[9rem] truncate">{label}</span>

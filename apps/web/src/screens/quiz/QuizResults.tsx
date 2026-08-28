@@ -29,10 +29,10 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
           size={110}
           className="mx-auto animate-pounce"
         />
-        <h1 className="mt-2 text-4xl font-extrabold text-grape">
+        <h1 className="mt-2 text-4xl font-extrabold text-ink">
           {summary.itemsCorrect} / {summary.itemsTotal}
         </h1>
-        <p className="mb-3 text-lg font-bold text-slate-500">
+        <p className="mb-3 text-lg font-bold text-muted">
           {def.emoji} {def.name} · {summary.deckTitle}
         </p>
 
@@ -42,15 +42,15 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
 
         <div className="flex flex-wrap justify-center gap-2">
           <Pill
-            className="bg-purple-100 text-grape"
+            className="bg-wash text-ink"
             title="Scored on your first go at each card, so going back over one never costs you."
           >
             {summary.accuracy}% first time
           </Pill>
-          <Pill className="bg-sky-100 text-sky-700">{summary.score} points</Pill>
+          <Pill className="bg-pineSoft/30 text-pine">{summary.score} points</Pill>
           {near.length > 0 && (
             <Pill
-              className="bg-amber-100 text-amber-700"
+              className="bg-sun/30 text-ink"
               title="Counted as correct — you had it, the spelling just slipped."
             >
               {near.length} near {near.length === 1 ? 'miss' : 'misses'}
@@ -65,7 +65,7 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
             </Pill>
           )}
           {summary.newlyMastered.length > 0 && (
-            <Pill className="bg-emerald-100 text-emerald-700">
+            <Pill className="bg-pine/10 text-pine">
               💎 {summary.newlyMastered.length} newly mastered
             </Pill>
           )}
@@ -73,7 +73,7 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
 
         {/* Honest framing: the score is measured against what was predicted for
             this exact set of cards, not a flat pass mark. */}
-        <p className="mt-4 font-bold text-slate-500">
+        <p className="mt-4 font-bold text-muted">
           {beatPrediction
             ? `We expected about ${summary.predictedAccuracy}% on these cards — you beat it. 🎉`
             : `We expected about ${summary.predictedAccuracy}% on these. These were hard cards; keep going.`}
@@ -82,10 +82,10 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
 
       {summary.newAchievements.length > 0 && (
         <Card className="mb-4">
-          <h2 className="mb-2 text-xl font-extrabold text-grape">New trophies 🏆</h2>
+          <h2 className="mb-2 text-xl font-extrabold text-ink">New trophies 🏆</h2>
           <div className="flex flex-wrap gap-2">
             {summary.newAchievements.map((a) => (
-              <Pill key={a.id} className="bg-amber-100 text-amber-700">
+              <Pill key={a.id} className="bg-sun/30 text-ink">
                 {a.emoji} {a.name}
               </Pill>
             ))}
@@ -95,16 +95,16 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
 
       {missed.length > 0 && (
         <Card className="mb-4">
-          <h2 className="mb-1 text-xl font-extrabold text-grape">
+          <h2 className="mb-1 text-xl font-extrabold text-ink">
             Worth another look ({missed.length})
           </h2>
-          <p className="mb-3 font-bold text-slate-500">
+          <p className="mb-3 font-bold text-muted">
             These are queued up for next time, so they will come round again.
           </p>
           <div className="space-y-2">
             {missed.map((r, i) => (
               <div key={`${r.planned.card.id}-${i}`} className="rounded-2xl bg-rose-50 px-4 py-3">
-                <p className="font-extrabold text-grape">{r.question.prompt}</p>
+                <p className="font-extrabold text-ink">{r.question.prompt}</p>
                 <p className="font-bold text-emerald-700">✓ {r.question.answer}</p>
                 {r.given && (
                   <p className="text-sm font-bold text-rose-500">

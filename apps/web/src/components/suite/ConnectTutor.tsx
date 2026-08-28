@@ -68,8 +68,8 @@ export default function ConnectTutor({
 
   return (
     <Card className="mt-4">
-      <h3 className="mb-1 text-lg font-extrabold text-grape">Connect a tutor or teacher</h3>
-      <p className="mb-3 text-sm font-bold text-slate-500">
+      <h3 className="mb-1 text-lg font-extrabold text-ink">Connect a tutor or teacher</h3>
+      <p className="mb-3 text-sm font-bold text-muted">
         If a tutor gave you a code, enter it here. You choose who they can see, and you can
         disconnect them at any time.
       </p>
@@ -84,7 +84,7 @@ export default function ConnectTutor({
           }}
           placeholder="ABCD2345"
           aria-label="Tutor code"
-          className="flex-1 rounded-xl border-2 border-purple-200 px-3 py-2 font-mono text-lg font-extrabold tracking-widest text-grape outline-none focus:border-grape"
+          className="flex-1 rounded-xl border-2 border-edge px-3 py-2 font-mono text-lg font-extrabold tracking-widest text-ink outline-none focus:border-ink"
         />
         <Button disabled={busy || code.trim().length < 6} onClick={look}>
           {busy ? 'Checking…' : 'Check code'}
@@ -104,19 +104,19 @@ export default function ConnectTutor({
       )}
 
       {preview?.valid && (
-        <div className="rounded-2xl bg-purple-50 p-4">
-          <p className="mb-1 font-extrabold text-grape">
+        <div className="rounded-2xl bg-quiet p-4">
+          <p className="mb-1 font-extrabold text-ink">
             {preview.ownerName}
             {preview.label ? ` — ${preview.label}` : ''}
           </p>
-          <p className="mb-3 text-sm font-bold text-slate-500">
+          <p className="mb-3 text-sm font-bold text-muted">
             They will be able to see the progress of whoever you choose
             {preview.canManageContent ? ', and set them work' : ''}. They will not see anyone
             else in your family.
           </p>
 
           <fieldset className="mb-3">
-            <legend className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+            <legend className="mb-1 text-xs font-extrabold uppercase tracking-wide text-stone">
               Who can they see?
             </legend>
             <div className="flex flex-wrap gap-2">
@@ -134,8 +134,8 @@ export default function ConnectTutor({
                     }
                     className={`flex items-center gap-2 rounded-2xl px-4 py-2 font-bold ring-1 transition-colors ${
                       on
-                        ? 'bg-grape text-white ring-grape'
-                        : 'bg-white/85 text-slate-500 ring-purple-100 hover:bg-purple-50'
+                        ? 'bg-ink text-white ring-ink'
+                        : 'bg-white/85 text-muted ring-hair hover:bg-quiet'
                     }`}
                   >
                     <span className="text-lg leading-none">{l.avatarEmoji}</span>

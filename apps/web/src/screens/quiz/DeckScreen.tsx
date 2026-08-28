@@ -23,7 +23,7 @@ export default function DeckScreen({ deckId, navigate }: { deckId: string; navig
       <div className="mx-auto w-full max-w-3xl py-4">
         <ScreenHeader title="Deck not found" onBack={() => navigate({ name: 'quiz' })} />
         <Card>
-          <p className="font-bold text-slate-500">
+          <p className="font-bold text-muted">
             That deck is gone. It may have been deleted on another device.
           </p>
         </Card>
@@ -63,7 +63,7 @@ export default function DeckScreen({ deckId, navigate }: { deckId: string; navig
           <Stat label="Mastered" value={String(stats.mastered)} />
           <Stat label="Still learning" value={String(stats.practiced + stats.learning)} />
           <Stat label="Not seen" value={String(stats.total - stats.seen)} />
-          {stats.due > 0 && <Pill className="bg-amber-100 text-amber-700">🔁 {stats.due} due</Pill>}
+          {stats.due > 0 && <Pill className="bg-sun/30 text-ink">🔁 {stats.due} due</Pill>}
         </div>
       </Card>
 
@@ -77,7 +77,7 @@ export default function DeckScreen({ deckId, navigate }: { deckId: string; navig
         <>
           {/* Which way round to ask */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-extrabold uppercase tracking-wide text-slate-400">
+            <span className="text-sm font-extrabold uppercase tracking-wide text-stone">
               Ask me with
             </span>
             <DirectionToggle
@@ -95,18 +95,18 @@ export default function DeckScreen({ deckId, navigate }: { deckId: string; navig
                 onClick={() =>
                   navigate({ name: 'quiz-play', mode: mode.id, deckId: deck.id, direction })
                 }
-                className="rounded-3xl bg-white/85 p-5 text-left shadow-xl ring-1 ring-purple-100 backdrop-blur transition-transform hover:-translate-y-1 hover:shadow-2xl"
+                className="rounded-3xl bg-white/85 p-5 text-left shadow-xl ring-1 ring-hair backdrop-blur transition-transform hover:-translate-y-1 hover:shadow-2xl"
               >
                 <div className="mb-1 flex items-center gap-2">
                   <span className="text-3xl">{mode.emoji}</span>
-                  <h3 className="text-xl font-extrabold text-grape">{mode.name}</h3>
+                  <h3 className="text-xl font-extrabold text-ink">{mode.name}</h3>
                   {mode.isTest && (
                     <Pill className="bg-rose-100 text-rose-600" title="Counts toward your score">
                       Graded
                     </Pill>
                   )}
                 </div>
-                <p className="font-bold text-slate-500">{mode.blurb}</p>
+                <p className="font-bold text-muted">{mode.blurb}</p>
               </button>
             ))}
           </div>
@@ -152,7 +152,7 @@ export default function DeckScreen({ deckId, navigate }: { deckId: string; navig
       </div>
 
       {/* The cards themselves, weakest first so the list is useful to read */}
-      <h3 className="mb-3 text-xl font-extrabold text-grape">
+      <h3 className="mb-3 text-xl font-extrabold text-ink">
         Cards ({deck.cards.length})
       </h3>
       <div className="space-y-2">
@@ -167,8 +167,8 @@ export default function DeckScreen({ deckId, navigate }: { deckId: string; navig
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-2xl font-extrabold text-grape">{value}</div>
-      <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-2xl font-extrabold text-ink">{value}</div>
+      <div className="text-xs font-bold uppercase tracking-wide text-stone">{label}</div>
     </div>
   )
 }
@@ -190,13 +190,13 @@ function DirectionToggle({
     { id: 'mixed', label: 'Both ways' },
   ]
   return (
-    <div className="flex flex-wrap gap-1 rounded-2xl bg-white/70 p-1 ring-1 ring-purple-200">
+    <div className="flex flex-wrap gap-1 rounded-2xl bg-white/70 p-1 ring-1 ring-edge">
       {options.map((o) => (
         <button
           key={o.id}
           onClick={() => onChange(o.id)}
           className={`rounded-xl px-3 py-1.5 text-sm font-extrabold transition-colors ${
-            value === o.id ? 'bg-grape text-white' : 'text-grape hover:bg-purple-50'
+            value === o.id ? 'bg-ink text-white' : 'text-ink hover:bg-quiet'
           }`}
         >
           {o.label}
@@ -213,17 +213,17 @@ function CardRow({ card, deckId }: { card: QuizCard; deckId: string }) {
 
   const band =
     !mastery || mastery.totalAttempts === 0
-      ? { label: 'Not seen', className: 'bg-slate-100 text-slate-500' }
+      ? { label: 'Not seen', className: 'bg-wash text-muted' }
       : score >= 0.8
-        ? { label: 'Mastered', className: 'bg-emerald-100 text-emerald-700' }
+        ? { label: 'Mastered', className: 'bg-pine/10 text-pine' }
         : score >= 0.45
-          ? { label: 'Practiced', className: 'bg-sky-100 text-sky-700' }
-          : { label: 'Learning', className: 'bg-amber-100 text-amber-700' }
+          ? { label: 'Practiced', className: 'bg-pineSoft/30 text-pine' }
+          : { label: 'Learning', className: 'bg-sun/30 text-ink' }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-purple-100">
-      <span className="min-w-[9rem] flex-1 font-extrabold text-grape">{card.term}</span>
-      <span className="flex-[2] font-bold text-slate-500">{card.definition}</span>
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-hair">
+      <span className="min-w-[9rem] flex-1 font-extrabold text-ink">{card.term}</span>
+      <span className="flex-[2] font-bold text-muted">{card.definition}</span>
       <Pill className={`shrink-0 ${band.className}`}>{band.label}</Pill>
     </div>
   )

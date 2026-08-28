@@ -94,12 +94,12 @@ export default function PracticeScreen({ game, navigate }: Props) {
         <div className="mb-4 flex items-center gap-3">
           <CatMascot mood="neutral" color="#38bdf8" size={80} />
           <div>
-            <h1 className="text-2xl font-extrabold text-grape">Free Practice</h1>
-            <p className="text-slate-500">Warm up your paws with a custom round!</p>
+            <h1 className="text-2xl font-extrabold text-ink">Free Practice</h1>
+            <p className="text-muted">Warm up your paws with a custom round!</p>
           </div>
         </div>
 
-        <p className="mb-2 font-bold text-slate-600">Which keys?</p>
+        <p className="mb-2 font-bold text-body">Which keys?</p>
         <div className="mb-4 grid grid-cols-2 gap-2">
           <Choice active={scope === 'learned'} onClick={() => setScope('learned')}>
             🎓 Keys I&apos;ve learned
@@ -109,7 +109,7 @@ export default function PracticeScreen({ game, navigate }: Props) {
           </Choice>
         </div>
 
-        <p className="mb-2 font-bold text-slate-600">How long?</p>
+        <p className="mb-2 font-bold text-body">How long?</p>
         <div className="mb-6 grid grid-cols-3 gap-2">
           {([15, 25, 40] as Length[]).map((n) => (
             <Choice key={n} active={length === n} onClick={() => setLength(n)}>
@@ -145,8 +145,8 @@ function Choice({
       onClick={onClick}
       className={`rounded-xl px-3 py-3 text-center font-bold transition-all ${
         active
-          ? 'bg-grape text-white shadow'
-          : 'bg-white text-slate-600 ring-2 ring-purple-100 hover:ring-purple-300'
+          ? 'bg-accent text-white shadow'
+          : 'bg-white text-body ring-2 ring-hair hover:ring-edge'
       }`}
     >
       {children}

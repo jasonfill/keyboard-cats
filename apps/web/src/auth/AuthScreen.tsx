@@ -122,12 +122,12 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     return (
       <div className="mx-auto w-full max-w-md py-10">
         <Card>
-          <h1 className="mb-2 text-3xl font-extrabold text-grape">Accounts are off</h1>
-          <p className="mb-4 font-bold text-slate-500">
+          <h1 className="mb-2 text-3xl font-extrabold text-ink">Accounts are off</h1>
+          <p className="mb-4 font-bold text-muted">
             This build has no database connected, so everything saves right here in your browser.
             Progress still works — it just will not follow you to another device.
           </p>
-          <p className="mb-5 text-sm font-bold text-slate-400">
+          <p className="mb-5 text-sm font-bold text-stone">
             Setting one up takes about ten minutes: see <code>supabase/README.md</code>.
           </p>
           <Button className="w-full" onClick={onGuest}>
@@ -143,15 +143,15 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
           <CatMascot mood="excited" size={110} className="animate-floaty" />
-          <h1 className="mt-1 text-4xl font-extrabold text-grape">Hi there!</h1>
-          <p className="text-center font-bold text-slate-500">
+          <h1 className="mt-1 text-4xl font-extrabold text-ink">Hi there!</h1>
+          <p className="text-center font-bold text-muted">
             Type the code and secret number your grown-up gave you.
           </p>
         </div>
 
         <Card>
           <form onSubmit={kidSignIn} className="flex flex-col gap-4">
-            <label className="text-sm font-extrabold text-slate-500">
+            <label className="text-sm font-extrabold text-muted">
               Your code
               <input
                 value={loginCode}
@@ -159,10 +159,10 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
                 autoComplete="off"
                 autoCapitalize="characters"
                 placeholder="ABCD2345"
-                className="mt-1 w-full rounded-2xl border-2 border-purple-200 px-4 py-3 text-center font-mono text-2xl font-extrabold tracking-[0.25em] text-grape outline-none focus:border-grape"
+                className="mt-1 w-full rounded-2xl border-2 border-edge px-4 py-3 text-center font-mono text-2xl font-extrabold tracking-[0.25em] text-ink outline-none focus:border-ink"
               />
             </label>
-            <label className="text-sm font-extrabold text-slate-500">
+            <label className="text-sm font-extrabold text-muted">
               Secret number
               <input
                 value={pin}
@@ -171,7 +171,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
                 type="password"
                 autoComplete="off"
                 placeholder="••••"
-                className="mt-1 w-full rounded-2xl border-2 border-purple-200 px-4 py-3 text-center text-2xl font-extrabold tracking-[0.4em] text-grape outline-none focus:border-grape"
+                className="mt-1 w-full rounded-2xl border-2 border-edge px-4 py-3 text-center text-2xl font-extrabold tracking-[0.4em] text-ink outline-none focus:border-ink"
               />
             </label>
 
@@ -189,7 +189,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
               setKidMode(false)
               clearError()
             }}
-            className="mt-4 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+            className="mt-4 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
             I am a grown-up
           </button>
@@ -205,17 +205,17 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
           <CatMascot mood="happy" size={104} className="animate-floaty" />
-          <h1 className="mt-1 text-center text-3xl font-extrabold text-grape">
+          <h1 className="mt-1 text-center text-3xl font-extrabold text-ink">
             Let's get a grown-up
           </h1>
-          <p className="mt-1 text-center font-bold text-slate-500">
+          <p className="mt-1 text-center font-bold text-muted">
             You need a grown-up to make the account. Then they give you a code, and the
             code is all you need — no email, nothing to remember.
           </p>
         </div>
 
         <Card>
-          <p className="mb-4 text-sm font-bold text-slate-500">
+          <p className="mb-4 text-sm font-bold text-muted">
             Already have a code from your grown-up?
           </p>
           <Button
@@ -229,7 +229,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
           </Button>
           <button
             onClick={onGuest}
-            className="mt-4 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+            className="mt-4 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
             Keep playing without an account
           </button>
@@ -245,7 +245,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
           <CatMascot mood="happy" size={104} className="animate-floaty" />
-          <h1 className="mt-1 text-3xl font-extrabold text-grape">What year were you born?</h1>
+          <h1 className="mt-1 text-3xl font-extrabold text-ink">What year were you born?</h1>
         </div>
 
         <Card>
@@ -275,7 +275,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
               inputMode="numeric"
               autoFocus
               placeholder="2011"
-              className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 text-center text-2xl font-extrabold tracking-widest text-grape outline-none focus:border-grape"
+              className="w-full rounded-2xl border-2 border-edge px-4 py-3 text-center text-2xl font-extrabold tracking-widest text-ink outline-none focus:border-ink"
             />
             {notice && (
               <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
@@ -293,7 +293,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
               setYearInput('')
               setNotice(null)
             }}
-            className="mt-4 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+            className="mt-4 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
             ← Back
           </button>
@@ -309,10 +309,14 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
           <CatMascot mood="happy" size={104} className="animate-floaty" />
-          <h1 className="mt-1 text-4xl font-extrabold text-grape">Cat Academy</h1>
-          <p className="text-center font-bold text-slate-500">Who is setting this up?</p>
+          <h1 className="mt-1 text-4xl font-extrabold text-ink">Cat Academy</h1>
+          <p className="text-center font-bold text-muted">Who is setting this up?</p>
         </div>
 
+        {/* The question that actually matters is not what you are called but
+            whether the learners are yours: a parent adds children to their own
+            account, a tutor connects to families who already have one. Same
+            account either way — it only changes what happens next. */}
         <Card>
           <div className="flex flex-col gap-3">
             <Button
@@ -322,10 +326,24 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
                 saveSignupIntent({ role: 'guardian' })
               }}
             >
-              👋 I am a parent or teacher
+              👋 I am a parent
             </Button>
-            <p className="-mt-1 px-1 text-xs font-bold text-slate-400">
+            <p className="-mt-1 px-1 text-xs font-bold text-stone">
               You make one account and add each child to it. Recommended.
+            </p>
+
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setRole('tutor')
+                saveSignupIntent({ role: 'tutor' })
+              }}
+            >
+              🎓 I am a tutor or teacher
+            </Button>
+            <p className="-mt-1 px-1 text-xs font-bold text-stone">
+              You get a code to hand to families. They choose which of their children you can see.
             </p>
 
             <Button variant="ghost" className="w-full" onClick={() => setRole('learner')}>
@@ -338,7 +356,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
               setTab('signin')
               clearError()
             }}
-            className="mt-5 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+            className="mt-5 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
             I already have an account
           </button>
@@ -347,7 +365,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
               setKidMode(true)
               clearError()
             }}
-            className="mt-2 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+            className="mt-2 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
             🐾 Kids: sign in with a code
           </button>
@@ -360,18 +378,20 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     <div className="mx-auto w-full max-w-md py-6">
       <div className="mb-4 flex flex-col items-center">
         <CatMascot mood="happy" size={100} className="animate-floaty" />
-        <h1 className="mt-1 text-4xl font-extrabold text-grape">Cat Academy</h1>
-        <p className="text-center font-bold text-slate-500">
+        <h1 className="mt-1 text-4xl font-extrabold text-ink">Cat Academy</h1>
+        <p className="text-center font-bold text-muted">
           {tab === 'signup'
             ? role === 'learner'
               ? 'Your own account. Progress follows you to any device.'
-              : 'This is the grown-up account. You will add the kids next.'
+              : role === 'tutor'
+                ? 'This is your account. Your students stay on their own families\u2019 accounts — you connect to them next.'
+                : 'This is the grown-up account. You will add the kids next.'
             : 'Welcome back.'}
         </p>
       </div>
 
       <Card>
-        <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-purple-50 p-1">
+        <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-quiet p-1">
           {(['signup', 'signin'] as Tab[]).map((t) => (
             <button
               key={t}
@@ -381,7 +401,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
                 setNotice(null)
               }}
               className={`rounded-xl py-2 text-sm font-extrabold transition-colors ${
-                tab === t ? 'bg-white text-grape shadow' : 'text-slate-400 hover:text-grape'
+                tab === t ? 'bg-white text-ink shadow' : 'text-stone hover:text-ink'
               }`}
             >
               {t === 'signup' ? 'Create account' : 'Sign in'}
@@ -393,16 +413,16 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
           type="button"
           onClick={google}
           disabled={busy}
-          className="mb-4 flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white py-3 text-base font-extrabold text-slate-700 transition-colors hover:border-purple-300 hover:bg-purple-50 disabled:opacity-50"
+          className="mb-4 flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-edge bg-white py-3 text-base font-extrabold text-ink transition-colors hover:border-edge hover:bg-quiet disabled:opacity-50"
         >
           <GoogleMark />
           Continue with Google
         </button>
 
         <div className="mb-4 flex items-center gap-3">
-          <span className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-400">or</span>
-          <span className="h-px flex-1 bg-slate-200" />
+          <span className="h-px flex-1 bg-tray" />
+          <span className="text-xs font-bold uppercase tracking-wide text-stone">or</span>
+          <span className="h-px flex-1 bg-tray" />
         </div>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -456,7 +476,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
             clearError()
             setNotice(null)
           }}
-          className="mt-4 w-full rounded-2xl border-2 border-purple-200 py-2.5 text-sm font-extrabold text-grape transition-colors hover:bg-purple-50"
+          className="mt-4 w-full rounded-2xl border-2 border-edge py-2.5 text-sm font-extrabold text-ink transition-colors hover:bg-quiet"
         >
           🐾 Kids: sign in with a code
         </button>
@@ -464,7 +484,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
         {tab === 'signin' && (
           <button
             onClick={reset}
-            className="mt-3 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+            className="mt-3 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
             Forgot your password?
           </button>
@@ -480,12 +500,12 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
 
       <button
         onClick={onGuest}
-        className="mt-5 w-full text-center text-sm font-bold text-slate-400 underline hover:text-grape"
+        className="mt-5 w-full text-center text-sm font-bold text-stone underline hover:text-ink"
       >
         Keep playing without an account
       </button>
 
-      <p className="mt-3 text-center text-xs font-bold text-slate-400">
+      <p className="mt-3 text-center text-xs font-bold text-stone">
         We only store what is needed to track learning progress. No ads, ever.
       </p>
     </div>
@@ -507,13 +527,13 @@ interface FieldProps {
 function Field({ label, value, onChange, type = 'text', ...rest }: FieldProps) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-bold text-slate-500">{label}</span>
+      <span className="mb-1 block text-sm font-bold text-muted">{label}</span>
       <input
         {...rest}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border-2 border-purple-200 px-4 py-3 text-base font-bold text-grape focus:border-grape focus:outline-none"
+        className="w-full rounded-xl border-2 border-edge px-4 py-3 text-base font-bold text-ink focus:border-ink focus:outline-none"
       />
     </label>
   )

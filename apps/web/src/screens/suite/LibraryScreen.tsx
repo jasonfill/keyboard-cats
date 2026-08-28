@@ -79,7 +79,7 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
       <div className="mx-auto w-full max-w-3xl py-4">
         <ScreenHeader title="Library 📚" onBack={() => navigate({ name: 'home' })} />
         <Card>
-          <p className="mb-3 font-bold text-slate-500">
+          <p className="mb-3 font-bold text-muted">
             A library holds the decks and word lists that are yours rather than any one
             learner&apos;s, so it needs an account.
           </p>
@@ -131,15 +131,15 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
       )}
 
       <Card className="mb-4">
-        <h2 className="mb-1 text-xl font-extrabold text-grape">Your decks ({decks.length})</h2>
-        <p className="mb-3 font-bold text-slate-500">
+        <h2 className="mb-1 text-xl font-extrabold text-ink">Your decks ({decks.length})</h2>
+        <p className="mb-3 font-bold text-muted">
           Yours, not any one learner&apos;s. A student can only open one after you have set it for
           them.
         </p>
         {loading ? (
-          <p className="font-bold text-slate-400">Loading…</p>
+          <p className="font-bold text-stone">Loading…</p>
         ) : decks.length === 0 ? (
-          <p className="font-bold text-slate-400">
+          <p className="font-bold text-stone">
             Nothing here yet. Copy one in from below, or make a deck and add it.
           </p>
         ) : (
@@ -147,10 +147,10 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
             {decks.map((deck) => (
               <li
                 key={deck.id}
-                className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-purple-100"
+                className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-hair"
               >
-                <span className="font-extrabold text-grape">{deck.title}</span>
-                <Pill className="bg-slate-100 text-xs text-slate-500">
+                <span className="font-extrabold text-ink">{deck.title}</span>
+                <Pill className="bg-wash text-xs text-muted">
                   {deck.cards.length} cards
                 </Pill>
                 <div className="ml-auto flex flex-wrap gap-2">
@@ -180,22 +180,22 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
       </Card>
 
       <Card className="mb-4">
-        <h2 className="mb-1 text-xl font-extrabold text-grape">
+        <h2 className="mb-1 text-xl font-extrabold text-ink">
           Your word lists ({lists.length})
         </h2>
         {loading ? (
-          <p className="font-bold text-slate-400">Loading…</p>
+          <p className="font-bold text-stone">Loading…</p>
         ) : lists.length === 0 ? (
-          <p className="font-bold text-slate-400">No word lists of your own yet.</p>
+          <p className="font-bold text-stone">No word lists of your own yet.</p>
         ) : (
           <ul className="space-y-2">
             {lists.map((list) => (
               <li
                 key={list.id}
-                className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-purple-100"
+                className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-hair"
               >
-                <span className="font-extrabold text-grape">{list.title}</span>
-                <Pill className="bg-slate-100 text-xs text-slate-500">
+                <span className="font-extrabold text-ink">{list.title}</span>
+                <Pill className="bg-wash text-xs text-muted">
                   {list.words.length} words
                 </Pill>
                 <div className="ml-auto flex flex-wrap gap-2">
@@ -227,8 +227,8 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
 
       {(learnerDecks.length > 0 || snapshot.customLists.length > 0) && (
         <Card>
-          <h2 className="mb-1 text-xl font-extrabold text-grape">Copy into your library</h2>
-          <p className="mb-3 font-bold text-slate-500">
+          <h2 className="mb-1 text-xl font-extrabold text-ink">Copy into your library</h2>
+          <p className="mb-3 font-bold text-muted">
             Material that belongs to a learner. Copying leaves theirs alone and gives you one you
             can set for anybody.
           </p>

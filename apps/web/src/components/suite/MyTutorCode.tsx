@@ -69,10 +69,10 @@ export default function MyTutorCode() {
   if (!has && !open) {
     return (
       <Card className="mt-4">
-        <h3 className="mb-1 text-lg font-extrabold text-grape">
+        <h3 className="mb-1 text-lg font-extrabold text-ink">
           Working with someone else&apos;s children?
         </h3>
-        <p className="mb-3 text-sm font-bold text-slate-500">
+        <p className="mb-3 text-sm font-bold text-muted">
           Tutoring, teaching, or helping out a friend — get a code to hand to their family. They
           choose which of their children you can see, and can disconnect you later.
         </p>
@@ -85,8 +85,8 @@ export default function MyTutorCode() {
 
   return (
     <Card className="mt-4">
-      <h3 className="mb-1 text-lg font-extrabold text-grape">Your connection code</h3>
-      <p className="mb-3 text-sm font-bold text-slate-500">
+      <h3 className="mb-1 text-lg font-extrabold text-ink">Your connection code</h3>
+      <p className="mb-3 text-sm font-bold text-muted">
         Give this to a family. They enter it, pick which of their children it applies to, and
         those learners appear in your Family screen alongside your own. Nobody is added until
         they accept.
@@ -95,13 +95,13 @@ export default function MyTutorCode() {
       {codes?.map((c) => (
         <div
           key={c.code}
-          className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-purple-50 px-4 py-3"
+          className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-quiet px-4 py-3"
         >
-          <span className="font-mono text-2xl font-extrabold tracking-widest text-grape">
+          <span className="font-mono text-2xl font-extrabold tracking-widest text-ink">
             {c.code}
           </span>
-          {c.label && <span className="font-bold text-slate-500">{c.label}</span>}
-          <Pill className="bg-white text-xs text-slate-500">
+          {c.label && <span className="font-bold text-muted">{c.label}</span>}
+          <Pill className="bg-white text-xs text-muted">
             {c.uses} {c.uses === 1 ? 'family' : 'families'} joined
           </Pill>
           <div className="ml-auto flex gap-2">
@@ -122,7 +122,7 @@ export default function MyTutorCode() {
       ))}
 
       {has && (
-        <p className="mb-3 text-xs font-bold text-slate-400">
+        <p className="mb-3 text-xs font-bold text-stone">
           Withdrawing a code stops new families joining. Anyone already connected stays connected
           until they disconnect you.
         </p>
@@ -133,7 +133,7 @@ export default function MyTutorCode() {
           value={label}
           onChange={(e) => setLabel(e.target.value.slice(0, 80))}
           placeholder="What is it for? e.g. Tuesday maths"
-          className="flex-1 rounded-xl border-2 border-purple-200 px-3 py-2 font-bold text-grape outline-none focus:border-grape"
+          className="flex-1 rounded-xl border-2 border-edge px-3 py-2 font-bold text-ink outline-none focus:border-ink"
         />
         <Button disabled={busy} onClick={mint}>
           {busy ? 'Working…' : has ? 'New code' : 'Create a code'}

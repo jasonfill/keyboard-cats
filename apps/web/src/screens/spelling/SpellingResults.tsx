@@ -45,10 +45,10 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
           size={120}
           className="mx-auto"
         />
-        <h1 className="mt-2 text-3xl font-extrabold text-grape">
+        <h1 className="mt-2 text-3xl font-extrabold text-ink">
           {summary.itemsCorrect} of {summary.itemsTotal} correct
         </h1>
-        <p className="font-bold text-slate-500">
+        <p className="font-bold text-muted">
           {encouragement(summary.accuracy, summary.predictedAccuracy)}
         </p>
 
@@ -57,16 +57,16 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
-          <Pill className="bg-purple-100 text-grape">{def.emoji} {def.name}</Pill>
-          <Pill className="bg-slate-100 text-slate-500">🎯 {summary.accuracy}% accuracy</Pill>
+          <Pill className="bg-wash text-ink">{def.emoji} {def.name}</Pill>
+          <Pill className="bg-wash text-muted">🎯 {summary.accuracy}% accuracy</Pill>
           <Pill
-            className="bg-slate-100 text-slate-500"
+            className="bg-wash text-muted"
             title="What the app predicted you would score on this exact set of words"
           >
             🔮 {summary.predictedAccuracy}% predicted
           </Pill>
-          <Pill className="bg-amber-100 text-amber-700">⭐ {summary.score} points</Pill>
-          <Pill className="bg-slate-100 text-slate-500">
+          <Pill className="bg-sun/30 text-ink">⭐ {summary.score} points</Pill>
+          <Pill className="bg-wash text-muted">
             ⏱️ {Math.round(summary.durationMs / 1000)}s
           </Pill>
         </div>
@@ -75,7 +75,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
       {/* What the round did to the learner's level */}
       {def.isTest && (
         <Card className="mb-4">
-          <h2 className="mb-2 text-xl font-extrabold text-grape">Your level 📈</h2>
+          <h2 className="mb-2 text-xl font-extrabold text-ink">Your level 📈</h2>
           {levelledUp ? (
             <div className="rounded-2xl bg-emerald-50 p-4">
               <p className="text-lg font-extrabold text-emerald-700">
@@ -91,8 +91,8 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
               <p className="font-bold text-amber-600">{summary.level.reason}</p>
             </div>
           ) : (
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="font-bold text-slate-600">
+            <div className="rounded-2xl bg-quiet p-4">
+              <p className="font-bold text-body">
                 Still working through grade {summary.gradeAfter}.{' '}
                 {abilityDelta >= 0.01
                   ? `Your spelling level went up ${abilityDelta.toFixed(2)} this round.`
@@ -102,7 +102,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
               </p>
             </div>
           )}
-          <p className="mt-2 text-xs font-bold text-slate-400">
+          <p className="mt-2 text-xs font-bold text-stone">
             Only words you spelled from scratch, with no hints, change your level.
           </p>
         </Card>
@@ -110,26 +110,26 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
 
       {/* Word-by-word */}
       <Card className="mb-4">
-        <h2 className="mb-3 text-xl font-extrabold text-grape">Word by word</h2>
-        <ul className="divide-y divide-slate-100">
+        <h2 className="mb-3 text-xl font-extrabold text-ink">Word by word</h2>
+        <ul className="divide-y divide-hair">
           {summary.results.map((r, i) => (
             <li key={`${r.word.w}-${i}`} className="flex items-center gap-3 py-2">
               <span className="text-lg">{r.correct ? '✅' : '❌'}</span>
               <div className="min-w-0 flex-1">
-                <span className="font-mono text-base font-bold text-grape">{r.word.w}</span>
+                <span className="font-mono text-base font-bold text-ink">{r.word.w}</span>
                 {!r.correct && r.given && (
                   <span className="ml-2 font-mono text-sm font-bold text-rose-400 line-through">
                     {r.given}
                   </span>
                 )}
-                <span className="ml-2 text-xs font-bold text-slate-400">
+                <span className="ml-2 text-xs font-bold text-stone">
                   grade {r.word.grade}
                   {r.hintsUsed > 0 && ' · used a hint'}
                 </span>
               </div>
               <button
                 onClick={() => speak(r.word.w)}
-                className="shrink-0 rounded-full bg-purple-50 px-2 py-1 text-xs font-extrabold text-grape"
+                className="shrink-0 rounded-full bg-quiet px-2 py-1 text-xs font-extrabold text-ink"
                 aria-label={`Hear ${r.word.w}`}
               >
                 🔊
@@ -148,7 +148,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
 
       {summary.newAchievements.length > 0 && (
         <Card className="mb-4">
-          <h2 className="mb-3 text-xl font-extrabold text-grape">New badges! 🏅</h2>
+          <h2 className="mb-3 text-xl font-extrabold text-ink">New badges! 🏅</h2>
           <div className="flex flex-wrap gap-3">
             {summary.newAchievements.map((a) => (
               <div key={a.id} className="rounded-2xl bg-amber-50 px-4 py-3 text-center">

@@ -109,13 +109,13 @@ export default function AssignForm({
 
   return (
     <Card>
-      <h2 className="mb-3 text-xl font-extrabold text-grape">Set some work</h2>
+      <h2 className="mb-3 text-xl font-extrabold text-ink">Set some work</h2>
 
       {/* Who it is for comes first: the same work usually goes to more than one
           child, and deciding that after writing the task is backwards. */}
       {learners.length > 1 && (
         <fieldset className="mb-3">
-          <legend className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <legend className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
             Who it is for
           </legend>
           <div className="flex flex-wrap gap-2">
@@ -133,8 +133,8 @@ export default function AssignForm({
                   }
                   className={`flex items-center gap-2 rounded-2xl px-4 py-2 font-bold ring-1 transition-colors ${
                     on
-                      ? 'bg-grape text-white ring-grape'
-                      : 'bg-white/85 text-slate-500 ring-purple-100 hover:bg-purple-50'
+                      ? 'bg-ink text-white ring-ink'
+                      : 'bg-white/85 text-muted ring-hair hover:bg-quiet'
                   }`}
                 >
                   <span className="text-lg leading-none">{l.avatarEmoji}</span>
@@ -144,14 +144,14 @@ export default function AssignForm({
               )
             })}
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-400">
+          <p className="mt-1 text-sm font-bold text-stone">
             Set it once and everyone gets their own copy to finish.
           </p>
         </fieldset>
       )}
 
       <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
           What kind
         </span>
         <select
@@ -167,7 +167,7 @@ export default function AssignForm({
               if (!fixedTarget) setTargetId('')
             }
           }}
-          className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+          className="w-full rounded-2xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         >
           {ASSIGNABLE.filter(
             (a) =>
@@ -183,13 +183,13 @@ export default function AssignForm({
       </label>
 
       <label className={`mb-3 block ${fixedTarget ? 'hidden' : ''}`}>
-        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
           On what
         </span>
         <select
           value={targetId}
           onChange={(e) => setTargetId(e.target.value)}
-          className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+          className="w-full rounded-2xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         >
           <option value="">Choose…</option>
           {targets.map((t) => (
@@ -201,7 +201,7 @@ export default function AssignForm({
       </label>
 
       <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
           What they see
         </span>
         <input
@@ -209,12 +209,12 @@ export default function AssignForm({
           onChange={(e) => setTitle(e.target.value)}
           placeholder={effectiveTitle}
           maxLength={120}
-          className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+          className="w-full rounded-2xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         />
       </label>
 
       <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+        <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
           A note (optional)
         </span>
         <input
@@ -222,25 +222,25 @@ export default function AssignForm({
           onChange={(e) => setNote(e.target.value)}
           placeholder="Take your time on this one"
           maxLength={500}
-          className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+          className="w-full rounded-2xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         />
       </label>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
             Due (optional)
           </span>
           <input
             type="date"
             value={dueOn}
             onChange={(e) => setDueOn(e.target.value)}
-            className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+            className="w-full rounded-2xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
           />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
             Score to beat (optional)
           </span>
           <input
@@ -251,7 +251,7 @@ export default function AssignForm({
             onChange={(e) => setMinAccuracy(e.target.value)}
             disabled={!choice.graded}
             placeholder={choice.graded ? 'e.g. 80' : 'not available'}
-            className="w-full rounded-2xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none disabled:bg-slate-50"
+            className="w-full rounded-2xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none disabled:bg-quiet"
           />
         </label>
       </div>

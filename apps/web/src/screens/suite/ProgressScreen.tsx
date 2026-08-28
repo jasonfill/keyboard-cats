@@ -85,7 +85,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
       {/* Activity strip */}
       <Card className="mb-4">
-        <h2 className="mb-3 text-xl font-extrabold text-grape">The last two weeks</h2>
+        <h2 className="mb-3 text-xl font-extrabold text-ink">The last two weeks</h2>
         <div className="flex gap-1.5">
           {last14.map((d) => (
             <div key={d.day} className="flex-1 text-center" title={`${d.day}: ${d.items} items`}>
@@ -93,7 +93,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
                 className={`mx-auto h-12 w-full rounded-lg ${intensityClass(d.items)}`}
                 aria-label={`${d.items} items on ${d.day}`}
               />
-              <span className="mt-1 block text-[10px] font-bold text-slate-400">{d.label}</span>
+              <span className="mt-1 block text-[10px] font-bold text-stone">{d.label}</span>
             </div>
           ))}
         </div>
@@ -102,15 +102,15 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
       {/* Spelling */}
       <Card className="mb-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-extrabold text-grape">Spelling 🐈‍⬛</h2>
+          <h2 className="text-xl font-extrabold text-ink">Spelling 🐈‍⬛</h2>
           <div className="flex flex-wrap gap-2">
-            <Pill className="bg-purple-100 text-grape">
+            <Pill className="bg-wash text-ink">
               Grade {GRADES[spelling.levelIndex]?.grade ?? 2}
             </Pill>
-            <Pill className="bg-slate-100 text-slate-500">
+            <Pill className="bg-wash text-muted">
               Ability {spelling.ability.toFixed(2)}
             </Pill>
-            <Pill className="bg-slate-100 text-slate-500">
+            <Pill className="bg-wash text-muted">
               {spelling.totalCorrect}/{spelling.totalAttempts} graded correct
             </Pill>
           </div>
@@ -129,13 +129,13 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
             const pct = b.total ? (b.mastered / b.total) * 100 : 0
             return (
               <div key={g.grade} className="flex items-center gap-3">
-                <span className="w-24 shrink-0 text-sm font-extrabold text-slate-500">
+                <span className="w-24 shrink-0 text-sm font-extrabold text-muted">
                   Grade {g.grade}
                 </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-tray">
+                  <div className="h-full bg-pine" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="w-16 shrink-0 text-right text-xs font-bold text-slate-400">
+                <span className="w-16 shrink-0 text-right text-xs font-bold text-stone">
                   {b.mastered}/{b.total}
                 </span>
               </div>
@@ -146,19 +146,19 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
       {/* Word-level report */}
       <Card className="mb-4">
-        <h2 className="mb-1 text-xl font-extrabold text-grape">Words to work on 🎯</h2>
-        <p className="mb-3 text-sm font-bold text-slate-500">
+        <h2 className="mb-1 text-xl font-extrabold text-ink">Words to work on 🎯</h2>
+        <p className="mb-3 text-sm font-bold text-muted">
           Ranked by how often they have actually been missed.
         </p>
         {trouble.length === 0 ? (
-          <p className="font-bold text-slate-400">
+          <p className="font-bold text-stone">
             Nothing here yet — spell a few rounds and the tricky words will show up.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[26rem] text-left">
               <thead>
-                <tr className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
+                <tr className="text-xs font-extrabold uppercase tracking-wide text-stone">
                   <th className="py-1">Word</th>
                   <th className="py-1">Correct</th>
                   <th className="py-1">Missed after knowing it</th>
@@ -167,13 +167,13 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
               </thead>
               <tbody>
                 {(limits.detailedWordReport ? trouble : trouble.slice(0, 5)).map((m) => (
-                  <tr key={m.itemKey} className="border-t border-slate-100">
-                    <td className="py-2 font-mono font-bold text-grape">{m.itemKey}</td>
-                    <td className="py-2 font-bold text-slate-500">
+                  <tr key={m.itemKey} className="border-t border-hair">
+                    <td className="py-2 font-mono font-bold text-ink">{m.itemKey}</td>
+                    <td className="py-2 font-bold text-muted">
                       {m.totalCorrect}/{m.totalAttempts}
                     </td>
-                    <td className="py-2 font-bold text-slate-500">{m.lapses}</td>
-                    <td className="py-2 font-bold text-slate-500">{m.dueOn ?? 'now'}</td>
+                    <td className="py-2 font-bold text-muted">{m.lapses}</td>
+                    <td className="py-2 font-bold text-muted">{m.dueOn ?? 'now'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -193,8 +193,8 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
       {turnaround.length > 0 && (
         <Card className="mb-4">
-          <h2 className="mb-1 text-xl font-extrabold text-grape">Turned around 💪</h2>
-          <p className="mb-3 text-sm font-bold text-slate-500">
+          <h2 className="mb-1 text-xl font-extrabold text-ink">Turned around 💪</h2>
+          <p className="mb-3 text-sm font-bold text-muted">
             Words that used to get missed and are now mastered.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -213,11 +213,11 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
       {/* Typing */}
       <Card className="mb-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-extrabold text-grape">Typing ⌨️</h2>
+          <h2 className="text-xl font-extrabold text-ink">Typing ⌨️</h2>
           <div className="flex flex-wrap gap-2">
-            <Pill className="bg-sky-100 text-sky-700">{typingLessons} lessons played</Pill>
-            <Pill className="bg-slate-100 text-slate-500">{game.state.totalStars} stars</Pill>
-            <Pill className="bg-slate-100 text-slate-500">best {bestWpm} WPM</Pill>
+            <Pill className="bg-pineSoft/30 text-pine">{typingLessons} lessons played</Pill>
+            <Pill className="bg-wash text-muted">{game.state.totalStars} stars</Pill>
+            <Pill className="bg-wash text-muted">best {bestWpm} WPM</Pill>
           </div>
         </div>
         <Button variant="ghost" onClick={() => navigate({ name: 'typing' })}>
@@ -228,14 +228,14 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
       {/* Quiz decks */}
       <Card className="mb-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-extrabold text-grape">Quiz decks 🃏</h2>
+          <h2 className="text-xl font-extrabold text-ink">Quiz decks 🃏</h2>
           <div className="flex flex-wrap gap-2">
-            <Pill className="bg-emerald-100 text-emerald-700">
+            <Pill className="bg-pine/10 text-pine">
               {quizTotals.mastered}/{quizTotals.cards} cards mastered
             </Pill>
-            <Pill className="bg-slate-100 text-slate-500">{quizTotals.started} decks started</Pill>
+            <Pill className="bg-wash text-muted">{quizTotals.started} decks started</Pill>
             {quizTotals.due > 0 && (
-              <Pill className="bg-amber-100 text-amber-700">🔁 {quizTotals.due} due</Pill>
+              <Pill className="bg-sun/30 text-ink">🔁 {quizTotals.due} due</Pill>
             )}
           </div>
         </div>
@@ -246,14 +246,14 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
       {/* Session log */}
       <Card>
-        <h2 className="mb-1 text-xl font-extrabold text-grape">Recent sessions</h2>
-        <p className="mb-3 font-bold text-slate-500">
+        <h2 className="mb-1 text-xl font-extrabold text-ink">Recent sessions</h2>
+        <p className="mb-3 font-bold text-muted">
           Open any round to see every answer, what was typed, and how long each one took.
         </p>
         {visibleSessions.length === 0 ? (
-          <p className="font-bold text-slate-400">No sessions recorded yet.</p>
+          <p className="font-bold text-stone">No sessions recorded yet.</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {visibleSessions.slice(0, 15).map((s) => {
               const open = openSession === s.id
               return (
@@ -261,14 +261,14 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
                   <button
                     onClick={() => setOpenSession(open ? null : s.id)}
                     aria-expanded={open}
-                    className="flex w-full flex-wrap items-center gap-2 rounded-xl px-1 py-2 text-left hover:bg-slate-50"
+                    className="flex w-full flex-wrap items-center gap-2 rounded-xl px-1 py-2 text-left hover:bg-quiet"
                   >
-                    <span className="text-xs font-bold text-slate-400">{open ? '▾' : '▸'}</span>
+                    <span className="text-xs font-bold text-stone">{open ? '▾' : '▸'}</span>
                     <span className="text-lg">{SUBJECT_EMOJI[s.subject] ?? '⌨️'}</span>
-                    <span className="font-extrabold text-grape">
+                    <span className="font-extrabold text-ink">
                       {activityLabel(s.activity, s.subject)}
                     </span>
-                    <span className="font-bold text-slate-500">
+                    <span className="font-bold text-muted">
                       {s.itemsCorrect}/{s.itemsTotal} · {Math.round(s.accuracy)}%
                     </span>
                     {s.isTest && (
@@ -288,7 +288,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
                           {s.verifiedItemsTotal}/{s.itemsTotal} checked
                         </span>
                       )}
-                    <span className="ml-auto text-xs font-bold text-slate-400">
+                    <span className="ml-auto text-xs font-bold text-stone">
                       {new Date(s.endedAt).toLocaleDateString()}
                     </span>
                   </button>
@@ -340,10 +340,10 @@ function activityLabel(activity: string, subject: string): string {
 
 function StatCard({ label, value, emoji }: { label: string; value: string; emoji: string }) {
   return (
-    <div className="rounded-2xl bg-white/85 p-4 text-center shadow ring-1 ring-purple-100">
+    <div className="rounded-2xl bg-white/85 p-4 text-center shadow ring-1 ring-hair">
       <div className="text-2xl">{emoji}</div>
-      <div className="text-2xl font-extrabold text-grape">{value}</div>
-      <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-2xl font-extrabold text-ink">{value}</div>
+      <div className="text-xs font-bold uppercase tracking-wide text-stone">{label}</div>
     </div>
   )
 }
@@ -368,7 +368,7 @@ function buildStreakStrip(daily: Array<{ day: string; items: number }>) {
 }
 
 function intensityClass(items: number): string {
-  if (items === 0) return 'bg-slate-100'
+  if (items === 0) return 'bg-wash'
   if (items < 6) return 'bg-emerald-200'
   if (items < 15) return 'bg-emerald-400'
   return 'bg-emerald-600'

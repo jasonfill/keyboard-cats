@@ -34,19 +34,19 @@ export default function Keyboard({ nextChar, lastWrong, showColors = true }: Pro
     const isWrong = lastWrong !== undefined && lastWrong !== null && k.key === lastWrong
 
     if (isNext) {
-      return `${base} scale-110 z-10 text-white border-purple-800 bg-grape ring-4 ring-purple-300 animate-pop shadow-lg`
+      return `${base} scale-110 z-10 text-white border-ink bg-accent ring-4 ring-edge animate-pop shadow-lg`
     }
     if (isShiftHint) {
-      return `${base} text-white border-purple-800 bg-grape/80`
+      return `${base} text-white border-ink bg-accent/80`
     }
     if (isWrong) {
       return `${base} bg-red-200 text-red-700 border-red-400 animate-shake`
     }
-    return `${base} bg-white text-slate-700 border-slate-200`
+    return `${base} bg-white text-ink border-edge`
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl select-none rounded-2xl bg-slate-100 p-2 md:p-3 shadow-inner">
+    <div className="mx-auto w-full max-w-3xl select-none rounded-2xl bg-wash p-2 md:p-3 shadow-inner">
       {KEYBOARD_ROWS.map((row, ri) => (
         <div key={ri} className="mb-1.5 flex justify-center gap-1.5 last:mb-0">
           {row.map((k, ki) => {

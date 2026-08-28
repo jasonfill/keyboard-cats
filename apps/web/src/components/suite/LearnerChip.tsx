@@ -41,17 +41,17 @@ export default function LearnerChip({ onManage }: { onManage: () => void }) {
         onClick={() => (solo ? onManage() : setOpen((v) => !v))}
         aria-haspopup={solo ? undefined : 'menu'}
         aria-expanded={solo ? undefined : open}
-        className="flex items-center gap-2 rounded-full border-2 border-purple-200 bg-white/80 py-1.5 pl-2 pr-3 text-sm font-extrabold text-grape shadow-sm transition-colors hover:bg-white"
+        className="flex items-center gap-2 rounded-full border-2 border-edge bg-white/80 py-1.5 pl-2 pr-3 text-sm font-extrabold text-ink shadow-sm transition-colors hover:bg-white"
       >
         <span className="text-lg leading-none">{active.avatarEmoji}</span>
         <span className="max-w-[9rem] truncate">{active.displayName}</span>
-        {!solo && <span className="text-[10px] text-slate-400">▼</span>}
+        {!solo && <span className="text-[10px] text-stone">▼</span>}
       </button>
 
       {open && !solo && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-2xl border-2 border-purple-200 bg-white shadow-xl"
+          className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-2xl border-2 border-edge bg-white shadow-xl"
         >
           {learners.map((learner) => (
             <button
@@ -61,8 +61,8 @@ export default function LearnerChip({ onManage }: { onManage: () => void }) {
                 select(learner.id)
                 setOpen(false)
               }}
-              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-extrabold transition-colors hover:bg-purple-50 ${
-                learner.id === active.id ? 'text-grape' : 'text-slate-500'
+              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-extrabold transition-colors hover:bg-quiet ${
+                learner.id === active.id ? 'text-ink' : 'text-muted'
               }`}
             >
               <span className="text-lg leading-none">{learner.avatarEmoji}</span>
@@ -76,7 +76,7 @@ export default function LearnerChip({ onManage }: { onManage: () => void }) {
               setOpen(false)
               onManage()
             }}
-            className="w-full border-t-2 border-purple-100 px-3 py-2.5 text-left text-sm font-extrabold text-slate-400 transition-colors hover:bg-purple-50 hover:text-grape"
+            className="w-full border-t-2 border-hair px-3 py-2.5 text-left text-sm font-extrabold text-stone transition-colors hover:bg-quiet hover:text-ink"
           >
             Manage family →
           </button>

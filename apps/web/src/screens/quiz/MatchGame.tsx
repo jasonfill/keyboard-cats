@@ -134,16 +134,16 @@ export default function MatchGame({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <Pill className="bg-purple-100 text-grape">
+        <Pill className="bg-wash text-ink">
           ⏱ {elapsed.toFixed(1)}s
         </Pill>
-        <Pill className="bg-emerald-100 text-emerald-700">
+        <Pill className="bg-pine/10 text-pine">
           {matched.size} / {plan.length} pairs
         </Pill>
       </div>
 
       <Card className="mb-4">
-        <p className="text-center font-bold text-slate-500">
+        <p className="text-center font-bold text-muted">
           Tap a card, then tap its partner. Beat the clock. 🐾
         </p>
       </Card>
@@ -164,8 +164,8 @@ export default function MatchGame({
                   : isWrong
                     ? 'animate-shake bg-rose-100 text-rose-700 ring-rose-300'
                     : isSelected
-                      ? 'bg-grape text-white ring-purple-400'
-                      : 'bg-white/90 text-grape ring-purple-100 hover:-translate-y-0.5 hover:shadow-lg'
+                      ? 'bg-accent text-white ring-edge'
+                      : 'bg-white/90 text-ink ring-hair hover:-translate-y-0.5 hover:shadow-lg'
               }`}
             >
               {tile.text}

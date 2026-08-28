@@ -4,7 +4,7 @@ export const GRADE_8: GradeLevel = {
   grade: 8,
   name: 'Tiger Summit',
   emoji: '🐯',
-  color: 'from-indigo-400 to-purple-500',
+  color: 'from-indigo-400 to-blue-600',
   blurb: 'Bee-level words, academic writing, and spellings that defy every rule.',
   lists: [
     {

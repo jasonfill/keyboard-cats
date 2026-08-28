@@ -26,7 +26,7 @@ export default function TrophyRoom({ game, navigate }: Props) {
   return (
     <div className="mx-auto w-full max-w-3xl py-4">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-3xl font-extrabold text-grape">Trophy Room 🏆</h1>
+        <h1 className="text-3xl font-extrabold text-ink">Trophy Room 🏆</h1>
         <Button variant="ghost" onClick={() => navigate({ name: 'home' })}>
           ← Home
         </Button>
@@ -49,21 +49,21 @@ export default function TrophyRoom({ game, navigate }: Props) {
           {state.highScores.length === 0 ? (
             <Empty text="No scores yet — play Cat Rain or Practice to set a record!" />
           ) : (
-            <ol className="divide-y divide-purple-50">
+            <ol className="divide-y divide-hair">
               {state.highScores.map((h, i) => (
                 <li key={i} className="flex items-center gap-3 py-2">
-                  <span className="w-8 text-center text-xl font-extrabold text-slate-400">
+                  <span className="w-8 text-center text-xl font-extrabold text-stone">
                     {i + 1}
                   </span>
-                  <span className="flex-1 truncate font-bold text-slate-700">
+                  <span className="flex-1 truncate font-bold text-ink">
                     {h.name}
-                    <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-grape">
+                    <span className="ml-2 rounded-full bg-wash px-2 py-0.5 text-xs font-bold text-ink">
                       {h.mode}
                     </span>
                   </span>
-                  {h.wpm > 0 && <span className="text-sm text-sky-500">{h.wpm} wpm</span>}
-                  <span className="text-sm text-emerald-500">{h.accuracy}%</span>
-                  <span className="w-20 text-right text-lg font-extrabold text-grape">
+                  {h.wpm > 0 && <span className="text-sm text-body">{h.wpm} wpm</span>}
+                  <span className="text-sm text-pine">{h.accuracy}%</span>
+                  <span className="w-20 text-right text-lg font-extrabold text-ink">
                     {h.score.toLocaleString()}
                   </span>
                 </li>
@@ -100,7 +100,7 @@ export default function TrophyRoom({ game, navigate }: Props) {
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {state.collectedCats.map((seed) => (
-                <div key={seed} className="rounded-2xl bg-white p-2 shadow ring-1 ring-purple-100">
+                <div key={seed} className="rounded-2xl bg-white p-2 shadow ring-1 ring-hair">
                   <CatPhoto seed={seed} className="h-28 w-full" />
                 </div>
               ))}
@@ -125,7 +125,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={`rounded-xl px-4 py-2 font-bold transition-all ${
-        active ? 'bg-grape text-white shadow' : 'bg-white text-slate-500 ring-1 ring-purple-100'
+        active ? 'bg-accent text-white shadow' : 'bg-white text-muted ring-1 ring-hair'
       }`}
     >
       {children}
@@ -134,7 +134,7 @@ function TabButton({
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="py-8 text-center font-bold text-slate-400">{text}</p>
+  return <p className="py-8 text-center font-bold text-stone">{text}</p>
 }
 
 function BadgeGrid({
@@ -149,9 +149,9 @@ function BadgeGrid({
   const earned = badges.filter((b) => unlocked(b.id)).length
   return (
     <div>
-      <h2 className="mb-2 flex items-baseline gap-2 text-xl font-extrabold text-grape">
+      <h2 className="mb-2 flex items-baseline gap-2 text-xl font-extrabold text-ink">
         {title}
-        <span className="text-sm font-bold text-slate-400">
+        <span className="text-sm font-bold text-stone">
           {earned}/{badges.length}
         </span>
       </h2>
@@ -162,13 +162,13 @@ function BadgeGrid({
             <div
               key={a.id}
               className={`flex items-center gap-3 rounded-2xl p-4 ring-1 ${
-                got ? 'bg-white ring-purple-200' : 'bg-slate-100 opacity-70 ring-slate-200'
+                got ? 'bg-white ring-edge' : 'bg-wash opacity-70 ring-edge'
               }`}
             >
               <span className={`text-3xl ${got ? '' : 'grayscale'}`}>{a.emoji}</span>
               <div>
-                <div className="font-extrabold text-slate-700">{got ? a.name : '???'}</div>
-                <div className="text-sm text-slate-500">{a.description}</div>
+                <div className="font-extrabold text-ink">{got ? a.name : '???'}</div>
+                <div className="text-sm text-muted">{a.description}</div>
               </div>
             </div>
           )

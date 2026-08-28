@@ -59,7 +59,7 @@ export default function TasksScreen({ navigate }: { navigate: Navigate }) {
       <div className="mx-auto w-full max-w-3xl py-4">
         <ScreenHeader title="Tasks ✅" onBack={() => navigate({ name: 'home' })} />
         <Card>
-          <p className="mb-3 font-bold text-slate-500">
+          <p className="mb-3 font-bold text-muted">
             Tasks are set for a learner, so they need an account with a learner profile.
           </p>
           <Button onClick={() => navigate({ name: 'auth' })}>Sign in</Button>
@@ -111,11 +111,11 @@ export default function TasksScreen({ navigate }: { navigate: Navigate }) {
       {canAssign && <SharedWork onChanged={refresh} />}
 
       <Card className="mb-4">
-        <h2 className="mb-3 text-xl font-extrabold text-grape">To do ({open.length})</h2>
+        <h2 className="mb-3 text-xl font-extrabold text-ink">To do ({open.length})</h2>
         {loading && open.length === 0 ? (
-          <p className="font-bold text-slate-400">Loading…</p>
+          <p className="font-bold text-stone">Loading…</p>
         ) : open.length === 0 ? (
-          <p className="font-bold text-slate-400">
+          <p className="font-bold text-stone">
             Nothing set right now. {canAssign ? 'Add something above.' : 'Enjoy it.'}
           </p>
         ) : (
@@ -142,15 +142,15 @@ export default function TasksScreen({ navigate }: { navigate: Navigate }) {
       </Card>
 
       <Card>
-        <h2 className="mb-1 text-xl font-extrabold text-grape">Done ({done.length})</h2>
-        <p className="mb-3 font-bold text-slate-500">
+        <h2 className="mb-1 text-xl font-extrabold text-ink">Done ({done.length})</h2>
+        <p className="mb-3 font-bold text-muted">
           Every one of these was closed by a round that was actually played. Open it to see the
           answers.
         </p>
         {done.length === 0 ? (
-          <p className="font-bold text-slate-400">Nothing finished yet.</p>
+          <p className="font-bold text-stone">Nothing finished yet.</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {done.map((a) => {
               const session = snapshot.sessions.find((s) => s.id === a.sessionId)
               const isOpen = openResult === a.id
@@ -159,13 +159,13 @@ export default function TasksScreen({ navigate }: { navigate: Navigate }) {
                   <button
                     onClick={() => setOpenResult(isOpen ? null : a.id)}
                     aria-expanded={isOpen}
-                    className="flex w-full flex-wrap items-center gap-2 rounded-xl px-1 py-2 text-left hover:bg-slate-50"
+                    className="flex w-full flex-wrap items-center gap-2 rounded-xl px-1 py-2 text-left hover:bg-quiet"
                   >
-                    <span className="text-xs font-bold text-slate-400">{isOpen ? '▾' : '▸'}</span>
+                    <span className="text-xs font-bold text-stone">{isOpen ? '▾' : '▸'}</span>
                     <span className="text-lg">✅</span>
-                    <span className="font-extrabold text-grape">{a.title}</span>
+                    <span className="font-extrabold text-ink">{a.title}</span>
                     {session && (
-                      <span className="font-bold text-slate-500">
+                      <span className="font-bold text-muted">
                         {session.itemsCorrect}/{session.itemsTotal} · {Math.round(session.accuracy)}%
                       </span>
                     )}
@@ -174,7 +174,7 @@ export default function TasksScreen({ navigate }: { navigate: Navigate }) {
                         cleared {a.minAccuracy}%
                       </Pill>
                     )}
-                    <span className="ml-auto text-xs font-bold text-slate-400">
+                    <span className="ml-auto text-xs font-bold text-stone">
                       {a.completedAt ? new Date(a.completedAt).toLocaleDateString() : ''}
                     </span>
                   </button>
@@ -182,7 +182,7 @@ export default function TasksScreen({ navigate }: { navigate: Navigate }) {
                     (session ? (
                       <SessionDetail session={session} />
                     ) : (
-                      <p className="px-1 py-2 font-bold text-slate-400">
+                      <p className="px-1 py-2 font-bold text-stone">
                         The round that finished this is older than the history the app keeps
                         loaded.
                       </p>
@@ -221,16 +221,16 @@ function OpenTask({
   return (
     <li
       className={`rounded-2xl px-4 py-3 ring-1 ${
-        overdue ? 'bg-rose-50 ring-rose-200' : 'bg-white/85 ring-purple-100'
+        overdue ? 'bg-rose-50 ring-rose-200' : 'bg-white/85 ring-hair'
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xl">{def?.emoji ?? '📌'}</span>
-        <span className="text-lg font-extrabold text-grape">{assignment.title}</span>
+        <span className="text-lg font-extrabold text-ink">{assignment.title}</span>
         {assignment.dueOn && (
           <Pill
             className={
-              overdue ? 'bg-rose-100 text-xs text-rose-700' : 'bg-slate-100 text-xs text-slate-500'
+              overdue ? 'bg-rose-100 text-xs text-rose-700' : 'bg-wash text-xs text-muted'
             }
           >
             {overdue ? 'overdue · ' : 'due '}
@@ -244,11 +244,11 @@ function OpenTask({
         )}
       </div>
 
-      <p className="mt-1 font-bold text-slate-500">
+      <p className="mt-1 font-bold text-muted">
         {def?.name ?? assignment.activity} · {targetName(assignment, deckTitles)}
       </p>
       {assignment.note && (
-        <p className="mt-1 rounded-xl bg-slate-50 px-3 py-2 font-bold text-slate-600">
+        <p className="mt-1 rounded-xl bg-quiet px-3 py-2 font-bold text-body">
           {assignment.note}
         </p>
       )}

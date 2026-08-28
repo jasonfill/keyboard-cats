@@ -116,8 +116,8 @@ export default function GamePlay({
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-grape md:text-3xl">{title}</h2>
-          {subtitle && <p className="text-slate-500">{subtitle}</p>}
+          <h2 className="text-2xl font-extrabold text-ink md:text-3xl">{title}</h2>
+          {subtitle && <p className="text-muted">{subtitle}</p>}
         </div>
         <Button variant="ghost" onClick={onQuit} aria-label="Quit to menu">
           ✕ Menu
@@ -130,7 +130,7 @@ export default function GamePlay({
           {floaters.map((f) => (
             <span
               key={f.id}
-              className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-extrabold text-bubble animate-floaty"
+              className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-extrabold text-accent animate-floaty"
             >
               {f.text}
             </span>
@@ -153,7 +153,7 @@ export default function GamePlay({
       )}
       {showHands && <Hands activeFinger={activeFinger} />}
 
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-stone">
         Type the highlighted letter. Keep your fingers on the home row! Press Esc to quit.
       </p>
     </div>

@@ -14,16 +14,16 @@ export default function MasteryBar({ mastered, practiced, learning, total, class
   const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0)
   return (
     <div className={className}>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-slate-200">
-        <div className="bg-emerald-500 transition-all" style={{ width: `${pct(mastered)}%` }} />
-        <div className="bg-sky transition-all" style={{ width: `${pct(practiced)}%` }} />
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-tray">
+        <div className="bg-pine transition-all" style={{ width: `${pct(mastered)}%` }} />
+        <div className="bg-pineSoft transition-all" style={{ width: `${pct(practiced)}%` }} />
         <div className="bg-sun transition-all" style={{ width: `${pct(learning)}%` }} />
       </div>
-      <div className="mt-1.5 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-        <Legend color="bg-emerald-500" label="Mastered" value={mastered} />
-        <Legend color="bg-sky" label="Practiced" value={practiced} />
+      <div className="mt-1.5 flex flex-wrap gap-3 text-[13px] font-bold text-muted">
+        <Legend color="bg-pine" label="Mastered" value={mastered} />
+        <Legend color="bg-pineSoft" label="Practiced" value={practiced} />
         <Legend color="bg-sun" label="Learning" value={learning} />
-        <Legend color="bg-slate-200" label="Not yet seen" value={total - mastered - practiced - learning} />
+        <Legend color="bg-tray" label="Not yet seen" value={total - mastered - practiced - learning} />
       </div>
     </div>
   )

@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { clearSignupIntent, readSignupIntent } from '../../auth/signupIntent'
 import CatMascot from '../../components/CatMascot'
 import ConnectTutor from '../../components/suite/ConnectTutor'
+import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill } from '../../components/ui'
 import { ApiError } from '../../lib/api/client'
@@ -71,7 +72,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
       <div className="mx-auto w-full max-w-2xl">
         <ScreenHeader title="Family" onBack={() => navigate({ name: 'home' })} />
         <Card>
-          <p className="font-bold text-slate-500">
+          <p className="font-bold text-muted">
             Sign in to add learners and share progress with another grown-up.
           </p>
         </Card>
@@ -86,6 +87,10 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
     // What they told the sign-up screen. A 13+ learner who already said "I am
     // the one learning" and gave their birth year should not be asked again.
     const selfLearner = intent?.role === 'learner'
+    // A tutor owns nobody, and marching them through "add your first learner"
+    // would have them creating profiles for children who are not theirs. Their
+    // first step is a code to hand to the families they work with.
+    const tutor = intent?.role === 'tutor'
 
     const finish = async (draft: {
       displayName: string
@@ -106,13 +111,15 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
       <div className="mx-auto w-full max-w-lg py-6">
         <div className="mb-5 flex flex-col items-center">
           <CatMascot mood="excited" size={110} className="animate-floaty" />
-          <h1 className="mt-1 text-center text-3xl font-extrabold text-grape">
-            {selfLearner ? 'One last thing' : 'Who is learning?'}
+          <h1 className="mt-1 text-center text-3xl font-extrabold text-ink">
+            {selfLearner ? 'One last thing' : tutor ? 'Connect your first family' : 'Who is learning?'}
           </h1>
-          <p className="mt-1 text-center font-bold text-slate-500">
+          <p className="mt-1 text-center font-bold text-muted">
             {selfLearner
               ? 'Set up your learner profile — that is where your progress lives.'
-              : 'This account is yours, the grown-up. Add the people who will actually be practising, and their progress stays with them.'}
+              : tutor
+                ? 'Your students stay on their own families\u2019 accounts. Give a family your code and they choose which of their children you can see.'
+                : 'This account is yours, the grown-up. Add the people who will actually be practising, and their progress stays with them.'}
           </p>
         </div>
 
@@ -122,12 +129,24 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
           </p>
         )}
 
-        {selfLearner ? (
+        {tutor ? (
+          <>
+            <MyTutorCode />
+
+            {/* AddLearner brings its own card, so this is a plain note above
+                it rather than a second box around it. */}
+            <p className="mt-4 px-1 text-sm font-bold text-muted">
+              Teaching your own children too? Plenty of tutors do — add them and they sit
+              alongside your students.
+            </p>
+            <AddLearner title="Add a learner of your own" onAdd={finish} />
+          </>
+        ) : selfLearner ? (
           <Card>
-            <h3 className="mb-1 text-lg font-extrabold text-grape">
+            <h3 className="mb-1 text-lg font-extrabold text-ink">
               {profile?.displayName?.trim() || 'You'}
             </h3>
-            <p className="mb-4 text-sm font-bold text-slate-500">
+            <p className="mb-4 text-sm font-bold text-muted">
               We already have your name and age from sign-up. Tap once and you are in.
             </p>
             <Button
@@ -148,8 +167,8 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
             <AddLearner startOpen title="Add your first learner" onAdd={finish} />
 
             <Card className="mt-4">
-              <h3 className="mb-1 text-lg font-extrabold text-grape">Actually, it is me</h3>
-              <p className="mb-3 text-sm font-bold text-slate-500">
+              <h3 className="mb-1 text-lg font-extrabold text-ink">Actually, it is me</h3>
+              <p className="mb-3 text-sm font-bold text-muted">
                 Practising yourself is fine — you just need a learner too, so there is
                 somewhere for the progress to live.
               </p>
@@ -178,7 +197,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
 
         <button
           onClick={() => navigate({ name: 'home' })}
-          className="mt-5 w-full text-sm font-bold text-slate-400 underline hover:text-grape"
+          className="mt-5 w-full text-sm font-bold text-stone underline hover:text-ink"
         >
           Skip for now
         </button>
@@ -280,8 +299,8 @@ function LearnerRow({
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-3xl leading-none">{learner.avatarEmoji}</span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-lg font-extrabold text-grape">{learner.displayName}</p>
-          <p className="text-sm font-bold text-slate-400">
+          <p className="truncate text-lg font-extrabold text-ink">{learner.displayName}</p>
+          <p className="text-sm font-bold text-stone">
             {age !== null ? `${age} years old` : 'Age not set'}
             {' · '}
             <SignInLabel learner={learner} />
@@ -289,7 +308,7 @@ function LearnerRow({
           </p>
         </div>
         {isActive ? (
-          <span className="rounded-full bg-lime px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+          <span className="rounded-full bg-pine px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
             Playing
           </span>
         ) : (
@@ -331,27 +350,27 @@ function LearnerStatus({
   const { openAssignments, overdueAssignments, doneThisWeek } = overview
 
   return (
-    <div className="mt-3 border-t border-slate-100 pt-3">
+    <div className="mt-3 border-t border-hair pt-3">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {overdueAssignments > 0 && (
           <Pill className="bg-rose-100 text-rose-700">⚠️ {overdueAssignments} overdue</Pill>
         )}
         <Pill
           className={
-            openAssignments > 0 ? 'bg-purple-100 text-grape' : 'bg-slate-100 text-slate-500'
+            openAssignments > 0 ? 'bg-wash text-ink' : 'bg-wash text-muted'
           }
         >
           {openAssignments === 0 ? 'nothing to do' : `${openAssignments} to do`}
         </Pill>
         {doneThisWeek > 0 && (
-          <Pill className="bg-emerald-100 text-emerald-700">✅ {doneThisWeek} done this week</Pill>
+          <Pill className="bg-pine/10 text-pine">✅ {doneThisWeek} done this week</Pill>
         )}
         {overview.currentStreakDays > 0 && (
-          <Pill className="bg-amber-100 text-amber-700">🔥 {overview.currentStreakDays}</Pill>
+          <Pill className="bg-sun/30 text-ink">🔥 {overview.currentStreakDays}</Pill>
         )}
       </div>
 
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm font-bold text-slate-500">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm font-bold text-muted">
         <span>{lastSeen(overview.lastActiveAt)}</span>
         <span>
           {overview.minutesThisWeek}m · {overview.itemsThisWeek} questions this week
@@ -456,24 +475,24 @@ function ManagePanel({
   const eligibleForSelf = canUseSelfSignIn(learner)
 
   return (
-    <div className="mt-5 flex flex-col gap-5 border-t-2 border-purple-100 pt-5">
+    <div className="mt-5 flex flex-col gap-5 border-t-2 border-hair pt-5">
       <section>
-        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-400">
+        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-stone">
           Grown-ups who can see {learner.displayName}
         </h3>
         {guardians.length === 0 ? (
-          <p className="text-sm font-bold text-slate-400">Just you so far.</p>
+          <p className="text-sm font-bold text-stone">Just you so far.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {guardians.map((g) => (
               <li
                 key={g.guardianId}
-                className="flex flex-wrap items-center gap-2 rounded-xl bg-purple-50 px-3 py-2"
+                className="flex flex-wrap items-center gap-2 rounded-xl bg-quiet px-3 py-2"
               >
-                <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-grape">
+                <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-ink">
                   {g.displayName ?? 'Another grown-up'}
                 </span>
-                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                <label className="flex items-center gap-1.5 text-xs font-bold text-muted">
                   <input
                     type="checkbox"
                     checked={g.canManageContent}
@@ -526,18 +545,18 @@ function ManagePanel({
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-400">
+        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-stone">
           How {learner.displayName} signs in
         </h3>
 
         {learner.authKind === 'self' ? (
-          <p className="text-sm font-bold text-slate-500">
+          <p className="text-sm font-bold text-muted">
             {learner.displayName} uses their own account. To change that, they can sign out and you
             can set up a code instead.
           </p>
         ) : (
           <>
-            <p className="mb-3 text-sm font-bold text-slate-500">
+            <p className="mb-3 text-sm font-bold text-muted">
               {learner.authKind === 'provisioned'
                 ? 'They have their own code. Setting a new PIN replaces it.'
                 : 'Give them a code and a PIN so they can play on their own tablet. We never ask a child for an email address.'}
@@ -548,7 +567,7 @@ function ManagePanel({
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
                 inputMode="numeric"
                 placeholder="4-digit PIN"
-                className="w-32 rounded-xl border-2 border-purple-200 px-3 py-2 text-sm font-extrabold text-grape outline-none focus:border-grape"
+                className="w-32 rounded-xl border-2 border-edge px-3 py-2 text-sm font-extrabold text-ink outline-none focus:border-ink"
               />
               <Button
                 disabled={busy || pin.length < 4}
@@ -591,12 +610,12 @@ function ManagePanel({
 
       {learner.authKind !== 'self' && (
         <section>
-          <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-400">
+          <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-stone">
             Their own Google account
           </h3>
           {eligibleForSelf ? (
             <>
-              <p className="mb-3 text-sm font-bold text-slate-500">
+              <p className="mb-3 text-sm font-bold text-muted">
                 {learner.displayName} is old enough to link their own account. Give them this code
                 while they are signed in with it.
               </p>
@@ -617,7 +636,7 @@ function ManagePanel({
               )}
             </>
           ) : (
-            <p className="text-sm font-bold text-slate-400">
+            <p className="text-sm font-bold text-stone">
               Available from age {SELF_SIGNIN_MIN_AGE}.{' '}
               {learner.birthYear
                 ? 'Until then, a code and PIN keeps their account free of personal details.'
@@ -632,11 +651,11 @@ function ManagePanel({
 
 function CodeBanner({ code, hint }: { code: string; hint: string }) {
   return (
-    <div className="mt-3 rounded-2xl border-2 border-dashed border-purple-300 bg-purple-50 p-4 text-center">
-      <p className="select-all font-mono text-2xl font-extrabold tracking-[0.3em] text-grape">
+    <div className="mt-3 rounded-2xl border-2 border-dashed border-edge bg-quiet p-4 text-center">
+      <p className="select-all font-mono text-2xl font-extrabold tracking-[0.3em] text-ink">
         {code}
       </p>
-      <p className="mt-2 text-xs font-bold text-slate-500">{hint}</p>
+      <p className="mt-2 text-xs font-bold text-muted">{hint}</p>
     </div>
   )
 }
@@ -668,28 +687,28 @@ function AddLearner({
 
   return (
     <Card className="mt-4">
-      <h3 className="mb-3 text-lg font-extrabold text-grape">{title}</h3>
+      <h3 className="mb-3 text-lg font-extrabold text-ink">{title}</h3>
       <div className="flex flex-col gap-3">
-        <label className="text-sm font-extrabold text-slate-500">
+        <label className="text-sm font-extrabold text-muted">
           Their name
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={40}
             placeholder="Ada"
-            className="mt-1 w-full rounded-xl border-2 border-purple-200 px-3 py-2 font-extrabold text-grape outline-none focus:border-grape"
+            className="mt-1 w-full rounded-xl border-2 border-edge px-3 py-2 font-extrabold text-ink outline-none focus:border-ink"
           />
         </label>
 
         <div>
-          <p className="text-sm font-extrabold text-slate-500">Pick a cat</p>
+          <p className="text-sm font-extrabold text-muted">Pick a cat</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {AVATARS.map((a) => (
               <button
                 key={a}
                 onClick={() => setAvatar(a)}
                 className={`rounded-xl border-2 px-2 py-1 text-xl transition-colors ${
-                  avatar === a ? 'border-grape bg-purple-50' : 'border-transparent hover:bg-purple-50'
+                  avatar === a ? 'border-ink bg-quiet' : 'border-transparent hover:bg-quiet'
                 }`}
               >
                 {a}
@@ -698,16 +717,16 @@ function AddLearner({
           </div>
         </div>
 
-        <label className="text-sm font-extrabold text-slate-500">
+        <label className="text-sm font-extrabold text-muted">
           Birth year
           <input
             value={birthYear}
             onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
             inputMode="numeric"
             placeholder={String(thisYear - 8)}
-            className="mt-1 w-full rounded-xl border-2 border-purple-200 px-3 py-2 font-extrabold text-grape outline-none focus:border-grape"
+            className="mt-1 w-full rounded-xl border-2 border-edge px-3 py-2 font-extrabold text-ink outline-none focus:border-ink"
           />
-          <span className="mt-1 block text-xs font-bold text-slate-400">
+          <span className="mt-1 block text-xs font-bold text-stone">
             Used only to decide whether they are old enough ({SELF_SIGNIN_MIN_AGE}+) to link their
             own Google account.
           </span>
@@ -756,8 +775,8 @@ function JoinWithCode({
 
   return (
     <Card className="mt-4">
-      <h3 className="mb-1 text-lg font-extrabold text-grape">Have a code?</h3>
-      <p className="mb-3 text-sm font-bold text-slate-500">
+      <h3 className="mb-1 text-lg font-extrabold text-ink">Have a code?</h3>
+      <p className="mb-3 text-sm font-bold text-muted">
         If another grown-up shared a learner with you, enter their code here.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -768,7 +787,7 @@ function JoinWithCode({
             setDone(false)
           }}
           placeholder="ABCD2345"
-          className="flex-1 rounded-xl border-2 border-purple-200 px-3 py-2 font-mono text-lg font-extrabold tracking-widest text-grape outline-none focus:border-grape"
+          className="flex-1 rounded-xl border-2 border-edge px-3 py-2 font-mono text-lg font-extrabold tracking-widest text-ink outline-none focus:border-ink"
         />
         <Button
           disabled={busy || code.trim().length < 6}

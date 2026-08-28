@@ -107,45 +107,45 @@ export default function DeckEditor({
       )}
 
       <Card className="mb-4">
-        <label className="mb-1 block text-sm font-bold text-slate-500">Deck name</label>
+        <label className="mb-1 block text-sm font-bold text-muted">Deck name</label>
         <input
           value={draft.title}
           onChange={(e) => update({ title: e.target.value })}
           placeholder="Chapter 7 — the Water Cycle"
           maxLength={80}
-          className="mb-4 w-full rounded-xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+          className="mb-4 w-full rounded-xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         />
 
-        <label className="mb-1 block text-sm font-bold text-slate-500">
-          Description <span className="font-normal text-slate-400">(optional)</span>
+        <label className="mb-1 block text-sm font-bold text-muted">
+          Description <span className="font-normal text-stone">(optional)</span>
         </label>
         <input
           value={draft.description}
           onChange={(e) => update({ description: e.target.value })}
           placeholder="Everything on Friday's test."
           maxLength={300}
-          className="mb-4 w-full rounded-xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+          className="mb-4 w-full rounded-xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         />
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-sm font-bold text-slate-500">Call side one</label>
+            <label className="mb-1 block text-sm font-bold text-muted">Call side one</label>
             <input
               value={draft.termLabel}
               onChange={(e) => update({ termLabel: e.target.value })}
               placeholder="Term"
               maxLength={24}
-              className="w-full rounded-xl border-2 border-purple-200 px-4 py-2.5 font-bold text-grape focus:border-grape focus:outline-none"
+              className="w-full rounded-xl border-2 border-edge px-4 py-2.5 font-bold text-ink focus:border-ink focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-bold text-slate-500">Call side two</label>
+            <label className="mb-1 block text-sm font-bold text-muted">Call side two</label>
             <input
               value={draft.definitionLabel}
               onChange={(e) => update({ definitionLabel: e.target.value })}
               placeholder="Definition"
               maxLength={24}
-              className="w-full rounded-xl border-2 border-purple-200 px-4 py-2.5 font-bold text-grape focus:border-grape focus:outline-none"
+              className="w-full rounded-xl border-2 border-edge px-4 py-2.5 font-bold text-ink focus:border-ink focus:outline-none"
             />
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function DeckEditor({
       )}
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xl font-extrabold text-grape">
+        <h3 className="text-xl font-extrabold text-ink">
           Cards ({draft.cards.filter(isFilled).length})
         </h3>
         <Button variant="ghost" onClick={addCard} disabled={draft.cards.length >= MAX_CARDS_PER_DECK}>
@@ -179,7 +179,7 @@ export default function DeckEditor({
       <div className="mb-4 space-y-2">
         {draft.cards.length === 0 && (
           <Card>
-            <p className="font-bold text-slate-400">
+            <p className="font-bold text-stone">
               No cards yet. Add one below, or paste a whole list at once.
             </p>
           </Card>
@@ -187,10 +187,10 @@ export default function DeckEditor({
         {draft.cards.map((card, i) => (
           <div
             key={card.id}
-            className="rounded-2xl bg-white/85 p-3 shadow ring-1 ring-purple-100"
+            className="rounded-2xl bg-white/85 p-3 shadow ring-1 ring-hair"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
+              <span className="text-xs font-extrabold uppercase tracking-wide text-stone">
                 Card {i + 1}
               </span>
               <div className="flex gap-1">
@@ -214,13 +214,13 @@ export default function DeckEditor({
                 value={card.term}
                 onChange={(e) => setCard(card.id, { term: e.target.value })}
                 placeholder={draft.termLabel}
-                className="w-full rounded-xl border-2 border-purple-200 px-3 py-2 font-bold text-grape focus:border-grape focus:outline-none"
+                className="w-full rounded-xl border-2 border-edge px-3 py-2 font-bold text-ink focus:border-ink focus:outline-none"
               />
               <input
                 value={card.definition}
                 onChange={(e) => setCard(card.id, { definition: e.target.value })}
                 placeholder={draft.definitionLabel}
-                className="w-full rounded-xl border-2 border-purple-200 px-3 py-2 font-bold text-slate-600 focus:border-grape focus:outline-none"
+                className="w-full rounded-xl border-2 border-edge px-3 py-2 font-bold text-body focus:border-ink focus:outline-none"
               />
             </div>
           </div>
@@ -245,7 +245,7 @@ export default function DeckEditor({
         </Button>
       </div>
       {!ready && (
-        <p className="mt-3 text-sm font-bold text-slate-400">
+        <p className="mt-3 text-sm font-bold text-stone">
           A deck needs a name and at least two complete cards.
         </p>
       )}
@@ -274,7 +274,7 @@ function IconButton({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className="h-7 w-7 rounded-lg bg-purple-50 font-extrabold text-grape transition-colors hover:bg-purple-100 disabled:opacity-30"
+      className="h-7 w-7 rounded-lg bg-quiet font-extrabold text-ink transition-colors hover:bg-wash disabled:opacity-30"
     >
       {children}
     </button>
@@ -313,8 +313,8 @@ function ImportPanel({
 
   return (
     <Card className="mb-4">
-      <h3 className="mb-1 text-xl font-extrabold text-grape">Paste a list 📥</h3>
-      <p className="mb-3 font-bold text-slate-500">
+      <h3 className="mb-1 text-xl font-extrabold text-ink">Paste a list 📥</h3>
+      <p className="mb-3 font-bold text-muted">
         One card per line, with the two sides separated. Copying straight out of a spreadsheet or a
         table already works — that pastes as tabs.
       </p>
@@ -324,7 +324,7 @@ function ImportPanel({
         onChange={(e) => setText(e.target.value)}
         rows={8}
         placeholder={'photosynthesis\tHow plants make food from sunlight\nmitochondria\tThe part of a cell that makes energy'}
-        className="mb-3 w-full rounded-xl border-2 border-purple-200 px-4 py-3 font-mono text-sm font-bold text-grape focus:border-grape focus:outline-none"
+        className="mb-3 w-full rounded-xl border-2 border-edge px-4 py-3 font-mono text-sm font-bold text-ink focus:border-ink focus:outline-none"
       />
 
       <div className="mb-3 flex flex-wrap gap-4">
@@ -338,29 +338,29 @@ function ImportPanel({
       </div>
 
       {text.trim() && (
-        <div className="mb-3 rounded-2xl bg-slate-50 p-3">
+        <div className="mb-3 rounded-2xl bg-quiet p-3">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <Pill className="bg-emerald-100 text-emerald-700">
+            <Pill className="bg-pine/10 text-pine">
               {preview.cards.length} {preview.cards.length === 1 ? 'card' : 'cards'} found
             </Pill>
             {preview.skipped.length > 0 && (
-              <Pill className="bg-amber-100 text-amber-700">
+              <Pill className="bg-sun/30 text-ink">
                 {preview.skipped.length} {preview.skipped.length === 1 ? 'line' : 'lines'} skipped
               </Pill>
             )}
-            <span className="text-xs font-bold text-slate-400">
+            <span className="text-xs font-bold text-stone">
               split on {preview.separator}
             </span>
           </div>
           <div className="max-h-40 space-y-1 overflow-y-auto">
             {preview.cards.slice(0, 8).map((c) => (
               <div key={c.id} className="flex gap-2 text-sm">
-                <span className="min-w-[8rem] font-extrabold text-grape">{c.term}</span>
-                <span className="font-bold text-slate-500">{c.definition}</span>
+                <span className="min-w-[8rem] font-extrabold text-ink">{c.term}</span>
+                <span className="font-bold text-muted">{c.definition}</span>
               </div>
             ))}
             {preview.cards.length > 8 && (
-              <p className="text-xs font-bold text-slate-400">
+              <p className="text-xs font-bold text-stone">
                 …and {preview.cards.length - 8} more
               </p>
             )}
@@ -416,14 +416,14 @@ function SeparatorPicker<T extends string>({
 }) {
   return (
     <div>
-      <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">{label}</p>
-      <div className="flex flex-wrap gap-1 rounded-2xl bg-white/70 p-1 ring-1 ring-purple-200">
+      <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-stone">{label}</p>
+      <div className="flex flex-wrap gap-1 rounded-2xl bg-white/70 p-1 ring-1 ring-edge">
         {options.map((o) => (
           <button
             key={o.id}
             onClick={() => onChange(o.id)}
             className={`rounded-xl px-2.5 py-1 text-sm font-extrabold transition-colors ${
-              value === o.id ? 'bg-grape text-white' : 'text-grape hover:bg-purple-50'
+              value === o.id ? 'bg-ink text-white' : 'text-ink hover:bg-quiet'
             }`}
           >
             {o.label}

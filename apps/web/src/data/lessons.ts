@@ -84,7 +84,7 @@ export const WORLDS: WorldDef[] = [
     id: 'numbers',
     name: 'Number Nook',
     emoji: '🔢',
-    color: 'from-fuchsia-300 to-purple-400',
+    color: 'from-rose-300 to-red-500',
     blurb: 'The top-top row: digits!',
     lessons: [
       { id: 'num-mid', title: '4 5 6 7', blurb: 'Index fingers stretch up.', newKeys: ['4', '5', '6', '7'], kind: 'keys', catSeed: 'nummid' },

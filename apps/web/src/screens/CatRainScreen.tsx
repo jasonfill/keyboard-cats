@@ -221,8 +221,8 @@ export default function CatRainScreen({ game, navigate }: Props) {
           <div className="mb-2 flex justify-center">
             <CatMascot mood="excited" color="#f472b6" size={120} className="animate-floaty" />
           </div>
-          <h1 className="text-3xl font-extrabold text-grape">Cat Rain 🌧️🐱</h1>
-          <p className="mx-auto mt-2 max-w-sm text-slate-500">
+          <h1 className="text-3xl font-extrabold text-ink">Cat Rain 🌧️🐱</h1>
+          <p className="mx-auto mt-2 max-w-sm text-muted">
             Cat-words fall from the sky! <b>Type a word</b> to make the kitty pounce and pop it
             before it reaches the ground. Miss 3 and it&apos;s game over. Keep a combo for bonus points!
           </p>
@@ -270,9 +270,9 @@ export default function CatRainScreen({ game, navigate }: Props) {
     <div className="mx-auto w-full max-w-3xl py-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex gap-4 text-lg font-extrabold">
-          <span className="text-grape">Score: {g.score}</span>
-          <span className="text-sky-500">Lvl {g.level}</span>
-          <span className={g.combo >= 5 ? 'text-bubble' : 'text-slate-400'}>
+          <span className="text-ink">Score: {g.score}</span>
+          <span className="text-body">Lvl {g.level}</span>
+          <span className={g.combo >= 5 ? 'text-accent' : 'text-stone'}>
             Combo x{g.combo}
           </span>
         </div>
@@ -283,7 +283,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
       </div>
 
       <div
-        className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-b from-sky-100 to-purple-100 shadow-inner ring-2 ring-purple-100"
+        className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-b from-chalk to-tintA shadow-inner ring-2 ring-hair"
         style={{ height: AREA_HEIGHT }}
       >
         {g.words.map((w) => {
@@ -299,11 +299,11 @@ export default function CatRainScreen({ game, navigate }: Props) {
               <CatMascot mood={locked ? 'wow' : 'neutral'} color={w.color} size={44} />
               <div
                 className={`mt-0.5 rounded-lg px-2 py-0.5 font-mono text-lg font-bold shadow ${
-                  locked ? 'bg-white ring-2 ring-grape' : 'bg-white/90'
+                  locked ? 'bg-white ring-2 ring-accent' : 'bg-white/90'
                 }`}
               >
                 <span className="text-emerald-500">{done}</span>
-                <span className="text-slate-700">{rest}</span>
+                <span className="text-ink">{rest}</span>
               </div>
             </div>
           )
@@ -321,11 +321,11 @@ export default function CatRainScreen({ game, navigate }: Props) {
         ))}
 
         {/* ground */}
-        <div className="absolute bottom-0 left-0 right-0 h-10 bg-lime/40 backdrop-blur-sm" />
+        <div className="absolute bottom-0 left-0 right-0 h-10 bg-accent/20 backdrop-blur-sm" />
       </div>
 
       <div className="mt-3 flex justify-between">
-        <p className="text-sm text-slate-400">Type the falling words! Esc to quit.</p>
+        <p className="text-sm text-stone">Type the falling words! Esc to quit.</p>
         <Button
           variant="ghost"
           onClick={() => {

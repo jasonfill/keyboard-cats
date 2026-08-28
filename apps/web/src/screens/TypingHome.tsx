@@ -35,7 +35,7 @@ export default function TypingHome({ game, navigate }: Props) {
       </div>
 
       <Card className="w-full max-w-md">
-        <label className="mb-1 block text-sm font-bold text-slate-500">
+        <label className="mb-1 block text-sm font-bold text-muted">
           What should we call you?
         </label>
         <input
@@ -45,7 +45,7 @@ export default function TypingHome({ game, navigate }: Props) {
           onKeyDown={(e) => e.key === 'Enter' && commitName()}
           placeholder="Type your name..."
           maxLength={16}
-          className="mb-4 w-full rounded-xl border-2 border-purple-200 px-4 py-3 text-lg font-bold text-grape focus:border-grape focus:outline-none"
+          className="mb-4 w-full rounded-xl border-2 border-edge px-4 py-3 text-lg font-bold text-ink focus:border-ink focus:outline-none"
         />
 
         <div className="grid grid-cols-1 gap-3">
@@ -88,8 +88,8 @@ export default function TypingHome({ game, navigate }: Props) {
 function Stat({ big, label }: { big: string; label: string }) {
   return (
     <div>
-      <div className="text-2xl font-extrabold text-grape">{big}</div>
-      <div className="text-sm font-bold text-slate-400">{label}</div>
+      <div className="text-2xl font-extrabold text-ink">{big}</div>
+      <div className="text-sm font-bold text-stone">{label}</div>
     </div>
   )
 }

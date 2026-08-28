@@ -431,6 +431,14 @@ export const THEMES: Theme[] = [
 
 export const DEFAULT_THEME_ID: ThemeId = 'cats'
 
+/** '#7C5CFF' -> '124 92 255', the space-separated form a CSS variable needs. */
+export function hexToRgbTriple(hex: string): string {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? [...h].map((c) => c + c).join('') : h
+  const n = Number.parseInt(full, 16)
+  return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`
+}
+
 const BY_ID = new Map<ThemeId, Theme>(THEMES.map((t) => [t.id, t]))
 
 /** Never throws: an unknown id falls back to the default rather than blanking the app. */

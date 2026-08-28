@@ -181,7 +181,7 @@ function Loading() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
       <CatMascot mood="sleepy" size={120} className="animate-floaty" />
-      <p className="text-lg font-bold text-slate-500">Fetching your progress…</p>
+      <p className="text-lg font-bold text-muted">Fetching your progress…</p>
     </div>
   )
 }

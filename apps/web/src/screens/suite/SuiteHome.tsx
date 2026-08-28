@@ -53,14 +53,14 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           <CatMascot mood="excited" size={116} className="animate-floaty" />
           <CatMascot mood="happy" color="#94a3b8" size={82} className="animate-floaty" />
         </div>
-        <h1 className="mt-2 text-center text-5xl font-extrabold text-grape drop-shadow-sm md:text-6xl">
+        <h1 className="mt-2 text-center text-5xl font-extrabold text-ink drop-shadow-sm md:text-6xl">
           Cat Academy
         </h1>
-        <p className="text-center text-lg font-bold text-slate-500">
+        <p className="text-center text-lg font-bold text-muted">
           {greeting ? `Welcome back, ${greeting}! 🐾` : 'Type, spell, and quiz yourself — with cats. 🐾'}
         </p>
         {sync === 'merging' && (
-          <Pill className="mt-2 bg-amber-100 text-amber-700">
+          <Pill className="mt-2 bg-sun/30 text-ink">
             🔄 Moving your saved progress into your account…
           </Pill>
         )}
@@ -69,9 +69,9 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
       {/* Work someone has set comes before the free choice of subjects: if a
           child has homework, that is the thing to show them first. */}
       {openTasks.length > 0 && (
-        <Card className="mb-6 ring-2 ring-purple-200">
+        <Card className="mb-6 ring-2 ring-edge">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-extrabold text-grape">
+            <h2 className="text-xl font-extrabold text-ink">
               ✅ Your tasks ({openTasks.length})
             </h2>
             {overdueTasks > 0 && (
@@ -84,9 +84,9 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
               return (
                 <li
                   key={task.id}
-                  className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-purple-100"
+                  className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-hair"
                 >
-                  <span className="font-extrabold text-grape">{task.title}</span>
+                  <span className="font-extrabold text-ink">{task.title}</span>
                   {task.dueOn && task.dueOn < today && (
                     <Pill className="bg-rose-100 text-xs text-rose-700">overdue</Pill>
                   )}
@@ -110,7 +110,6 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           emoji="🐈‍⬛"
           title="Spelling Cats"
           tagline="Adaptive spelling, second grade and up."
-          gradient="from-violet-300 to-fuchsia-400"
           stats={[
             { label: 'Level', value: `Grade ${level.grade}` },
             { label: 'Words mastered', value: `${overall.mastered}/${totalCurriculumWords()}` },
@@ -123,7 +122,6 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           emoji="⌨️"
           title="Keyboard Cats"
           tagline="Touch typing, one world at a time."
-          gradient="from-sky-300 to-cyan-400"
           stats={[
             { label: 'Lessons done', value: `${typingLessons}/${TOTAL_LESSONS}` },
             { label: 'Stars', value: String(game.state.totalStars) },
@@ -136,7 +134,6 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           emoji="🃏"
           title="Quiz Cats"
           tagline="Flashcards for anything at all."
-          gradient="from-emerald-300 to-teal-400"
           stats={[
             { label: 'My decks', value: String(snapshot.decks.length) },
             { label: 'Cards mastered', value: `${quizTotals.mastered}/${quizTotals.cards}` },
@@ -184,8 +181,8 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-extrabold text-grape">Save your progress ☁️</h2>
-              <p className="font-bold text-slate-500">
+              <h2 className="text-xl font-extrabold text-ink">Save your progress ☁️</h2>
+              <p className="font-bold text-muted">
                 Everything you have done so far is saved on this device. Make a free account and it
                 follows you to any other one — nothing is lost.
               </p>
@@ -195,9 +192,9 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         </Card>
       )}
 
-      <p className="mt-6 text-center text-xs font-bold text-slate-400">
+      <p className="mt-6 text-center text-xs font-bold text-stone">
         Free forever, no ads.{' '}
-        <button className="underline hover:text-grape" onClick={() => navigate({ name: 'upgrade' })}>
+        <button className="underline hover:text-ink" onClick={() => navigate({ name: 'upgrade' })}>
           Family Pro
         </button>{' '}
         adds custom word lists and printable reports.
@@ -210,37 +207,39 @@ interface SubjectCardProps {
   emoji: string
   title: string
   tagline: string
-  gradient: string
   stats: Array<{ label: string; value: string }>
   cta: string
   onClick: () => void
 }
 
-function SubjectCard({ emoji, title, tagline, gradient, stats, cta, onClick }: SubjectCardProps) {
+// A neutral card with a hair border. The per-subject gradients this replaces
+// were the cat era's paint, and they fought nine of the ten themes; the only
+// colour left here is the accent on the CTA.
+function SubjectCard({ emoji, title, tagline, stats, cta, onClick }: SubjectCardProps) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-3xl bg-gradient-to-br ${gradient} p-1 text-left shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl`}
+      className="rounded-3xl border border-hair bg-chalk p-1 text-left transition-transform hover:-translate-y-px"
     >
-      <div className="flex h-full flex-col rounded-[22px] bg-white/92 p-5">
+      <div className="flex h-full flex-col rounded-[22px] p-5">
         <div className="mb-2 flex items-center gap-3">
           <span className="text-4xl">{emoji}</span>
           <div>
-            <h2 className="text-2xl font-extrabold text-grape">{title}</h2>
-            <p className="font-bold text-slate-500">{tagline}</p>
+            <h2 className="text-2xl font-extrabold text-ink">{title}</h2>
+            <p className="font-bold text-muted">{tagline}</p>
           </div>
         </div>
         <div className="my-3 flex flex-wrap gap-x-5 gap-y-2">
           {stats.map((s) => (
             <div key={s.label}>
-              <div className="text-lg font-extrabold text-grape">{s.value}</div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <div className="text-lg font-extrabold text-ink">{s.value}</div>
+              <div className="text-xs font-bold uppercase tracking-wide text-stone">
                 {s.label}
               </div>
             </div>
           ))}
         </div>
-        <span className="mt-auto inline-block font-extrabold text-grape">{cta} →</span>
+        <span className="mt-auto inline-block font-extrabold text-accent">{cta} →</span>
       </div>
     </button>
   )

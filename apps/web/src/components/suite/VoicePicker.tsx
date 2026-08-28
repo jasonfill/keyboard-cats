@@ -34,12 +34,12 @@ export default function VoicePicker({ className = '' }: { className?: string }) 
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      <span className="text-sm font-extrabold text-slate-500">🔊 Reading voice</span>
+      <span className="text-sm font-extrabold text-muted">🔊 Reading voice</span>
       <select
         value={selected}
         onChange={(e) => choose(e.target.value)}
         aria-label="Reading voice"
-        className="rounded-xl border-2 border-purple-200 bg-white/80 px-3 py-2 text-sm font-bold text-grape"
+        className="rounded-xl border-2 border-edge bg-white/80 px-3 py-2 text-sm font-bold text-ink"
       >
         <option value="">Best on this device ({auto.name})</option>
         {voices.map((v) => (

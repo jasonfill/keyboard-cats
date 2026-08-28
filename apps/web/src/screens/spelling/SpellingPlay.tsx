@@ -170,7 +170,7 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
     return (
       <div className="mx-auto w-full max-w-2xl py-16 text-center">
         <CatMascot mood="happy" size={120} className="mx-auto animate-floaty" />
-        <p className="mt-4 text-lg font-bold text-slate-500">Adding up your round…</p>
+        <p className="mt-4 text-lg font-bold text-muted">Adding up your round…</p>
       </div>
     )
   }
@@ -179,7 +179,7 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
     return (
       <div className="mx-auto w-full max-w-2xl py-16 text-center">
         <CatMascot mood="sleepy" size={120} className="mx-auto animate-floaty" />
-        <p className="mt-4 text-lg font-bold text-slate-500">Rounding up some words…</p>
+        <p className="mt-4 text-lg font-bold text-muted">Rounding up some words…</p>
       </div>
     )
   }
@@ -200,29 +200,29 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
         >
           ← Quit
         </Button>
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/70 ring-1 ring-purple-100">
+        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/70 ring-1 ring-hair">
           <div
-            className="h-full bg-grape transition-all duration-300"
+            className="h-full bg-accent transition-all duration-300"
             style={{ width: `${(session.index / Math.max(1, total)) * 100}%` }}
           />
         </div>
-        <span className="text-sm font-extrabold text-slate-500">
+        <span className="text-sm font-extrabold text-muted">
           {session.index + 1}/{total}
         </span>
       </div>
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Pill className="bg-purple-100 text-grape">
+          <Pill className="bg-wash text-ink">
             {def.emoji} {def.name}
           </Pill>
           {mode === 'adaptive' && (
-            <Pill className="bg-slate-100 text-slate-500">
+            <Pill className="bg-wash text-muted">
               {reason.emoji} {reason.label}
             </Pill>
           )}
           {def.isTest && (
-            <Pill className="bg-emerald-100 text-emerald-700">Counts toward your level</Pill>
+            <Pill className="bg-pine/10 text-pine">Counts toward your level</Pill>
           )}
         </div>
 
@@ -293,14 +293,14 @@ function PromptArea(props: PromptProps) {
   if (activity === 'proofread') {
     return (
       <div>
-        <p className="mb-1 text-lg font-extrabold text-grape">Which one is spelled correctly?</p>
-        <p className="mb-4 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+        <p className="mb-1 text-lg font-extrabold text-ink">Which one is spelled correctly?</p>
+        <p className="mb-4 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {choices.map((choice) => (
             <button
               key={choice}
               onClick={() => props.onChoose(choice)}
-              className="rounded-2xl border-2 border-purple-200 bg-white px-4 py-4 font-mono text-xl font-bold text-grape transition-colors hover:border-grape hover:bg-purple-50"
+              className="rounded-2xl border-2 border-edge bg-white px-4 py-4 font-mono text-xl font-bold text-ink transition-colors hover:border-ink hover:bg-quiet"
             >
               {choice}
             </button>
@@ -316,38 +316,38 @@ function PromptArea(props: PromptProps) {
         <ListenPrompt {...props} />
       ) : activity === 'missing-letters' ? (
         <div className="mb-5 text-center">
-          <p className="mb-2 font-bold text-slate-500">Fill in the missing letters:</p>
-          <p className="font-mono text-4xl font-extrabold tracking-[0.2em] text-grape">
+          <p className="mb-2 font-bold text-muted">Fill in the missing letters:</p>
+          <p className="font-mono text-4xl font-extrabold tracking-[0.2em] text-ink">
             {puzzle.masked}
           </p>
-          <p className="mt-3 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+          <p className="mt-3 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
         </div>
       ) : activity === 'scramble' ? (
         <div className="mb-5 text-center">
-          <p className="mb-2 font-bold text-slate-500">Unscramble these letters:</p>
+          <p className="mb-2 font-bold text-muted">Unscramble these letters:</p>
           <div className="flex flex-wrap justify-center gap-2">
             {[...scrambled].map((c, i) => (
               <span
                 key={`${c}-${i}`}
-                className="rounded-xl bg-purple-100 px-3 py-2 font-mono text-2xl font-extrabold uppercase text-grape"
+                className="rounded-xl bg-wash px-3 py-2 font-mono text-2xl font-extrabold uppercase text-ink"
               >
                 {c}
               </span>
             ))}
           </div>
-          <p className="mt-3 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+          <p className="mt-3 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
         </div>
       ) : (
         // study
         <div className="mb-5 text-center">
-          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-stone">
             Look at it, say it, then type it
           </p>
-          <p className="font-mono text-5xl font-extrabold text-grape">{word}</p>
-          <p className="mt-3 font-bold text-slate-500">{sentence}</p>
+          <p className="font-mono text-5xl font-extrabold text-ink">{word}</p>
+          <p className="mt-3 font-bold text-muted">{sentence}</p>
           <button
             onClick={() => speak(word)}
-            className="mt-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-extrabold text-grape"
+            className="mt-2 rounded-full bg-wash px-4 py-1.5 text-sm font-extrabold text-ink"
           >
             🔊 Hear it again
           </button>
@@ -375,10 +375,10 @@ function ListenPrompt({
         <p className="mb-3 text-6xl">🎧</p>
       ) : (
         <div className="mb-3">
-          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-stone">
             {flashWord ? 'Look at it, then spell it from memory' : 'Now spell it'}
           </p>
-          <p className="font-mono text-4xl font-extrabold text-grape">
+          <p className="font-mono text-4xl font-extrabold text-ink">
             {flashWord ? word : '• • •'}
           </p>
         </div>
@@ -389,13 +389,13 @@ function ListenPrompt({
           <>
             <button
               onClick={() => dictate(word, sentence)}
-              className="rounded-full bg-grape px-5 py-2 text-sm font-extrabold text-white shadow"
+              className="rounded-full bg-accent px-5 py-2 text-sm font-extrabold text-white shadow"
             >
               🔊 Say it again
             </button>
             <button
               onClick={() => speak(sentence)}
-              className="rounded-full bg-purple-100 px-5 py-2 text-sm font-extrabold text-grape"
+              className="rounded-full bg-wash px-5 py-2 text-sm font-extrabold text-ink"
             >
               📖 In a sentence
             </button>
@@ -404,7 +404,7 @@ function ListenPrompt({
           activity !== 'test' && (
             <button
               onClick={onReveal}
-              className="rounded-full bg-grape px-5 py-2 text-sm font-extrabold text-white shadow"
+              className="rounded-full bg-accent px-5 py-2 text-sm font-extrabold text-white shadow"
             >
               👀 Show it again
             </button>
@@ -421,13 +421,13 @@ function ListenPrompt({
       </div>
 
       {!speechReady && (
-        <p className="mt-3 text-xs font-bold text-slate-400">
+        <p className="mt-3 text-xs font-bold text-stone">
           This device has no speech voice installed, so we show the word instead of reading it.
         </p>
       )}
 
       {!speechReady && (
-        <p className="mt-3 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+        <p className="mt-3 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
       )}
 
       {hints > 0 && activity !== 'test' && (
@@ -460,7 +460,7 @@ function TypedAnswer({ answer, setAnswer, inputRef, onSubmit }: PromptProps) {
         autoCapitalize="off"
         spellCheck={false}
         aria-label="Your spelling"
-        className="w-full rounded-2xl border-2 border-purple-200 px-4 py-4 text-center font-mono text-2xl font-bold text-grape focus:border-grape focus:outline-none"
+        className="w-full rounded-2xl border-2 border-edge px-4 py-4 text-center font-mono text-2xl font-bold text-ink focus:border-ink focus:outline-none"
       />
       <Button className="mt-3 w-full" onClick={onSubmit} disabled={!answer.trim()}>
         Check it ✓
@@ -501,14 +501,14 @@ function Feedback({
 
       {!result.correct && (
         <>
-          <p className="mb-1 text-sm font-bold text-slate-400">You wrote</p>
+          <p className="mb-1 text-sm font-bold text-stone">You wrote</p>
           <p className="mb-3 font-mono text-2xl font-bold">
             {diff.map((d, i) => (
               <span
                 key={i}
                 className={
                   d.status === 'correct'
-                    ? 'text-slate-400'
+                    ? 'text-stone'
                     : d.status === 'missing'
                       ? 'text-emerald-600 underline decoration-dotted'
                       : 'text-rose-500 line-through'
@@ -521,15 +521,15 @@ function Feedback({
         </>
       )}
 
-      <p className="mb-1 text-sm font-bold text-slate-400">
+      <p className="mb-1 text-sm font-bold text-stone">
         {result.correct ? 'That is the one' : 'The correct spelling is'}
       </p>
-      <p className="font-mono text-4xl font-extrabold text-grape">{result.word.w}</p>
-      <p className="mx-auto mt-3 max-w-md font-bold text-slate-500">{result.word.s}</p>
+      <p className="font-mono text-4xl font-extrabold text-ink">{result.word.w}</p>
+      <p className="mx-auto mt-3 max-w-md font-bold text-muted">{result.word.s}</p>
 
       <button
         onClick={() => speak(result.word.w)}
-        className="mt-3 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-extrabold text-grape"
+        className="mt-3 rounded-full bg-wash px-4 py-1.5 text-sm font-extrabold text-ink"
       >
         🔊 Hear it
       </button>
@@ -537,7 +537,7 @@ function Feedback({
       <Button className="mt-5 w-full" onClick={onNext}>
         {isLast ? 'See my results →' : 'Next word →'}
       </Button>
-      <p className="mt-2 text-xs font-bold text-slate-400">or press Enter</p>
+      <p className="mt-2 text-xs font-bold text-stone">or press Enter</p>
     </div>
   )
 }

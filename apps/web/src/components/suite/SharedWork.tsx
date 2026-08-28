@@ -51,8 +51,8 @@ export default function SharedWork({ onChanged }: { onChanged?: () => void | Pro
 
   return (
     <Card className="mb-4">
-      <h2 className="mb-1 text-xl font-extrabold text-grape">Work you have set</h2>
-      <p className="mb-3 font-bold text-slate-500">
+      <h2 className="mb-1 text-xl font-extrabold text-ink">Work you have set</h2>
+      <p className="mb-3 font-bold text-muted">
         One piece of work, everyone you gave it to, and who has finished it.
       </p>
 
@@ -63,20 +63,20 @@ export default function SharedWork({ onChanged }: { onChanged?: () => void | Pro
           const complete = total > 0 && done === total
 
           return (
-            <li key={set.setId} className="rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-purple-100">
+            <li key={set.setId} className="rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-hair">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="font-extrabold text-grape">{set.title}</span>
+                <span className="font-extrabold text-ink">{set.title}</span>
                 <Pill
                   className={
                     complete
                       ? 'bg-emerald-100 text-xs text-emerald-700'
-                      : 'bg-slate-100 text-xs text-slate-500'
+                      : 'bg-wash text-xs text-muted'
                   }
                 >
                   {done} of {total} done
                 </Pill>
                 {set.dueOn && (
-                  <Pill className="bg-slate-100 text-xs text-slate-500">due {set.dueOn}</Pill>
+                  <Pill className="bg-wash text-xs text-muted">due {set.dueOn}</Pill>
                 )}
                 {set.minAccuracy !== null && (
                   <Pill className="bg-amber-100 text-xs text-amber-700">
@@ -96,10 +96,10 @@ export default function SharedWork({ onChanged }: { onChanged?: () => void | Pro
                     }
                     className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${
                       l.status === 'done'
-                        ? 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-pine/10 text-pine'
                         : l.status === 'cancelled'
-                          ? 'bg-slate-100 text-slate-400 line-through'
-                          : 'bg-purple-100 text-grape'
+                          ? 'bg-wash text-stone line-through'
+                          : 'bg-wash text-ink'
                     }`}
                   >
                     <span className="leading-none">{l.avatarEmoji}</span>

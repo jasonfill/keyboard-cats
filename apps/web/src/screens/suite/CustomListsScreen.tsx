@@ -89,7 +89,7 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
 
       {status !== 'signed-in' && configured && (
         <Card className="mb-4">
-          <p className="mb-3 font-bold text-slate-500">
+          <p className="mb-3 font-bold text-muted">
             Lists you make here are saved in this browser. Add a free account and they follow you
             between devices.
           </p>
@@ -99,20 +99,20 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
 
       {editing ? (
         <Card className="mb-4">
-          <h2 className="mb-3 text-xl font-extrabold text-grape">
+          <h2 className="mb-3 text-xl font-extrabold text-ink">
             {editing.title ? 'Edit list' : 'New list'}
           </h2>
 
-          <label className="mb-1 block text-sm font-bold text-slate-500">List name</label>
+          <label className="mb-1 block text-sm font-bold text-muted">List name</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Week 12 — Mrs. Alvarez"
             maxLength={80}
-            className="mb-4 w-full rounded-xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+            className="mb-4 w-full rounded-xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
           />
 
-          <label className="mb-1 block text-sm font-bold text-slate-500">
+          <label className="mb-1 block text-sm font-bold text-muted">
             Words — one per line
           </label>
           <textarea
@@ -120,9 +120,9 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
             onChange={(e) => setText(e.target.value)}
             rows={10}
             placeholder={'because\nfriend\tMy friend sits next to me.\nthrough | We walked through the park.'}
-            className="mb-2 w-full rounded-xl border-2 border-purple-200 px-4 py-3 font-mono text-sm font-bold text-grape focus:border-grape focus:outline-none"
+            className="mb-2 w-full rounded-xl border-2 border-edge px-4 py-3 font-mono text-sm font-bold text-ink focus:border-ink focus:outline-none"
           />
-          <p className="mb-4 text-xs font-bold text-slate-400">
+          <p className="mb-4 text-xs font-bold text-stone">
             Add an example sentence after a tab, a <code>|</code>, or a <code>-</code>. Without one
             we will read a simple prompt instead. Up to 60 words per list.
           </p>
@@ -157,7 +157,7 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
 
       {lists.length === 0 && !editing ? (
         <Card>
-          <p className="font-bold text-slate-400">
+          <p className="font-bold text-stone">
             No lists yet. Paste one in and every spelling activity will use it.
           </p>
         </Card>
@@ -167,26 +167,26 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
             <Card key={list.id}>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-lg font-extrabold text-grape">{list.title}</h3>
-                  <p className="text-sm font-bold text-slate-400">
+                  <h3 className="text-lg font-extrabold text-ink">{list.title}</h3>
+                  <p className="text-sm font-bold text-stone">
                     {list.words.length} words · updated{' '}
                     {new Date(list.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
-                <Pill className="bg-purple-100 text-grape">Custom</Pill>
+                <Pill className="bg-wash text-ink">Custom</Pill>
               </div>
 
               <div className="mb-3 flex flex-wrap gap-1.5">
                 {list.words.slice(0, 20).map((w) => (
                   <span
                     key={w.w}
-                    className="rounded-lg bg-slate-50 px-2 py-1 font-mono text-xs font-bold text-slate-600"
+                    className="rounded-lg bg-quiet px-2 py-1 font-mono text-xs font-bold text-body"
                   >
                     {w.w}
                   </span>
                 ))}
                 {list.words.length > 20 && (
-                  <span className="px-2 py-1 text-xs font-bold text-slate-400">
+                  <span className="px-2 py-1 text-xs font-bold text-stone">
                     +{list.words.length - 20} more
                   </span>
                 )}

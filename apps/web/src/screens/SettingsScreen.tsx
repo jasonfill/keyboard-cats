@@ -19,7 +19,7 @@ export default function SettingsScreen({ game, navigate }: Props) {
     <div className="mx-auto max-w-lg py-8">
       <Card>
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-grape">Settings ⚙️</h1>
+          <h1 className="text-2xl font-extrabold text-ink">Settings ⚙️</h1>
           <Button variant="ghost" onClick={() => navigate({ name: 'home' })}>
             ← Home
           </Button>
@@ -45,7 +45,7 @@ export default function SettingsScreen({ game, navigate }: Props) {
           onChange={(v) => setSetting('showHands', v)}
         />
 
-        <div className="mt-6 border-t border-purple-100 pt-4">
+        <div className="mt-6 border-t border-hair pt-4">
           {!confirmReset ? (
             <Button variant="danger" className="w-full" onClick={() => setConfirmReset(true)}>
               🗑️ Reset all progress
@@ -77,7 +77,7 @@ export default function SettingsScreen({ game, navigate }: Props) {
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-stone">
           Cat Academy · progress is saved{' '}
           {mode === 'cloud' ? 'to your account' : 'on this device'}.
         </p>
@@ -96,13 +96,13 @@ function Toggle({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="mb-3 flex cursor-pointer items-center justify-between rounded-xl bg-white p-3 ring-1 ring-purple-100">
-      <span className="font-bold text-slate-600">{label}</span>
+    <label className="mb-3 flex cursor-pointer items-center justify-between rounded-xl bg-white p-3 ring-1 ring-hair">
+      <span className="font-bold text-body">{label}</span>
       <button
         type="button"
         onClick={() => onChange(!checked)}
         className={`relative h-7 w-12 rounded-full transition-colors ${
-          checked ? 'bg-emerald-400' : 'bg-slate-300'
+          checked ? 'bg-emerald-400' : 'bg-tray'
         }`}
         aria-pressed={checked}
       >

@@ -57,13 +57,13 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
         <div className="rounded-[22px] bg-white/92 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-stone">
                 Your cards
               </p>
-              <h2 className="text-2xl font-extrabold text-grape">
+              <h2 className="text-2xl font-extrabold text-ink">
                 {totals.mastered} of {totals.cards} mastered
               </h2>
-              <p className="font-bold text-slate-500">
+              <p className="font-bold text-muted">
                 {state.streakDays > 0
                   ? `🔥 ${state.streakDays} day streak — keep it going.`
                   : 'Study any deck today to start a streak.'}
@@ -87,10 +87,10 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="mb-1 flex items-center gap-2">
-                <h3 className="text-xl font-extrabold text-grape">Due for review</h3>
-                <Pill className="bg-amber-100 text-amber-700">🔁 {due.length} cards</Pill>
+                <h3 className="text-xl font-extrabold text-ink">Due for review</h3>
+                <Pill className="bg-sun/30 text-ink">🔁 {due.length} cards</Pill>
               </div>
-              <p className="font-bold text-slate-500">
+              <p className="font-bold text-muted">
                 Cards from every deck that you are about to forget. Ten minutes here beats an hour
                 the night before.
               </p>
@@ -107,7 +107,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-2xl font-extrabold text-grape">My decks</h3>
+        <h3 className="text-2xl font-extrabold text-ink">My decks</h3>
         <Button onClick={() => navigate({ name: 'quiz-edit' })} disabled={atLimit}>
           ➕ New deck
         </Button>
@@ -127,7 +127,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
 
       {mine.length === 0 ? (
         <Card className="mb-6">
-          <p className="mb-3 font-bold text-slate-500">
+          <p className="mb-3 font-bold text-muted">
             No decks of your own yet. Make one by pasting a list — vocabulary, dates, formulas,
             anything with two sides to it — or start with one of ours below.
           </p>
@@ -141,7 +141,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
         </div>
       )}
 
-      <h3 className="mb-3 text-2xl font-extrabold text-grape">Starter decks</h3>
+      <h3 className="mb-3 text-2xl font-extrabold text-ink">Starter decks</h3>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {STARTER_DECKS.map((deck) => (
           <DeckCard key={deck.id} deck={deck} navigate={navigate} />
@@ -160,12 +160,12 @@ function DeckCard({ deck, navigate }: { deck: QuizDeck; navigate: Navigate }) {
   return (
     <button
       onClick={() => navigate({ name: 'quiz-deck', deckId: deck.id })}
-      className="rounded-3xl bg-white/85 p-5 text-left shadow-xl ring-1 ring-purple-100 backdrop-blur transition-transform hover:-translate-y-1 hover:shadow-2xl"
+      className="rounded-3xl bg-white/85 p-5 text-left shadow-xl ring-1 ring-hair backdrop-blur transition-transform hover:-translate-y-1 hover:shadow-2xl"
     >
       <div className="mb-2 flex items-start justify-between gap-3">
         <div>
-          <h4 className="text-lg font-extrabold text-grape">{deck.title}</h4>
-          <p className="text-sm font-bold text-slate-400">
+          <h4 className="text-lg font-extrabold text-ink">{deck.title}</h4>
+          <p className="text-sm font-bold text-stone">
             {deck.cards.length} cards
             {stats.seen > 0 && ` · ${stats.mastered} mastered`}
           </p>
@@ -173,26 +173,26 @@ function DeckCard({ deck, navigate }: { deck: QuizDeck; navigate: Navigate }) {
         {deck.source === 'starter' ? (
           <Pill className="shrink-0 bg-teal-100 text-teal-700">Starter</Pill>
         ) : (
-          <Pill className="shrink-0 bg-purple-100 text-grape">Mine</Pill>
+          <Pill className="shrink-0 bg-wash text-ink">Mine</Pill>
         )}
       </div>
 
       {deck.description && (
-        <p className="mb-3 text-sm font-bold text-slate-500">{deck.description}</p>
+        <p className="mb-3 text-sm font-bold text-muted">{deck.description}</p>
       )}
 
-      <div className="mb-3 h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className="mb-3 h-2 overflow-hidden rounded-full bg-wash">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
+          className="h-full rounded-full bg-pine transition-all"
           style={{ width: `${Math.round(stats.progress * 100)}%` }}
         />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {stats.due > 0 && <Pill className="bg-amber-100 text-amber-700">🔁 {stats.due} due</Pill>}
+        {stats.due > 0 && <Pill className="bg-sun/30 text-ink">🔁 {stats.due} due</Pill>}
         {progress?.stars ? <StarRow stars={progress.stars} size={18} /> : null}
         {stats.lastStudiedAt && (
-          <span className="text-xs font-bold text-slate-400">
+          <span className="text-xs font-bold text-stone">
             Last studied {new Date(stats.lastStudiedAt).toLocaleDateString()}
           </span>
         )}

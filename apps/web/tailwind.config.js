@@ -39,9 +39,13 @@ export default {
         pineSoft: '#8FC9BE',
         sun: '#FFC542',
 
-        // Theme-driven. `--wz-accent` is written by the theme provider; the
-        // fallback below keeps the token valid before the provider mounts.
+        // Theme-driven. Written by the theme provider; the fallbacks are Cats,
+        // so the tokens stay valid before it mounts. These four are the whole
+        // of "the paint" — a play surface should never need more.
         accent: 'rgb(var(--wz-accent, 124 92 255) / <alpha-value>)',
+        accentDeep: 'rgb(var(--wz-accent-deep, 76 47 209) / <alpha-value>)',
+        tintA: 'rgb(var(--wz-tint-a, 243 239 255) / <alpha-value>)',
+        tintB: 'rgb(var(--wz-tint-b, 233 225 255) / <alpha-value>)',
       },
       keyframes: {
         pop: {

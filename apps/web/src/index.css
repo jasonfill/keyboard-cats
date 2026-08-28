@@ -6,6 +6,9 @@
   color-scheme: light;
   /* Cats, until the theme provider mounts and writes the learner's own. */
   --wz-accent: 124 92 255;
+  --wz-accent-deep: 76 47 209;
+  --wz-tint-a: 243 239 255;
+  --wz-tint-b: 233 225 255;
 }
 
 html,

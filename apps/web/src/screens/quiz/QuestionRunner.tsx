@@ -87,10 +87,10 @@ export default function QuestionRunner({
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Pill className="bg-purple-100 text-grape">
+          <Pill className="bg-wash text-ink">
             {reason.emoji} {reason.label}
           </Pill>
-          <Pill className="bg-slate-100 text-slate-500">
+          <Pill className="bg-wash text-muted">
             {q.kind === 'multiple-choice'
               ? 'Pick the answer'
               : q.kind === 'true-false'
@@ -98,31 +98,31 @@ export default function QuestionRunner({
                 : 'Write it out'}
           </Pill>
         </div>
-        <span className="font-bold text-slate-400">
+        <span className="font-bold text-stone">
           {progress.retired} of {progress.total} done
         </span>
       </div>
 
-      <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className="mb-4 h-2 overflow-hidden rounded-full bg-wash">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
+          className="h-full rounded-full bg-accent transition-all"
           style={{ width: `${(progress.retired / Math.max(1, progress.total)) * 100}%` }}
         />
       </div>
 
       {progress.pass > 1 && (
-        <p className="mb-3 text-center font-extrabold text-grape">
+        <p className="mb-3 text-center font-extrabold text-ink">
           🔁 Second go at this one — you have seen the answer now.
         </p>
       )}
 
       <Card className="mb-4">
-        <p className="mb-1 text-xs font-extrabold uppercase tracking-widest text-slate-400">
+        <p className="mb-1 text-xs font-extrabold uppercase tracking-widest text-stone">
           {q.kind === 'true-false' ? 'Does this match?' : 'Question'}
         </p>
-        <p className="text-2xl font-extrabold text-grape md:text-3xl">{q.prompt}</p>
+        <p className="text-2xl font-extrabold text-ink md:text-3xl">{q.prompt}</p>
         {q.kind === 'true-false' && (
-          <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-xl font-bold text-slate-600">
+          <p className="mt-3 rounded-2xl bg-quiet px-4 py-3 text-xl font-bold text-body">
             {q.claim}
           </p>
         )}
@@ -139,12 +139,12 @@ export default function QuestionRunner({
             const isAnswer = choice === q.answer
             const picked = feedback?.given === choice
             const style = !revealed
-              ? 'bg-white/85 text-grape ring-purple-100 hover:-translate-y-0.5 hover:shadow-lg'
+              ? 'bg-white/85 text-ink ring-hair hover:-translate-y-0.5 hover:shadow-lg'
               : isAnswer
                 ? 'bg-emerald-100 text-emerald-800 ring-emerald-300'
                 : picked
                   ? 'bg-rose-100 text-rose-700 ring-rose-300'
-                  : 'bg-white/60 text-slate-400 ring-slate-200'
+                  : 'bg-white/60 text-stone ring-edge'
             return (
               <button
                 key={choice}
@@ -165,12 +165,12 @@ export default function QuestionRunner({
             const correct = value === q.claimIsTrue
             const picked = feedback ? feedback.given === String(value) : false
             const style = !revealed
-              ? 'bg-white/85 text-grape ring-purple-100 hover:-translate-y-0.5 hover:shadow-lg'
+              ? 'bg-white/85 text-ink ring-hair hover:-translate-y-0.5 hover:shadow-lg'
               : correct
                 ? 'bg-emerald-100 text-emerald-800 ring-emerald-300'
                 : picked
                   ? 'bg-rose-100 text-rose-700 ring-rose-300'
-                  : 'bg-white/60 text-slate-400 ring-slate-200'
+                  : 'bg-white/60 text-stone ring-edge'
             return (
               <button
                 key={String(value)}
@@ -203,7 +203,7 @@ export default function QuestionRunner({
             autoCorrect="off"
             spellCheck={false}
             placeholder="Type the answer…"
-            className="mb-3 w-full rounded-2xl border-2 border-purple-200 px-5 py-4 text-xl font-bold text-grape focus:border-grape focus:outline-none disabled:bg-slate-50"
+            className="mb-3 w-full rounded-2xl border-2 border-edge px-5 py-4 text-xl font-bold text-ink focus:border-ink focus:outline-none disabled:bg-quiet"
           />
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={revealed || !typed.trim()}>
@@ -228,7 +228,7 @@ export default function QuestionRunner({
             )}
           </div>
           {hintsUsed > 0 && (
-            <p className="mt-2 text-xs font-bold text-slate-400">
+            <p className="mt-2 text-xs font-bold text-stone">
               Hinted cards still count toward review, but not toward your level.
             </p>
           )}
@@ -251,7 +251,7 @@ export default function QuestionRunner({
             <span className="text-2xl">
               {feedback.grade === 'correct' ? '🎉' : feedback.grade === 'close' ? '😼' : '😿'}
             </span>
-            <h3 className="text-xl font-extrabold text-grape">
+            <h3 className="text-xl font-extrabold text-ink">
               {feedback.grade === 'correct'
                 ? 'Correct!'
                 : feedback.grade === 'close'
@@ -261,12 +261,12 @@ export default function QuestionRunner({
           </div>
 
           {feedback.grade !== 'correct' && (
-            <p className="mb-3 text-lg font-bold text-slate-600">
+            <p className="mb-3 text-lg font-bold text-body">
               The answer is <span className="text-emerald-700">{q.answer}</span>
             </p>
           )}
           {feedback.grade === 'close' && (
-            <p className="mb-3 font-bold text-slate-500">
+            <p className="mb-3 font-bold text-muted">
               Counted as correct — you knew it. Worth a second look at the spelling.
             </p>
           )}

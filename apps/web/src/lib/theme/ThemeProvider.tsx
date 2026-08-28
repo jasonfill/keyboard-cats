@@ -19,6 +19,7 @@ import {
 import { useLearners } from '../learners/LearnerProvider'
 import {
   DEFAULT_THEME_ID,
+  hexToRgbTriple,
   isThemeId,
   themeById,
   THEMES,
@@ -79,11 +80,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeId(readTheme(learnerId))
   }, [learnerId])
 
-  // The one global side effect: everything styled with the `accent` token
-  // reads this variable, so writing it here re-paints every play surface at
-  // once without a single component re-rendering on the colour.
+  // The one global side effect. Everything styled with the accent tokens reads
+  // these variables, so writing them here re-paints every play surface at once
+  // without a single component re-rendering on the colour.
+  //
+  // Four, not one: the pressed/shadow colour and the two tints are as much a
+  // part of "the paint" as the accent itself, and a play surface that had to
+  // reach for an inline style to get them would be a play surface the sweep
+  // could not check.
   useEffect(() => {
-    document.documentElement.style.setProperty('--wz-accent', themeById(themeId).accentRgb)
+    const theme = themeById(themeId)
+    const root = document.documentElement.style
+    root.setProperty('--wz-accent', theme.accentRgb)
+    root.setProperty('--wz-accent-deep', hexToRgbTriple(theme.deep))
+    root.setProperty('--wz-tint-a', hexToRgbTriple(theme.tintA))
+    root.setProperty('--wz-tint-b', hexToRgbTriple(theme.tintB))
   }, [themeId])
 
   const setTheme = useCallback(
