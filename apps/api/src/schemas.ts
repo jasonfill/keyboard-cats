@@ -46,17 +46,56 @@ export const itemMasterySchema = z.object({
   lastSeenAt: epochMs,
 })
 
+/**
+ * A task a grown-up sets. `status`, `completedAt` and `sessionId` are absent on
+ * purpose: a task is closed by the round that satisfied it, so they are never
+ * something a caller supplies.
+ */
+export const assignmentDraftSchema = z.object({
+  subject: subjectSchema,
+  activity: z.string().min(1).max(60),
+  targetId: z.string().max(120).nullable().optional(),
+  size: z.number().int().min(1).max(200).nullable().optional(),
+  title: z.string().min(1).max(120),
+  note: z.string().max(500).nullable().optional(),
+  minAccuracy: z.number().int().min(1).max(100).nullable().optional(),
+  dueOn: dayString.nullable().optional(),
+  sortOrder: z.number().int().min(0).max(10000).optional(),
+})
+
+/** Editing the work itself, which every learner given it will see. */
+export const assignmentSetPatchSchema = z.object({
+  title: z.string().min(1).max(120).optional(),
+  note: z.string().max(500).nullable().optional(),
+  minAccuracy: z.number().int().min(1).max(100).nullable().optional(),
+  dueOn: dayString.nullable().optional(),
+})
+
+/** Editing one learner's copy: cancel, reopen, reorder. */
+export const assignmentPatchSchema = z.object({
+  sortOrder: z.number().int().min(0).max(10000).optional(),
+  // 'done' is not offered: finishing work is something you do, not something
+  // you declare.
+  status: z.enum(['open', 'cancelled']).optional(),
+})
+
 export const attemptSchema = z.object({
   subject: subjectSchema,
   itemKey: z.string().min(1).max(200),
   activity: z.string().min(1).max(60),
   isTest: z.boolean(),
+  // Older clients predate the flag; they only ever sent system-checked
+  // attempts, so defaulting to true keeps their rows honest.
+  verified: z.boolean().default(true),
   correct: z.boolean(),
   responseMs: z.number().int().min(0).nullable(),
   hintsUsed: z.number().int().min(0),
   difficulty: z.number().finite(),
   given: z.string().max(400).nullable(),
   at: epochMs,
+  // Accepted for round-tripping, ignored on write: the API links an attempt to
+  // the session it arrived with rather than to whichever id the caller names.
+  sessionId: z.string().uuid().nullable().optional(),
 })
 
 export const sessionRecordSchema = z.object({
@@ -76,6 +115,11 @@ export const sessionRecordSchema = z.object({
   meta: z.record(z.unknown()).default({}),
   startedAt: epochMs,
   endedAt: epochMs,
+  // Provenance is derived from the attempts on the way in, never taken from
+  // the caller. Accepted so a snapshot can be round-tripped, then overwritten.
+  evidence: z.enum(['attempts', 'client', 'legacy']).optional(),
+  verifiedItemsTotal: z.number().int().min(0).optional(),
+  verifiedItemsCorrect: z.number().int().min(0).optional(),
 })
 
 export const listProgressSchema = z.object({

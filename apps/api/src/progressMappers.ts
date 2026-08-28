@@ -5,6 +5,8 @@
 // only thing that should know what a row looks like.
 
 import type {
+  Assignment,
+  Attempt,
   CustomWordList,
   DailyActivityRow,
   HighScoreRow,
@@ -30,6 +32,10 @@ function epochOrNull(value: any): number | null {
 }
 
 /** A `date` column arrives as a Date; the domain wants 'YYYY-MM-DD'. */
+export function dayOf(value: any): string | null {
+  return dayString(value)
+}
+
 function dayString(value: any): string | null {
   if (!value) return null
   if (value instanceof Date) {
@@ -107,6 +113,53 @@ export function toSession(row: any): SessionRecord {
     meta: row.meta ?? {},
     startedAt: epoch(row.started_at),
     endedAt: epoch(row.ended_at),
+    evidence: row.evidence ?? 'legacy',
+    verifiedItemsTotal: row.verified_items_total ?? 0,
+    verifiedItemsCorrect: row.verified_items_correct ?? 0,
+  }
+}
+
+/**
+ * One recorded answer. Read back so a grown-up can see what actually happened
+ * in a round rather than the score it ended on.
+ */
+export function toAttempt(row: any): Attempt {
+  return {
+    subject: row.subject,
+    itemKey: row.item_key,
+    activity: row.activity,
+    isTest: row.is_test,
+    verified: row.verified,
+    correct: row.correct,
+    responseMs: row.response_ms,
+    hintsUsed: row.hints_used,
+    difficulty: row.difficulty === null ? 0 : Number(row.difficulty),
+    given: row.given,
+    at: epoch(row.created_at),
+    sessionId: row.session_id,
+  }
+}
+
+/** Reads a row of the assignments-joined-to-sets view; see assignmentSelect. */
+export function toAssignment(row: any): Assignment {
+  return {
+    id: row.id,
+    setId: row.set_id,
+    learnerId: row.learner_id,
+    createdBy: row.created_by,
+    subject: row.subject,
+    activity: row.activity,
+    targetId: row.target_id,
+    size: row.size,
+    title: row.title,
+    note: row.note,
+    minAccuracy: row.min_accuracy,
+    dueOn: dayString(row.due_on),
+    sortOrder: row.sort_order,
+    status: row.status,
+    completedAt: epochOrNull(row.completed_at),
+    sessionId: row.session_id,
+    createdAt: epoch(row.created_at),
   }
 }
 

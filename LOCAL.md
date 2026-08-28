@@ -112,7 +112,7 @@ there via the `@applied-if` sentinels. Both are worth having work.
 
 ```bash
 npm test                              # typecheck, lint, curriculum, adaptive engine
-npm run test:db                       # 27 RLS assertions against the local stack
+npm run test:db                       # RLS and audit-trail assertions against the local stack
 npm run smoke --workspace @whizzo/api # 37 API checks against a running API
 ```
 

@@ -12,10 +12,17 @@ import { useAuth } from '../../auth/AuthProvider'
 import { useLearners } from '../learners/LearnerProvider'
 import { ApiProgressRepo } from './apiRepo'
 import { clearLocalProgress, LocalProgressRepo, loadLocalSnapshot } from './localRepo'
-import { applyChange, mergeSnapshots, type ProgressChange, type ProgressRepo } from './repo'
+import {
+  applyChange,
+  mergeSnapshots,
+  withDerivedEvidence,
+  type ProgressChange,
+  type ProgressRepo,
+} from './repo'
 import {
   defaultSkillState,
   emptySnapshot,
+  type Attempt,
   type CustomWordList,
   type ProgressSnapshot,
   type QuizDeck,
@@ -38,6 +45,8 @@ interface ProgressContextValue {
   saveDeck: (deck: QuizDeck) => Promise<void>
   deleteDeck: (id: string) => Promise<void>
   reset: () => Promise<void>
+  /** Every answer given in one round, oldest first. Fetched on demand. */
+  attemptsForSession: (sessionId: string) => Promise<Attempt[]>
 }
 
 const ProgressContext = createContext<ProgressContextValue | null>(null)
@@ -137,11 +146,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, [status, learnerStatus, active])
 
   const commit = useCallback(async (change: ProgressChange) => {
+    // Reconciled first, so the optimistic snapshot and the stored one are the
+    // same round rather than two accounts of it.
+    const reconciled = withDerivedEvidence(change)
     // Optimistic: the UI updates immediately, the write follows. A failed write
     // is logged inside the repo rather than thrown, so a flaky connection never
     // interrupts a child mid-round.
-    setSnapshot((prev) => applyChange(prev, change))
-    await repoRef.current.persist(change)
+    setSnapshot((prev) => applyChange(prev, reconciled))
+    await repoRef.current.persist(reconciled)
   }, [])
 
   const skill = useCallback(
@@ -214,6 +226,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setSnapshot(emptySnapshot())
   }, [])
 
+  const attemptsForSession = useCallback(
+    (sessionId: string) => repoRef.current.attemptsForSession(sessionId),
+    [],
+  )
+
   const value = useMemo<ProgressContextValue>(
     () => ({
       snapshot,
@@ -227,6 +244,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       saveDeck,
       deleteDeck,
       reset,
+      attemptsForSession,
     }),
     [
       snapshot,
@@ -239,6 +257,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       saveDeck,
       deleteDeck,
       reset,
+      attemptsForSession,
     ],
   )
 

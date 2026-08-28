@@ -8,7 +8,13 @@
 
 import type { FastifyInstance } from 'fastify'
 import type { ProgressSnapshot } from '@whizzo/shared'
-import { emptySnapshot, listKey, masteryKey } from '@whizzo/shared'
+import {
+  deriveSessionCounts,
+  emptySnapshot,
+  listKey,
+  masteryKey,
+  withVerifiedFlag,
+} from '@whizzo/shared'
 import { z } from 'zod'
 import { callerOf, requireCaller } from '../auth.js'
 import { withUser, type Queryable } from '../db.js'
@@ -21,12 +27,18 @@ import {
   toDeck,
   toHighScore,
   toList,
+  dayOf,
+  toAssignment,
+  toAttempt,
   toMastery,
   toSession,
   toSkill,
 } from '../progressMappers.js'
 import { insertMany } from '../sql.js'
 import {
+  assignmentDraftSchema,
+  assignmentPatchSchema,
+  assignmentSetPatchSchema,
   customWordListSchema,
   progressChangeSchema,
   quizDeckSchema,
@@ -87,10 +99,35 @@ async function loadSnapshot(db: Queryable, learnerId: string): Promise<ProgressS
           order by ended_at desc limit $2`,
         [learnerId, SESSION_FETCH_LIMIT],
       ),
-      db.query('select * from public.word_lists where learner_id = $1', [learnerId]),
-      db.query('select * from public.decks where learner_id = $1 order by updated_at desc', [
-        learnerId,
-      ]),
+      // Their own lists and decks, plus any library content a grown-up has set
+      // them as work — without that second half a student cannot open the deck
+      // their tutor assigned. RLS allows exactly these rows; the where clause
+      // says which of them this learner needs.
+      db.query(
+        `select * from public.word_lists
+          where learner_id = $1
+             or (owner_user_id is not null and id in (
+                   select t.target_id::uuid
+                     from public.assignment_sets t
+                     join public.assignments a on a.set_id = t.id
+                    where a.learner_id = $1 and t.subject = 'spelling'
+                      and t.target_id ~ '^[0-9a-f-]{36}$'
+                 ))`,
+        [learnerId],
+      ),
+      db.query(
+        `select * from public.decks
+          where learner_id = $1
+             or (owner_user_id is not null and id in (
+                   select t.target_id::uuid
+                     from public.assignment_sets t
+                     join public.assignments a on a.set_id = t.id
+                    where a.learner_id = $1 and t.subject = 'quiz'
+                      and t.target_id ~ '^[0-9a-f-]{36}$'
+                 ))
+          order by updated_at desc`,
+        [learnerId],
+      ),
     ])
 
   const snapshot = emptySnapshot()
@@ -205,6 +242,39 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
     return { snapshot }
   })
 
+  /**
+   * Every answer given in one round.
+   *
+   * The snapshot carries session summaries because that is what the app needs
+   * to boot; this is the level underneath, for a grown-up who wants to see
+   * what a score was actually made of — which questions, what the child
+   * answered, how long each one took, and whether the app checked it or the
+   * child graded themselves.
+   *
+   * Ordered by the attempts' own identity column, which is insertion order:
+   * the order the round was played, including a card that came round twice.
+   */
+  app.get('/learners/:id/sessions/:sessionId/attempts', async (request) => {
+    const caller = callerOf(request)
+    const { id, sessionId } = parse(
+      z.object({ id: uuid, sessionId: uuid }),
+      request.params,
+    )
+
+    const attempts = await withUser(caller.id, async (db) => {
+      await assertVisible(db, id)
+      const rows = await db.query(
+        `select * from public.attempts
+          where learner_id = $1 and session_id = $2
+          order by id asc`,
+        [id, sessionId],
+      )
+      return rows.rows.map(toAttempt)
+    })
+
+    return { attempts }
+  })
+
   // One round of practice. Applied as a single transaction: a session and the
   // attempts that belong to it either both land or neither does, which is what
   // keeps `attempts` usable as the audit trail everything else derives from.
@@ -212,6 +282,26 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
     const caller = callerOf(request)
     const { id } = parse(z.object({ id: uuid }), request.params)
     const change = parse(progressChangeSchema, request.body)
+
+    // The attempts are the record; everything else in the payload is the
+    // client's summary of them. Before anything is stored, the two are made to
+    // agree — with the attempts winning.
+    //
+    // `verified` is settled first, because it is a property of the mode the
+    // answer was given in rather than something a caller may assert: a
+    // flashcard graded by the learner is self-reported however the request
+    // describes it.
+    const attempts = (change.attempts ?? []).map(withVerifiedFlag)
+    const derived = deriveSessionCounts(attempts)
+    const session = change.session
+      ? {
+          ...change.session,
+          // A session that arrived without attempts keeps the counts it came
+          // with — for typing rounds the summary really is the finest grain —
+          // and is labelled so nothing downstream mistakes it for evidence.
+          ...(derived ?? { evidence: 'client' as const }),
+        }
+      : undefined
 
     await withUser(caller.id, async (db) => {
       await assertVisible(db, id)
@@ -239,14 +329,15 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
         )
       }
 
-      if (change.session) {
-        const s = change.session
+      if (session) {
+        const s = session
         await db.query(
           `insert into public.sessions
              (id, learner_id, subject, activity, list_id, is_test, items_total,
               items_correct, accuracy, score, wpm, duration_ms, ability_before,
-              ability_after, meta, started_at, ended_at)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+              ability_after, meta, started_at, ended_at,
+              evidence, verified_items_total, verified_items_correct)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
            on conflict (id) do update set
              items_total = excluded.items_total,
              items_correct = excluded.items_correct,
@@ -256,26 +347,43 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
              duration_ms = excluded.duration_ms,
              ability_after = excluded.ability_after,
              meta = excluded.meta,
-             ended_at = excluded.ended_at`,
+             ended_at = excluded.ended_at,
+             evidence = excluded.evidence,
+             verified_items_total = excluded.verified_items_total,
+             verified_items_correct = excluded.verified_items_correct`,
           [s.id, id, s.subject, s.activity, s.listId, s.isTest, s.itemsTotal,
            s.itemsCorrect, s.accuracy, s.score, s.wpm, s.durationMs,
            s.abilityBefore, s.abilityAfter, JSON.stringify(s.meta ?? {}),
-           iso(s.startedAt), iso(s.endedAt)],
+           iso(s.startedAt), iso(s.endedAt),
+           s.evidence ?? 'client', s.verifiedItemsTotal ?? 0,
+           s.verifiedItemsCorrect ?? 0],
         )
       }
 
-      // Append-only: the record of truth is never rewritten.
-      if (change.attempts?.length) {
+      // Append-only, and enforced as such: 0007 revokes update and delete on
+      // this table from everyone, so this insert is the only way a row ever
+      // gets here and no later request can revise it.
+      if (attempts.length) {
         await insertMany(
           db,
           'public.attempts',
           ['learner_id', 'session_id', 'subject', 'item_key', 'activity', 'is_test',
-           'correct', 'response_ms', 'hints_used', 'difficulty', 'given', 'created_at'],
-          change.attempts.map((a) => [
-            id, change.session?.id ?? null, a.subject, a.itemKey, a.activity, a.isTest,
-            a.correct, a.responseMs, a.hintsUsed, a.difficulty, a.given, iso(a.at),
+           'verified', 'correct', 'response_ms', 'hints_used', 'difficulty', 'given',
+           'created_at'],
+          attempts.map((a) => [
+            id, session?.id ?? null, a.subject, a.itemKey, a.activity, a.isTest,
+            a.verified, a.correct, a.responseMs, a.hintsUsed, a.difficulty, a.given,
+            iso(a.at),
           ]),
         )
+      }
+
+      // Close any task this round satisfied, in the same transaction that
+      // recorded it. Done in the database rather than here because the check
+      // has to read the session row it just wrote — and because "done" should
+      // be impossible to say without one.
+      if (session) {
+        await db.query('select public.complete_matching_assignments($1, $2)', [id, session.id])
       }
 
       if (change.achievements?.length) {
@@ -295,6 +403,17 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
            values ($1,$2,$3,$4,$5,$6)`,
           [id, h.subject, h.mode, h.score, h.wpm, h.accuracy],
         )
+      }
+
+      // The daily strip is a rollup of the same evidence, so it is corrected
+      // the same way rather than being left to disagree with the session it
+      // came from.
+      if (change.daily && derived) {
+        change.daily = {
+          ...change.daily,
+          items: derived.itemsTotal,
+          correct: derived.itemsCorrect,
+        }
       }
 
       if (change.daily) {
@@ -362,17 +481,397 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
 
     await withUser(caller.id, async (db) => {
       await assertVisible(db, id)
-      // Ordered so the audit trail goes last: if this fails part way, what
-      // survives is the record everything else can be rebuilt from.
-      for (const table of [
-        'public.sessions', 'public.item_mastery', 'public.list_progress',
-        'public.achievements', 'public.daily_activity', 'public.high_scores',
-        'public.skill_states', 'public.attempts',
-      ]) {
-        await db.query(`delete from ${table} where learner_id = $1`, [id])
+      // Attempts are append-only now, so this cannot be a loop of deletes: the
+      // erase runs as a definer function gated on ownership. Deleting your own
+      // data stays a right; a child clearing their own history does not.
+      await db.query('select public.erase_learner_progress($1)', [id])
+    })
+
+    reply.code(204)
+    return null
+  })
+
+  // --- assignments ---------------------------------------------------------
+
+  /**
+   * A learner's task list.
+   *
+   * Readable by anyone linked to them, because the child needs to see their own
+   * work; writable only by a grown-up, which RLS enforces rather than this
+   * handler. Open tasks first, in the order they were set.
+   */
+  /**
+   * A task, as the client wants it: the work and this learner's state on it,
+   * in one row. The split lives in the schema because two children can be given
+   * the same work; nothing above the API needs to care.
+   */
+  const assignmentSelect = `
+    select a.id, a.set_id, a.learner_id, a.sort_order, a.status, a.completed_at,
+           a.session_id, a.created_at,
+           t.created_by, t.subject, t.activity, t.target_id, t.size, t.title,
+           t.note, t.min_accuracy, t.due_on
+      from public.assignments a
+      join public.assignment_sets t on t.id = a.set_id`
+
+  app.get('/learners/:id/assignments', async (request) => {
+    const caller = callerOf(request)
+    const { id } = parse(z.object({ id: uuid }), request.params)
+    const { status } = parse(
+      z.object({ status: z.enum(['open', 'done', 'cancelled', 'all']).default('all') }),
+      request.query,
+    )
+
+    const assignments = await withUser(caller.id, async (db) => {
+      await assertVisible(db, id)
+      const rows = await db.query(
+        `${assignmentSelect}
+          where a.learner_id = $1
+            and ($2 = 'all' or a.status = $2)
+          order by case a.status when 'open' then 0 when 'done' then 1 else 2 end,
+                   a.sort_order, a.created_at`,
+        [id, status],
+      )
+      return rows.rows.map(toAssignment)
+    })
+
+    return { assignments }
+  })
+
+  /**
+   * Set work, for one learner or several.
+   *
+   * Addressed to no learner in particular, because a piece of work is not the
+   * property of one child: a parent sets the same thing for two siblings and a
+   * tutor for a class. Each draft becomes one set plus a row per learner, and
+   * RLS checks every learner named — so a caller entitled to two of three
+   * children gets a clean refusal rather than a partial write, because the
+   * whole thing is one transaction.
+   */
+  app.post('/assignments', async (request, reply) => {
+    const caller = callerOf(request)
+    const { assignments: drafts, learnerIds } = parse(
+      z.object({
+        assignments: z.array(assignmentDraftSchema).min(1).max(50),
+        learnerIds: z.array(uuid).min(1).max(60),
+      }),
+      request.body,
+    )
+
+    const created = await withUser(caller.id, async (db) => {
+      for (const learnerId of learnerIds) await assertVisible(db, learnerId)
+
+      const out = []
+      for (const [i, d] of drafts.entries()) {
+        const set = await db.query(
+          `insert into public.assignment_sets
+             (created_by, subject, activity, target_id, size, title, note,
+              min_accuracy, due_on)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+           returning id`,
+          [caller.id, d.subject, d.activity, d.targetId ?? null, d.size ?? null,
+           d.title, d.note ?? null, d.minAccuracy ?? null, d.dueOn ?? null],
+        )
+        const setId = set.rows[0].id
+
+        for (const learnerId of learnerIds) {
+          const row = await db.query(
+            `insert into public.assignments (set_id, learner_id, sort_order)
+             values ($1,$2,$3)
+             on conflict (set_id, learner_id) do nothing
+             returning id`,
+            [setId, learnerId, d.sortOrder ?? i],
+          )
+          if (!row.rows[0]) continue
+          const full = await db.query(`${assignmentSelect} where a.id = $1`, [row.rows[0].id])
+          out.push(toAssignment(full.rows[0]))
+        }
+      }
+      return out
+    })
+
+    reply.code(201)
+    return { assignments: created }
+  })
+
+  /**
+   * Work the caller has set, with everyone they can see who was given it —
+   * "who has done this yet?", which is the question a tutor opens the app for.
+   *
+   * The learner rows come back filtered by RLS rather than by anything here, so
+   * a parent who shares work with another family sees their own child on it and
+   * learns nothing about the others.
+   */
+  app.get('/assignments/sets', async (request) => {
+    const caller = callerOf(request)
+
+    const sets = await withUser(caller.id, async (db) => {
+      const { rows } = await db.query(
+        `select t.id as set_id, t.subject, t.activity, t.target_id, t.title,
+                t.note, t.min_accuracy, t.due_on, t.created_at,
+                coalesce(
+                  jsonb_agg(
+                    jsonb_build_object(
+                      'assignmentId', a.id,
+                      'learnerId',    a.learner_id,
+                      'displayName',  l.display_name,
+                      'avatarEmoji',  l.avatar_emoji,
+                      'status',       a.status,
+                      'completedAt',  a.completed_at,
+                      'sessionId',    a.session_id
+                    )
+                    order by l.display_name
+                  ) filter (where a.id is not null),
+                  '[]'::jsonb
+                ) as learners
+           from public.assignment_sets t
+           left join public.assignments a on a.set_id = t.id
+           left join public.learners l    on l.id = a.learner_id
+          where t.created_by = $1
+          group by t.id
+          order by t.created_at desc
+          limit 200`,
+        [caller.id],
+      )
+
+      return rows.map((row: Record<string, unknown>) => ({
+        setId: row.set_id,
+        subject: row.subject,
+        activity: row.activity,
+        targetId: row.target_id,
+        title: row.title,
+        note: row.note,
+        minAccuracy: row.min_accuracy,
+        dueOn: dayOf(row.due_on),
+        createdAt: new Date(row.created_at as string).getTime(),
+        learners: (row.learners as Array<Record<string, unknown>>).map((l) => ({
+          ...l,
+          completedAt: l.completedAt ? new Date(l.completedAt as string).getTime() : null,
+        })),
+      }))
+    })
+
+    return { sets }
+  })
+
+  /**
+   * Edit the work itself. Changes what every learner it was given to sees, so
+   * RLS restricts it to whoever wrote it — a parent must not be able to rewrite
+   * work another family's child is looking at.
+   */
+  app.patch('/assignments/sets/:setId', async (request) => {
+    const caller = callerOf(request)
+    const { setId } = parse(z.object({ setId: uuid }), request.params)
+    const patch = parse(assignmentSetPatchSchema, request.body)
+
+    const updated = await withUser(caller.id, async (db) => {
+      const row = await db.query(
+        `update public.assignment_sets
+            set title        = coalesce($2, title),
+                note         = case when $3::boolean then $4 else note end,
+                min_accuracy = case when $5::boolean then $6 else min_accuracy end,
+                due_on       = case when $7::boolean then $8 else due_on end
+          where id = $1
+          returning id`,
+        [setId, patch.title ?? null,
+         'note' in patch, patch.note ?? null,
+         'minAccuracy' in patch, patch.minAccuracy ?? null,
+         'dueOn' in patch, patch.dueOn ?? null],
+      )
+      return row.rows[0]?.id ?? null
+    })
+
+    if (!updated) throw notFound('No such assignment set, or it is not yours to edit')
+    return { setId: updated }
+  })
+
+  /**
+   * Edit one learner's copy: cancel it, put it back, or reorder their list.
+   * Marking work done is deliberately absent — that only happens by playing a
+   * round that satisfies it.
+   */
+  app.patch('/learners/:id/assignments/:assignmentId', async (request) => {
+    const caller = callerOf(request)
+    const { id, assignmentId } = parse(
+      z.object({ id: uuid, assignmentId: uuid }),
+      request.params,
+    )
+    const patch = parse(assignmentPatchSchema, request.body)
+
+    const updated = await withUser(caller.id, async (db) => {
+      await assertVisible(db, id)
+      const row = await db.query(
+        `update public.assignments
+            set sort_order   = coalesce($3, sort_order),
+                status       = coalesce($4, status),
+                -- Reopening drops the evidence with the status, so a task can
+                -- never point at a round that no longer closes it.
+                completed_at = case when $4 is null then completed_at else null end,
+                session_id   = case when $4 is null then session_id else null end
+          where id = $2 and learner_id = $1
+          returning id`,
+        [id, assignmentId, patch.sortOrder ?? null, patch.status ?? null],
+      )
+      if (!row.rows[0]) return null
+      const full = await db.query(`${assignmentSelect} where a.id = $1`, [row.rows[0].id])
+      return toAssignment(full.rows[0])
+    })
+
+    if (!updated) throw notFound('No such assignment')
+    return { assignment: updated }
+  })
+
+  /** Withdraw the work entirely — every learner's copy goes with it. */
+  app.delete('/assignments/sets/:setId', async (request, reply) => {
+    const caller = callerOf(request)
+    const { setId } = parse(z.object({ setId: uuid }), request.params)
+
+    await withUser(caller.id, async (db) => {
+      await db.query('delete from public.assignment_sets where id = $1', [setId])
+    })
+
+    reply.code(204)
+    return null
+  })
+
+  /** Take one learner off a piece of work, leaving it set for everyone else. */
+  app.delete('/learners/:id/assignments/:assignmentId', async (request, reply) => {
+    const caller = callerOf(request)
+    const { id, assignmentId } = parse(
+      z.object({ id: uuid, assignmentId: uuid }),
+      request.params,
+    )
+
+    await withUser(caller.id, async (db) => {
+      await assertVisible(db, id)
+      await db.query('delete from public.assignments where id = $1 and learner_id = $2', [
+        assignmentId, id,
+      ])
+    })
+
+    reply.code(204)
+    return null
+  })
+
+  // --- the library ---------------------------------------------------------
+  //
+  // Content that belongs to a grown-up rather than to one child. A tutor builds
+  // a deck once and sets it for every student they work with; a parent keeps
+  // the spelling list they wrote for all three of theirs. The alternative —
+  // filing material under whichever learner happened to be on screen — is what
+  // this replaces.
+
+  app.get('/library', async (request) => {
+    const caller = callerOf(request)
+
+    const library = await withUser(caller.id, async (db) => {
+      const [decks, lists] = await Promise.all([
+        db.query(
+          'select * from public.decks where owner_user_id = $1 order by updated_at desc',
+          [caller.id],
+        ),
+        db.query(
+          'select * from public.word_lists where owner_user_id = $1 order by updated_at desc',
+          [caller.id],
+        ),
+      ])
+      return {
+        decks: decks.rows.map(toDeck),
+        customLists: lists.rows.map(toCustomList),
       }
     })
 
+    return library
+  })
+
+  app.post('/library/decks', async (request, reply) => {
+    const caller = callerOf(request)
+    const { decks } = parse(
+      z.object({ decks: z.array(quizDeckSchema).min(1).max(50) }),
+      request.body,
+    )
+
+    const saved = await withUser(caller.id, async (db) => {
+      const out = []
+      for (const deck of decks) {
+        const { rows } = await db.query(
+          `insert into public.decks
+             (id, owner_user_id, title, description, tags, cards, term_label,
+              definition_label, updated_at)
+           values ($1,$2,$3,$4,$5,$6,$7,$8, now())
+           on conflict (id) do update set
+             title = excluded.title,
+             description = excluded.description,
+             tags = excluded.tags,
+             cards = excluded.cards,
+             term_label = excluded.term_label,
+             definition_label = excluded.definition_label,
+             updated_at = now()
+           returning *`,
+          [deck.id, caller.id, deck.title, deck.description ?? '', deck.tags ?? [],
+           JSON.stringify(deck.cards ?? []), deck.termLabel ?? 'Term',
+           deck.definitionLabel ?? 'Definition'],
+        )
+        out.push(toDeck(rows[0]))
+      }
+      return out
+    })
+
+    reply.code(201)
+    return { decks: saved }
+  })
+
+  app.post('/library/word-lists', async (request, reply) => {
+    const caller = callerOf(request)
+    const { customLists } = parse(
+      z.object({ customLists: z.array(customWordListSchema).min(1).max(50) }),
+      request.body,
+    )
+
+    const saved = await withUser(caller.id, async (db) => {
+      const out = []
+      for (const list of customLists) {
+        const { rows } = await db.query(
+          `insert into public.word_lists
+             (id, owner_user_id, title, subject, grade, words, updated_at)
+           values ($1,$2,$3,$4,$5,$6, now())
+           on conflict (id) do update set
+             title = excluded.title,
+             grade = excluded.grade,
+             words = excluded.words,
+             updated_at = now()
+           returning *`,
+          [list.id, caller.id, list.title, 'spelling', list.grade ?? null,
+           JSON.stringify(list.words ?? [])],
+        )
+        out.push(toCustomList(rows[0]))
+      }
+      return out
+    })
+
+    reply.code(201)
+    return { customLists: saved }
+  })
+
+  app.delete('/library/decks/:deckId', async (request, reply) => {
+    const caller = callerOf(request)
+    const { deckId } = parse(z.object({ deckId: uuid }), request.params)
+    await withUser(caller.id, async (db) => {
+      await db.query('delete from public.decks where id = $1 and owner_user_id = $2', [
+        deckId, caller.id,
+      ])
+    })
+    reply.code(204)
+    return null
+  })
+
+  app.delete('/library/word-lists/:listId', async (request, reply) => {
+    const caller = callerOf(request)
+    const { listId } = parse(z.object({ listId: uuid }), request.params)
+    await withUser(caller.id, async (db) => {
+      await db.query('delete from public.word_lists where id = $1 and owner_user_id = $2', [
+        listId, caller.id,
+      ])
+    })
     reply.code(204)
     return null
   })

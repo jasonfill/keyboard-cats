@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { LibraryResponse } from '@whizzo/shared'
 import { useAuth } from '../../auth/AuthProvider'
+import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
+import { loadLibrary } from '../../lib/assignments/library'
 import { Button, Card, Pill } from '../../components/ui'
 import { PLANS, allows } from '../../lib/plans'
 import { useProgress } from '../../lib/progress/ProgressProvider'
@@ -14,6 +17,21 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
   const { snapshot, mode, sync, reset } = useProgress()
   const [name, setName] = useState(profile?.displayName ?? '')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [library, setLibrary] = useState<LibraryResponse | null>(null)
+
+  // Just the counts, so the card can say something true before you open it.
+  // A library that will not load shows a dash rather than a zero: "none" and
+  // "could not ask" are different answers.
+  useEffect(() => {
+    if (status !== 'signed-in') return
+    const controller = new AbortController()
+    loadLibrary(controller.signal)
+      .then((lib) => {
+        if (!controller.signal.aborted) setLibrary(lib)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [status])
 
   const plan = profile?.plan ?? 'free'
   const planDef = PLANS[plan]
@@ -104,7 +122,33 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
         )}
       </Card>
 
+      {/* Your things, as opposed to the people you look after — those live in
+          Family. A tutor's decks are not any one student's, so this is where
+          they belong. */}
       <Card className="mb-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-extrabold text-grape">Your library 📚</h2>
+          <Button variant="secondary" onClick={() => navigate({ name: 'library' })}>
+            Open library
+          </Button>
+        </div>
+        <p className="mb-3 font-bold text-slate-500">
+          Decks and word lists that belong to you rather than to one learner — build once, set
+          them for any learner you look after.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Pill className="bg-purple-100 text-grape">
+            🃏 {library ? library.decks.length : '—'} decks
+          </Pill>
+          <Pill className="bg-purple-100 text-grape">
+            ✏️ {library ? library.customLists.length : '—'} word lists
+          </Pill>
+        </div>
+      </Card>
+
+      <MyTutorCode />
+
+      <Card className="mb-4 mt-4">
         <h2 className="mb-2 text-xl font-extrabold text-grape">Your data</h2>
         <p className="mb-3 font-bold text-slate-500">
           Progress is stored {mode === 'cloud' ? 'in your account' : 'in this browser'}

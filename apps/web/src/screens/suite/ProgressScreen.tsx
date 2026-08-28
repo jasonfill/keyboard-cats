@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
+import SessionDetail from '../../components/suite/SessionDetail'
 import { Button, Card, Pill } from '../../components/ui'
 import { ALL_WORDS, GRADES } from '../../data/spelling'
 import type { GameApi } from '../../hooks/useGameState'
@@ -19,6 +20,8 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const { profile } = useAuth()
   const { snapshot, skill } = useProgress()
   const limits = limitsFor(profile?.plan ?? 'free')
+
+  const [openSession, setOpenSession] = useState<string | null>(null)
 
   const spelling = skill('spelling')
   const typing = skill('typing')
@@ -243,30 +246,56 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
       {/* Session log */}
       <Card>
-        <h2 className="mb-3 text-xl font-extrabold text-grape">Recent sessions</h2>
+        <h2 className="mb-1 text-xl font-extrabold text-grape">Recent sessions</h2>
+        <p className="mb-3 font-bold text-slate-500">
+          Open any round to see every answer, what was typed, and how long each one took.
+        </p>
         {visibleSessions.length === 0 ? (
           <p className="font-bold text-slate-400">No sessions recorded yet.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {visibleSessions.slice(0, 15).map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center gap-2 py-2">
-                <span className="text-lg">{SUBJECT_EMOJI[s.subject] ?? '⌨️'}</span>
-                <span className="font-extrabold text-grape">
-                  {activityLabel(s.activity, s.subject)}
-                </span>
-                <span className="font-bold text-slate-500">
-                  {s.itemsCorrect}/{s.itemsTotal} · {Math.round(s.accuracy)}%
-                </span>
-                {s.isTest && (
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
-                    graded
-                  </span>
-                )}
-                <span className="ml-auto text-xs font-bold text-slate-400">
-                  {new Date(s.endedAt).toLocaleDateString()}
-                </span>
-              </li>
-            ))}
+            {visibleSessions.slice(0, 15).map((s) => {
+              const open = openSession === s.id
+              return (
+                <li key={s.id} className="py-1">
+                  <button
+                    onClick={() => setOpenSession(open ? null : s.id)}
+                    aria-expanded={open}
+                    className="flex w-full flex-wrap items-center gap-2 rounded-xl px-1 py-2 text-left hover:bg-slate-50"
+                  >
+                    <span className="text-xs font-bold text-slate-400">{open ? '▾' : '▸'}</span>
+                    <span className="text-lg">{SUBJECT_EMOJI[s.subject] ?? '⌨️'}</span>
+                    <span className="font-extrabold text-grape">
+                      {activityLabel(s.activity, s.subject)}
+                    </span>
+                    <span className="font-bold text-slate-500">
+                      {s.itemsCorrect}/{s.itemsTotal} · {Math.round(s.accuracy)}%
+                    </span>
+                    {s.isTest && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
+                        graded
+                      </span>
+                    )}
+                    {/* Only worth saying when some of the round was not checked;
+                        a fully verified round needs no caveat. */}
+                    {typeof s.verifiedItemsTotal === 'number' &&
+                      s.evidence === 'attempts' &&
+                      s.verifiedItemsTotal < s.itemsTotal && (
+                        <span
+                          className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-extrabold text-amber-700"
+                          title={`${s.verifiedItemsTotal} of ${s.itemsTotal} answers were checked by the app; the rest were self-graded.`}
+                        >
+                          {s.verifiedItemsTotal}/{s.itemsTotal} checked
+                        </span>
+                      )}
+                    <span className="ml-auto text-xs font-bold text-slate-400">
+                      {new Date(s.endedAt).toLocaleDateString()}
+                    </span>
+                  </button>
+                  {open && <SessionDetail session={s} />}
+                </li>
+              )
+            })}
           </ul>
         )}
         {hiddenSessions > 0 && (

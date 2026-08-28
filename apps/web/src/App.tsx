@@ -21,6 +21,8 @@ import SpellingLists from './screens/spelling/SpellingLists'
 import SpellingPlay from './screens/spelling/SpellingPlay'
 import AccountScreen from './screens/suite/AccountScreen'
 import FamilyScreen from './screens/suite/FamilyScreen'
+import LibraryScreen from './screens/suite/LibraryScreen'
+import TasksScreen from './screens/suite/TasksScreen'
 import CustomListsScreen from './screens/suite/CustomListsScreen'
 import ProgressScreen from './screens/suite/ProgressScreen'
 import SuiteHome from './screens/suite/SuiteHome'
@@ -105,6 +107,10 @@ function Router() {
       return <ProgressScreen game={game} navigate={navigate} />
     case 'custom-lists':
       return <CustomListsScreen navigate={navigate} />
+    case 'tasks':
+      return <TasksScreen navigate={navigate} />
+    case 'library':
+      return <LibraryScreen navigate={navigate} />
 
     // Typing
     case 'typing':

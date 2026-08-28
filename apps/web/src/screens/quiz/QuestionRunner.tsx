@@ -11,6 +11,11 @@ import { sfx } from '../../lib/sound'
  * Feedback is immediate in both. Holding results back to the end is how a real
  * exam works, but nobody learns from a paper handed back cold — and the whole
  * point of Learn is that the next question already knows how the last one went.
+ *
+ * Learn also puts a missed card back into the round a few questions later, so
+ * the learner meets it again while the correction is still fresh. Test does
+ * not: it is a measurement, and a paper that keeps handing your mistakes back
+ * until you fix them is measuring something else.
  */
 export default function QuestionRunner({
   session,
@@ -22,7 +27,8 @@ export default function QuestionRunner({
   strict: boolean
   onFinish: (results: QuizItemResult[]) => void
 }) {
-  const { plan, index, current, currentQuestion, results, beginItem, submit, advance } = session
+  const { cursor, progress, isLast, current, currentQuestion, results, beginItem, submit, advance } =
+    session
 
   const [typed, setTyped] = useState('')
   const [hintsUsed, setHintsUsed] = useState(0)
@@ -38,11 +44,11 @@ export default function QuestionRunner({
     // reaching for the mouse between every card.
     const id = window.setTimeout(() => inputRef.current?.focus(), 40)
     return () => window.clearTimeout(id)
-  }, [index, beginItem])
+  }, [cursor, beginItem])
 
   const answer = useCallback(
     (given: string, grade: Grade) => {
-      const result = submit(given, grade, hintsUsed)
+      const result = submit(given, grade, { hintsUsed })
       if (!result) return
       if (result.correct) sfx.correct()
       else sfx.wrong()
@@ -54,9 +60,8 @@ export default function QuestionRunner({
   const next = useCallback(() => {
     if (!feedback) return
     const all = [...results]
-    if (index >= plan.length - 1) onFinish(all)
-    else advance()
-  }, [advance, feedback, index, onFinish, plan.length, results])
+    if (!advance()) onFinish(all)
+  }, [advance, feedback, onFinish, results])
 
   // Enter moves on once an answer is in, so a whole round can be done from the
   // keyboard without ever leaving the home row.
@@ -94,16 +99,22 @@ export default function QuestionRunner({
           </Pill>
         </div>
         <span className="font-bold text-slate-400">
-          {index + 1} of {plan.length}
+          {progress.retired} of {progress.total} done
         </span>
       </div>
 
       <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
         <div
           className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
-          style={{ width: `${(index / plan.length) * 100}%` }}
+          style={{ width: `${(progress.retired / Math.max(1, progress.total)) * 100}%` }}
         />
       </div>
+
+      {progress.pass > 1 && (
+        <p className="mb-3 text-center font-extrabold text-grape">
+          🔁 Second go at this one — you have seen the answer now.
+        </p>
+      )}
 
       <Card className="mb-4">
         <p className="mb-1 text-xs font-extrabold uppercase tracking-widest text-slate-400">
@@ -260,8 +271,14 @@ export default function QuestionRunner({
             </p>
           )}
 
+          {feedback.requeued && (
+            <p className="mb-3 font-bold text-amber-600">
+              🔁 We&apos;ll come back to this one before the end.
+            </p>
+          )}
+
           <Button className="w-full" onClick={next} autoFocus>
-            {index >= plan.length - 1 ? 'See how I did →' : 'Next card →'}
+            {isLast ? 'See how I did →' : 'Next card →'}
           </Button>
         </Card>
       )}

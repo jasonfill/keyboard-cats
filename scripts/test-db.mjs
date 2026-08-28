@@ -53,20 +53,35 @@ if (!dbUrl) {
   process.exit(1)
 }
 
-const testFile = join(root, 'supabase/tests/0003_learners_test.sql')
-console.log(`running ${testFile}\n`)
+// Each file is self-contained and leaves the database as it found it, so they
+// run in order against the same stack.
+const testFiles = [
+  'supabase/tests/0003_learners_test.sql',
+  'supabase/tests/0007_attempt_integrity_test.sql',
+  'supabase/tests/0008_assignments_test.sql',
+  'supabase/tests/0010_tutor_codes_test.sql',
+  'supabase/tests/0011_library_test.sql',
+]
 
-try {
-  const out = execFileSync(psql, [dbUrl, '-v', 'ON_ERROR_STOP=1', '-q', '-f', testFile], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  const passes = (out.match(/pass:/g) ?? []).length
-  console.log(out.replace(/^psql:[^ ]*: /gm, ''))
-  console.log(`\n${passes} security assertion(s) passed`)
-} catch (err) {
-  const detail = err instanceof Error && 'stderr' in err ? String(err.stderr) : String(err)
-  console.error(detail)
-  console.error('\nRLS tests FAILED')
-  process.exit(1)
+let total = 0
+for (const relative of testFiles) {
+  const testFile = join(root, relative)
+  console.log(`running ${testFile}\n`)
+
+  try {
+    const out = execFileSync(psql, [dbUrl, '-v', 'ON_ERROR_STOP=1', '-q', '-f', testFile], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    const passes = (out.match(/pass:/g) ?? []).length
+    total += passes
+    console.log(out.replace(/^psql:[^ ]*: /gm, ''))
+  } catch (err) {
+    const detail = err instanceof Error && 'stderr' in err ? String(err.stderr) : String(err)
+    console.error(detail)
+    console.error(`\n${relative} FAILED`)
+    process.exit(1)
+  }
 }
+
+console.log(`\n${total} security assertion(s) passed`)

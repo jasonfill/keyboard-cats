@@ -195,6 +195,9 @@ export function useSpellingSession() {
           // learner unscrambled with the letters in front of them is practice,
           // not evidence of independent spelling.
           isTest: def.isTest && r.hintsUsed === 0,
+          // Spelling has no self-graded mode: every answer here was typed and
+          // checked against the word.
+          verified: true,
           correct: r.correct,
           responseMs: r.responseMs,
           hintsUsed: r.hintsUsed,

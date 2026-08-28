@@ -4,7 +4,10 @@ import AccountChip from '../../components/suite/AccountChip'
 import LearnerChip from '../../components/suite/LearnerChip'
 import { Button, Card, Pill } from '../../components/ui'
 import { TOTAL_LESSONS } from '../../data/lessons'
+import { useAssignments } from '../../hooks/useAssignments'
 import type { GameApi } from '../../hooks/useGameState'
+import { routeForAssignment } from '../../lib/assignments/routing'
+import { useLearners } from '../../lib/learners/LearnerProvider'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { dueWords, levelSnapshot, totalCurriculumWords } from '../../lib/spelling/stats'
 import { breakdown } from '../../lib/spelling/stats'
@@ -34,6 +37,9 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
     { cards: 0, mastered: 0, due: 0 },
   )
   const greeting = profile?.displayName || game.state.playerName
+  const { open: openTasks } = useAssignments()
+  const { learners } = useLearners()
+  const overdueTasks = openTasks.filter((t) => t.dueOn !== null && t.dueOn < today).length
 
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
@@ -59,6 +65,45 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           </Pill>
         )}
       </div>
+
+      {/* Work someone has set comes before the free choice of subjects: if a
+          child has homework, that is the thing to show them first. */}
+      {openTasks.length > 0 && (
+        <Card className="mb-6 ring-2 ring-purple-200">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <h2 className="text-xl font-extrabold text-grape">
+              ✅ Your tasks ({openTasks.length})
+            </h2>
+            {overdueTasks > 0 && (
+              <Pill className="bg-rose-100 text-rose-700">{overdueTasks} overdue</Pill>
+            )}
+          </div>
+          <ul className="mb-3 space-y-2">
+            {openTasks.slice(0, 3).map((task) => {
+              const route = routeForAssignment(task)
+              return (
+                <li
+                  key={task.id}
+                  className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-purple-100"
+                >
+                  <span className="font-extrabold text-grape">{task.title}</span>
+                  {task.dueOn && task.dueOn < today && (
+                    <Pill className="bg-rose-100 text-xs text-rose-700">overdue</Pill>
+                  )}
+                  {route && (
+                    <Button className="ml-auto" onClick={() => navigate(route)}>
+                      ▶️ Start
+                    </Button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          <Button variant="ghost" onClick={() => navigate({ name: 'tasks' })}>
+            See all tasks →
+          </Button>
+        </Card>
+      )}
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <SubjectCard
@@ -102,6 +147,20 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         />
       </div>
 
+      {/* The two a grown-up needs from the child's home screen: the work set
+          for them, and the people. Your own things — the library, your tutor
+          code — live in your account instead. */}
+      {learners.length > 0 && (
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Button variant="secondary" onClick={() => navigate({ name: 'tasks' })}>
+            ✅ Tasks{openTasks.length > 0 ? ` (${openTasks.length})` : ''}
+          </Button>
+          <Button variant="secondary" onClick={() => navigate({ name: 'family' })}>
+            👨‍👩‍👧 Family
+          </Button>
+        </div>
+      )}
+
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Button variant="ghost" onClick={() => navigate({ name: 'progress' })}>
           📊 Progress
@@ -119,6 +178,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           ⚙️ Settings
         </Button>
       </div>
+
 
       {status !== 'signed-in' && configured && (
         <Card>

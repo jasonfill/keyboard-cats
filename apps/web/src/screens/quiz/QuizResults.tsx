@@ -13,7 +13,9 @@ interface Props {
 
 export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props) {
   const def = modeDef(summary.mode)
-  const missed = summary.results.filter((r) => !r.correct)
+  // Not "everything you ever got wrong" — the cards still unresolved when the
+  // round ended. One missed and then fixed is a success story, not a to-do.
+  const missed = summary.unresolved
   const near = summary.results.filter((r) => r.grade === 'close')
   const beatPrediction = summary.accuracy >= summary.predictedAccuracy
 
@@ -39,7 +41,12 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
-          <Pill className="bg-purple-100 text-grape">{summary.accuracy}% correct</Pill>
+          <Pill
+            className="bg-purple-100 text-grape"
+            title="Scored on your first go at each card, so going back over one never costs you."
+          >
+            {summary.accuracy}% first time
+          </Pill>
           <Pill className="bg-sky-100 text-sky-700">{summary.score} points</Pill>
           {near.length > 0 && (
             <Pill
@@ -47,6 +54,14 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
               title="Counted as correct — you had it, the spelling just slipped."
             >
               {near.length} near {near.length === 1 ? 'miss' : 'misses'}
+            </Pill>
+          )}
+          {summary.retiredAfterMiss > 0 && (
+            <Pill
+              className="bg-teal-100 text-teal-700"
+              title="Missed at first, then got right before the end of the round."
+            >
+              💪 {summary.retiredAfterMiss} turned around
             </Pill>
           )}
           {summary.newlyMastered.length > 0 && (
@@ -80,9 +95,12 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
 
       {missed.length > 0 && (
         <Card className="mb-4">
-          <h2 className="mb-3 text-xl font-extrabold text-grape">
+          <h2 className="mb-1 text-xl font-extrabold text-grape">
             Worth another look ({missed.length})
           </h2>
+          <p className="mb-3 font-bold text-slate-500">
+            These are queued up for next time, so they will come round again.
+          </p>
           <div className="space-y-2">
             {missed.map((r, i) => (
               <div key={`${r.planned.card.id}-${i}`} className="rounded-2xl bg-rose-50 px-4 py-3">

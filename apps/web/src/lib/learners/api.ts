@@ -5,6 +5,9 @@
 // re-implements them; this file is transport.
 
 import type {
+  ConnectionCodePreview,
+  ConnectionCodeResponse,
+  ConnectionCodesResponse,
   GuardianRole,
   GuardiansResponse,
   InvitePurpose,
@@ -18,6 +21,8 @@ import { api } from '../api/client'
 
 export type {
   AuthKind,
+  ConnectionCode,
+  ConnectionCodePreview,
   Guardian,
   GuardianRole,
   InvitePurpose,
@@ -97,6 +102,54 @@ export async function setGuardianContentAccess(
 }
 
 /** Turn on (or reset) a child's own code + PIN sign-in. Owner-only. */
+// --- connection codes ------------------------------------------------------
+//
+// The tutor flow, which runs opposite to the invite above: a tutor mints one
+// code standing for themselves and hands it to families, and each family
+// redeems it against a child they own. Minting grants nothing; redeeming is
+// the consent.
+
+export async function listConnectionCodes(signal?: AbortSignal) {
+  const { codes } = await api.get<ConnectionCodesResponse>('/connection-codes', signal)
+  return codes
+}
+
+export async function mintConnectionCode(options: {
+  label?: string | null
+  role?: GuardianRole
+  canManageContent?: boolean
+  ttlHours?: number | null
+  maxUses?: number | null
+}) {
+  const { code } = await api.post<ConnectionCodeResponse>('/connection-codes', options)
+  return code
+}
+
+/** Stops new families joining. Everyone already connected stays connected. */
+export async function revokeConnectionCode(code: string): Promise<void> {
+  await api.del<void>(`/connection-codes/${encodeURIComponent(code)}`)
+}
+
+/** Who is behind a code, so a family can see who they are letting in. */
+export async function describeConnectionCode(code: string, signal?: AbortSignal) {
+  return api.get<ConnectionCodePreview>(
+    `/connection-codes/${encodeURIComponent(code)}/describe`,
+    signal,
+  )
+}
+
+/** The consent step. Refused unless the caller owns every learner named. */
+export async function redeemConnectionCode(
+  code: string,
+  learnerIds: string[],
+): Promise<number> {
+  const { connected } = await api.post<{ connected: number }>(
+    `/connection-codes/${encodeURIComponent(code)}/redeem`,
+    { learnerIds },
+  )
+  return connected
+}
+
 export async function setChildLogin(learnerId: string, pin: string) {
   return api.post<{ loginCode: string; learnerId: string }>(
     `/learners/${learnerId}/child-login`,

@@ -83,6 +83,11 @@ export default function MatchGame({
             // round's average stands in rather than a fabricated number.
             responseMs: Math.round((seconds * 1000) / Math.max(1, plan.length)),
             hintsUsed: 0,
+            // The grid checks every pair itself, and nothing repeats in a
+            // round of Match — you either found it or the timer stopped.
+            verified: true,
+            pass: 1,
+            requeued: false,
           }
         })
         .filter((r): r is QuizItemResult => r !== null)

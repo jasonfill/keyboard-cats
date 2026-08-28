@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import { clearSignupIntent, readSignupIntent } from '../../auth/signupIntent'
 import CatMascot from '../../components/CatMascot'
+import ConnectTutor from '../../components/suite/ConnectTutor'
 import ScreenHeader from '../../components/suite/ScreenHeader'
-import { Button, Card } from '../../components/ui'
+import { Button, Card, Pill } from '../../components/ui'
 import { ApiError } from '../../lib/api/client'
+import { familyOverview, type LearnerOverview } from '../../lib/assignments/api'
 import { useLearners } from '../../lib/learners/LearnerProvider'
 import {
   ageOf,
@@ -20,7 +22,7 @@ import {
   type Guardian,
   type Learner,
 } from '../../lib/learners/api'
-import type { Navigate } from '../../routes'
+import type { Navigate, Route } from '../../routes'
 
 const AVATARS = ['🐱', '🐯', '🦊', '🐰', '🐨', '🐼', '🦁', '🐸', '🐧', '🦄']
 
@@ -37,6 +39,32 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
   const [error, setError] = useState<string | null>(null)
   // Read once: it is a hand-off from the sign-up screen, not live state.
   const [intent] = useState(() => readSignupIntent())
+
+  /**
+   * How everyone is actually doing, alongside who they are.
+   *
+   * One aggregated call for the whole family rather than a progress snapshot
+   * per child — a grown-up with four children should not pay for four full
+   * loads to see who still has homework. Failing to load it costs the status
+   * lines and nothing else, so it is deliberately not wired to `error`: not
+   * knowing this week's minutes should never stop somebody adding a learner.
+   */
+  const [overview, setOverview] = useState<Map<string, LearnerOverview>>(new Map())
+
+  useEffect(() => {
+    if (status !== 'ready') return
+    const controller = new AbortController()
+    familyOverview(controller.signal)
+      .then((rows) => {
+        if (!controller.signal.aborted) {
+          setOverview(new Map(rows.map((r) => [r.learnerId, r])))
+        }
+      })
+      .catch(() => {
+        /* status lines stay blank; the rest of the screen still works */
+      })
+    return () => controller.abort()
+  }, [status, learners.length])
 
   if (status === 'unavailable') {
     return (
@@ -162,7 +190,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
     <div className="mx-auto w-full max-w-2xl">
       <ScreenHeader
         title="Family"
-        subtitle="Everyone learning here, and the grown-ups who can see them."
+        subtitle={familySubtitle(overview, learners.length)}
         onBack={() => navigate({ name: 'home' })}
       />
 
@@ -175,6 +203,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
           <LearnerRow
             key={learner.id}
             learner={learner}
+            overview={overview.get(learner.id)}
             isActive={learner.id === active?.id}
             isOwner={learner.ownerId === user?.id}
             expanded={expanded === learner.id}
@@ -182,6 +211,12 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
             onSelect={() => select(learner.id)}
             onError={setError}
             onChanged={refresh}
+            onOpen={(route) => {
+              // Every screen in the suite shows the active learner, so looking
+              // at a child's work means switching to them first.
+              select(learner.id)
+              navigate(route)
+            }}
           />
         ))}
       </div>
@@ -204,12 +239,20 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
         }}
         onError={setError}
       />
+
+      <ConnectTutor
+        // Only learners this person owns: granting access to somebody else's
+        // child is not theirs to do, and the database refuses it anyway.
+        ownedLearners={learners.filter((l) => l.ownerId === user?.id)}
+        onConnected={refresh}
+      />
     </div>
   )
 }
 
 function LearnerRow({
   learner,
+  overview,
   isActive,
   isOwner,
   expanded,
@@ -217,8 +260,10 @@ function LearnerRow({
   onSelect,
   onError,
   onChanged,
+  onOpen,
 }: {
   learner: Learner
+  overview: LearnerOverview | undefined
   isActive: boolean
   isOwner: boolean
   expanded: boolean
@@ -226,6 +271,7 @@ function LearnerRow({
   onSelect: () => void
   onError: (message: string | null) => void
   onChanged: () => Promise<void>
+  onOpen: (route: Route) => void
 }) {
   const age = ageOf(learner)
 
@@ -258,11 +304,107 @@ function LearnerRow({
         )}
       </div>
 
+      {overview && <LearnerStatus overview={overview} onOpen={onOpen} />}
+
       {expanded && isOwner && (
         <ManagePanel learner={learner} onError={onError} onChanged={onChanged} />
       )}
     </Card>
   )
+}
+
+/**
+ * How this child is doing, on the row that already says who they are.
+ *
+ * Deliberately part of the family list rather than a dashboard of its own: a
+ * grown-up looking after several children thinks about them one at a time, and
+ * a second screen listing the same people again is a worse answer than one
+ * screen that says more.
+ */
+function LearnerStatus({
+  overview,
+  onOpen,
+}: {
+  overview: LearnerOverview
+  onOpen: (route: Route) => void
+}) {
+  const { openAssignments, overdueAssignments, doneThisWeek } = overview
+
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {overdueAssignments > 0 && (
+          <Pill className="bg-rose-100 text-rose-700">⚠️ {overdueAssignments} overdue</Pill>
+        )}
+        <Pill
+          className={
+            openAssignments > 0 ? 'bg-purple-100 text-grape' : 'bg-slate-100 text-slate-500'
+          }
+        >
+          {openAssignments === 0 ? 'nothing to do' : `${openAssignments} to do`}
+        </Pill>
+        {doneThisWeek > 0 && (
+          <Pill className="bg-emerald-100 text-emerald-700">✅ {doneThisWeek} done this week</Pill>
+        )}
+        {overview.currentStreakDays > 0 && (
+          <Pill className="bg-amber-100 text-amber-700">🔥 {overview.currentStreakDays}</Pill>
+        )}
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm font-bold text-slate-500">
+        <span>{lastSeen(overview.lastActiveAt)}</span>
+        <span>
+          {overview.minutesThisWeek}m · {overview.itemsThisWeek} questions this week
+        </span>
+        {/* The checked figure, not the headline: a week of self-graded
+            flashcards should not read as a week of demonstrated accuracy. */}
+        <span
+          title="Accuracy over answers the app checked this week. A dash means nothing graded was done."
+        >
+          {overview.verifiedAccuracyThisWeek === null
+            ? 'nothing checked yet'
+            : `${overview.verifiedAccuracyThisWeek}% checked`}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" onClick={() => onOpen({ name: 'tasks' })}>
+          ✅ Tasks{openAssignments > 0 ? ` (${openAssignments})` : ''}
+        </Button>
+        <Button variant="ghost" onClick={() => onOpen({ name: 'progress' })}>
+          📊 History
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function lastSeen(at: number | null): string {
+  if (!at) return 'has not practised yet'
+  const days = Math.floor((Date.now() - at) / 86_400_000)
+  if (days === 0) return 'practised today'
+  if (days === 1) return 'practised yesterday'
+  if (days < 7) return `practised ${days} days ago`
+  if (days < 14) return 'practised last week'
+  return `last practised ${new Date(at).toLocaleDateString()}`
+}
+
+/** Leads with what needs doing, because that is what a grown-up opens this for. */
+function familySubtitle(overview: Map<string, LearnerOverview>, learnerCount: number): string {
+  const rows = [...overview.values()]
+  const outstanding = rows.reduce((n, r) => n + r.openAssignments, 0)
+  const overdue = rows.reduce((n, r) => n + r.overdueAssignments, 0)
+
+  if (!rows.length || !learnerCount) {
+    return 'Everyone learning here, and the grown-ups who can see them.'
+  }
+  if (overdue > 0) {
+    return `${outstanding} task${outstanding === 1 ? '' : 's'} outstanding, ${overdue} overdue.`
+  }
+  if (outstanding > 0) {
+    return `${outstanding} task${outstanding === 1 ? '' : 's'} outstanding across the family.`
+  }
+  return 'Nothing outstanding. Everyone is up to date.'
 }
 
 function SignInLabel({ learner }: { learner: Learner }) {

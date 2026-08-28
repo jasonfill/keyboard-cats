@@ -16,6 +16,10 @@ export type Route =
   | { name: 'upgrade' }
   | { name: 'progress' }
   | { name: 'custom-lists' }
+  /** The learner's task list — what a grown-up has set them. */
+  | { name: 'tasks' }
+  /** A grown-up's own decks and lists, and the work they have set. */
+  | { name: 'library' }
   // Typing (Keyboard Cats)
   | { name: 'typing' }
   | { name: 'map' }

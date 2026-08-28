@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Card, Pill } from '../../components/ui'
 import type { QuizItemResult, QuizSessionApi } from '../../hooks/useQuizSession'
 import { REASON_LABEL } from '../../lib/quiz/session'
@@ -7,10 +7,14 @@ import { isSpeechAvailable, speak, stopSpeaking } from '../../lib/spelling/speec
 /**
  * Classic flashcards: read the front, decide whether you knew it, turn it over.
  *
- * The self-grade is honest input, so it moves the card's mastery and its place
- * in the review schedule — but it never moves the learner's ability estimate.
- * "I knew that" is a claim about a card, not a measurement of a person, and the
- * graded modes exist to do the measuring.
+ * Two things keep the self-grade from being worth less than nothing:
+ *
+ *   * a card marked "still learning" comes back later in the same round, so
+ *     the honest answer leads somewhere instead of onto a list at the end;
+ *   * the grade is submitted unverified, which earns a fraction of the mastery
+ *     a checked answer does and can never reach the mastered band. "I knew
+ *     that" is a claim about a card, not a measurement of a person, and the
+ *     graded modes exist to do the measuring.
  */
 export default function Flashcards({
   session,
@@ -20,23 +24,41 @@ export default function Flashcards({
   onFinish: (results: QuizItemResult[]) => void
 }) {
   const [flipped, setFlipped] = useState(false)
-  const { plan, index, current, currentQuestion, results, beginItem, submit, advance } = session
+  const [comingBack, setComingBack] = useState(false)
+  const handoffRef = useRef(0)
+  const { cursor, progress, current, currentQuestion, results, beginItem, submit, advance } =
+    session
 
   useEffect(() => {
     setFlipped(false)
+    setComingBack(false)
     beginItem()
-  }, [index, beginItem])
+  }, [cursor, beginItem])
 
   const grade = useCallback(
     (knewIt: boolean) => {
-      const result = submit('', knewIt ? 'correct' : 'wrong')
+      // The pause after a miss is short, but it is long enough for a fast
+      // learner to hit the key again and grade the next card by accident.
+      if (comingBack) return
+      // Self-graded, and marked as such all the way down to the attempt row.
+      const result = submit('', knewIt ? 'correct' : 'wrong', { verified: false })
       if (!result) return
       stopSpeaking()
       const all = [...results, result]
-      if (index >= plan.length - 1) onFinish(all)
-      else advance()
+
+      // A card they missed is going to come back — say so, briefly, before
+      // moving on. Being told "we'll come back to this" is the difference
+      // between a queue and a telling-off.
+      if (result.requeued) {
+        setComingBack(true)
+        handoffRef.current = window.setTimeout(() => {
+          if (!advance()) onFinish(all)
+        }, 750)
+        return
+      }
+      if (!advance()) onFinish(all)
     },
-    [advance, index, onFinish, plan.length, results, submit],
+    [advance, comingBack, onFinish, results, submit],
   )
 
   // Keyboard: space to turn the card over, then left or right to grade it.
@@ -57,7 +79,13 @@ export default function Flashcards({
     return () => window.removeEventListener('keydown', onKey)
   }, [flipped, grade])
 
-  useEffect(() => () => stopSpeaking(), [])
+  useEffect(
+    () => () => {
+      stopSpeaking()
+      window.clearTimeout(handoffRef.current)
+    },
+    [],
+  )
 
   if (!current || !currentQuestion) return null
 
@@ -72,9 +100,15 @@ export default function Flashcards({
           {reason.emoji} {reason.label}
         </Pill>
         <span className="font-bold text-slate-400">
-          {index + 1} of {plan.length}
+          {progress.retired} of {progress.total} put away
         </span>
       </div>
+
+      {progress.pass > 1 && (
+        <p className="mb-3 text-center font-extrabold text-grape">
+          🔁 Here it is again — try to get it this time.
+        </p>
+      )}
 
       {/* The card. Clicking anywhere turns it over. */}
       <button
@@ -116,7 +150,13 @@ export default function Flashcards({
         </div>
       )}
 
-      {flipped ? (
+      {comingBack ? (
+        <Card className="bg-amber-50 ring-amber-200">
+          <p className="text-center font-extrabold text-amber-700">
+            🔁 No problem — we&apos;ll come back to this one in a bit.
+          </p>
+        </Card>
+      ) : flipped ? (
         <div className="grid grid-cols-2 gap-3">
           <Button variant="danger" onClick={() => grade(false)}>
             😾 Still learning

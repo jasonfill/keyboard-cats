@@ -25,6 +25,7 @@ import { buildQuestion, type Grade, type Question } from '../lib/quiz/questions'
 import {
   modeDef,
   planStudy,
+  requeuePolicy,
   type DirectionSetting,
   type PlannedCard,
   type StudyMode,
@@ -39,15 +40,31 @@ export interface QuizItemResult {
   correct: boolean
   responseMs: number
   hintsUsed: number
+  /** False when the learner graded themselves, which is flashcards and only flashcards. */
+  verified: boolean
+  /** Which try at this card this was, within this round. 1 is the first sighting. */
+  pass: number
+  /** True when the miss put the card back in the queue to be seen again. */
+  requeued: boolean
 }
 
 export interface QuizSummary {
   mode: StudyMode
   deckId: string | null
   deckTitle: string
+  /** Every attempt in the round, in order — a requeued card appears more than once. */
   results: QuizItemResult[]
+  /**
+   * The cards the learner did not resolve: still wrong on their last try, or
+   * parked after too many attempts. This is what "worth another look" means
+   * now that a miss gets a second chance inside the round.
+   */
+  unresolved: QuizItemResult[]
+  /** Distinct cards, and how many were right *first time* — repeats do not dilute it. */
   itemsTotal: number
   itemsCorrect: number
+  /** Missed at first sight, then got right before the round was out. */
+  retiredAfterMiss: number
   nearMisses: number
   accuracy: number
   predictedAccuracy: number
@@ -109,10 +126,33 @@ export function useQuizSession() {
 
   const [plan, setPlan] = useState<PlannedCard[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
-  const [index, setIndex] = useState(0)
   const [results, setResults] = useState<QuizItemResult[]>([])
   const [summary, setSummary] = useState<QuizSummary | null>(null)
   const [options, setOptions] = useState<StartQuizOptions | null>(null)
+
+  /**
+   * A round is a queue of plan indices, not a walk from 0 to the end.
+   *
+   * When a card is missed it goes back into the queue a few places ahead, so
+   * the round finishes when every card has been retired rather than when the
+   * cards run out. Showing somebody the answer and then never asking again is
+   * the one thing a study app should not do.
+   *
+   * The queue lives in refs because a screen submits an answer and then asks
+   * "is there another card?" inside the same event handler — React state would
+   * still be describing the previous question. `walk` is the render-visible
+   * copy, published from the refs whenever they move, so what is drawn and what
+   * the handlers act on can never disagree.
+   */
+  const queueRef = useRef<number[]>([])
+  const cursorRef = useRef(0)
+  /** Tries so far per plan index, which is what caps the requeue loop. */
+  const passesRef = useRef(new Map<number, number>())
+  const [walk, setWalk] = useState<{ queue: number[]; cursor: number }>({ queue: [], cursor: 0 })
+  const publish = useCallback(
+    () => setWalk({ queue: queueRef.current, cursor: cursorRef.current }),
+    [],
+  )
 
   const startedAtRef = useRef(0)
   const itemStartedAtRef = useRef(0)
@@ -138,51 +178,114 @@ export function useQuizSession() {
       setOptions(opts)
       setPlan(planned)
       setQuestions(built)
-      setIndex(0)
       setResults([])
       setSummary(null)
+      queueRef.current = planned.map((_, i) => i)
+      cursorRef.current = 0
+      passesRef.current = new Map()
+      publish()
       startedAtRef.current = Date.now()
       itemStartedAtRef.current = Date.now()
       return planned
     },
-    [snapshot],
+    [publish, snapshot],
   )
 
   const beginItem = useCallback(() => {
     itemStartedAtRef.current = Date.now()
   }, [])
 
+  /**
+   * Record an answer, and put the card back in the queue if it was missed and
+   * the mode works that way.
+   *
+   * `verified` defaults to true because every mode but flashcards checks the
+   * answer itself. Flashcards passes false, and that one flag is what stops a
+   * learner grading their way to mastery — see blendSelfReport in adaptive.ts.
+   */
   const submit = useCallback(
-    (given: string, grade: Grade, hintsUsed = 0): QuizItemResult | null => {
-      const planned = plan[index]
-      const question = questions[index]
+    (
+      given: string,
+      grade: Grade,
+      opts: { hintsUsed?: number; verified?: boolean } = {},
+    ): QuizItemResult | null => {
+      const planIndex = queueRef.current[cursorRef.current]
+      const planned = plan[planIndex]
+      const question = questions[planIndex]
       if (!planned || !question) return null
+
+      const pass = (passesRef.current.get(planIndex) ?? 0) + 1
+      passesRef.current.set(planIndex, pass)
+
+      // A near miss counts. The learner recalled the answer; penalising a
+      // transposed letter on a biology deck tests typing, not biology.
+      const correct = grade !== 'wrong'
+      const policy = options ? requeuePolicy(options.mode) : null
+      const requeued = !correct && policy !== null && pass < policy.maxPasses
+
+      if (requeued && policy) {
+        // Far enough ahead that the answer has left short-term memory. Slotting
+        // it in rather than appending keeps the round from ending on a run of
+        // nothing but the cards they found hardest.
+        const at = Math.min(cursorRef.current + policy.gap, queueRef.current.length)
+        const next = [...queueRef.current]
+        next.splice(at, 0, planIndex)
+        queueRef.current = next
+      }
+
       const result: QuizItemResult = {
         planned,
         question,
         given,
         grade,
-        // A near miss counts. The learner recalled the answer; penalising a
-        // transposed letter on a biology deck tests typing, not biology.
-        correct: grade !== 'wrong',
+        correct,
         responseMs: Math.max(0, Date.now() - itemStartedAtRef.current),
-        hintsUsed,
+        hintsUsed: opts.hintsUsed ?? 0,
+        verified: opts.verified ?? true,
+        pass,
+        requeued,
       }
       setResults((prev) => [...prev, result])
+      publish()
       return result
     },
-    [index, plan, questions],
+    [options, plan, publish, questions],
   )
 
+  /** Move to the next card. Returns false when that was the last one. */
   const advance = useCallback(() => {
-    setIndex((i) => i + 1)
+    cursorRef.current += 1
     itemStartedAtRef.current = Date.now()
-  }, [])
+    publish()
+    return cursorRef.current < queueRef.current.length
+  }, [publish])
 
+  const { queue, cursor } = walk
+  const index = queue[cursor] ?? -1
   const current = plan[index] ?? null
   const currentQuestion = questions[index] ?? null
-  const isLast = index >= plan.length - 1
-  const isComplete = index >= plan.length && plan.length > 0
+  const isLast = cursor >= queue.length - 1
+  const isComplete = plan.length > 0 && cursor >= queue.length
+
+  /**
+   * What the learner sees as progress. Cards retired out of the deck, not
+   * questions ticked off a list — under a requeue those are different numbers,
+   * and the honest one is how many cards they have actually put away.
+   */
+  const progress = useMemo(() => {
+    const remaining = new Set(queue.slice(cursor)).size
+    return {
+      retired: plan.length - remaining,
+      total: plan.length,
+      remaining,
+      /**
+       * Which sighting of this card the learner is looking at. Counted from
+       * the queue rather than from attempts recorded, so that answering does
+       * not tick it over while the answer is still on screen.
+       */
+      pass: queue.slice(0, cursor + 1).filter((i) => i === index).length,
+    }
+  }, [cursor, index, plan.length, queue])
 
   /**
    * Turn a finished round into progress.
@@ -223,6 +326,7 @@ export function useQuizSession() {
           itemKey: key,
           activity: options.mode,
           isTest: graded,
+          verified: r.verified,
           correct: r.correct,
           responseMs: r.responseMs,
           hintsUsed: r.hintsUsed,
@@ -232,7 +336,10 @@ export function useQuizSession() {
         }
         attempts.push(attempt)
 
-        const movesAbility = graded && def.isTest && r.question.kind === 'written'
+        // Unaided, checked, written recall is the only thing that moves the
+        // estimate. `verified` is redundant with `def.isTest` today — no graded
+        // mode self-reports — but the rule belongs where it is enforced.
+        const movesAbility = graded && r.verified && def.isTest && r.question.kind === 'written'
         if (movesAbility) {
           const update = updateAbility(working, r.planned.card.difficulty, r.correct)
           working = {
@@ -262,17 +369,39 @@ export function useQuizSession() {
       // "this learner has done graded work", which the home screen reads.
       if (!working.placed && def.isTest) working = { ...working, placed: true }
 
-      const itemsTotal = rows.length
-      const itemsCorrect = rows.filter((r) => r.correct).length
-      const nearMisses = rows.filter((r) => r.grade === 'close').length
+      // A card can appear more than once now, so the headline is scored on
+      // first sight of each card. Otherwise a learner who missed one and then
+      // drilled it three times would read as worse than one who never went
+      // back to it, which would punish exactly the behaviour this is for.
+      const firstAttempts: QuizItemResult[] = []
+      const lastAttempt = new Map<string, QuizItemResult>()
+      const seen = new Set<string>()
+      for (const r of rows) {
+        const key = cardKey(r.planned.deckId, r.planned.card.id)
+        if (!seen.has(key)) {
+          seen.add(key)
+          firstAttempts.push(r)
+        }
+        lastAttempt.set(key, r)
+      }
+
+      const itemsTotal = firstAttempts.length
+      const itemsCorrect = firstAttempts.filter((r) => r.correct).length
+      const unresolved = [...lastAttempt.values()].filter((r) => !r.correct)
+      const retiredAfterMiss = firstAttempts.filter((r) => {
+        if (r.correct) return false
+        const key = cardKey(r.planned.deckId, r.planned.card.id)
+        return lastAttempt.get(key)?.correct === true
+      }).length
+      const nearMisses = firstAttempts.filter((r) => r.grade === 'close').length
       const accuracy = Math.round((itemsCorrect / itemsTotal) * 100)
       const score = scoreFor(rows)
       const predictedAccuracy = Math.round(
-        (rows.reduce(
+        (firstAttempts.reduce(
           (sum, r) => sum + expectedCorrect(abilityBefore, r.planned.card.difficulty),
           0,
         ) /
-          rows.length) *
+          itemsTotal) *
           100,
       )
       const stars = starsFor(accuracy, predictedAccuracy)
@@ -295,7 +424,17 @@ export function useQuizSession() {
         durationMs,
         abilityBefore,
         abilityAfter: working.ability,
-        meta: { predictedAccuracy, nearMisses, deckTitle, ...extra?.meta },
+        meta: {
+          predictedAccuracy,
+          nearMisses,
+          deckTitle,
+          // Distinct cards vs. tries taken: the gap between them is how much
+          // work the requeue actually did.
+          attemptsTotal: rows.length,
+          retiredAfterMiss,
+          unresolved: unresolved.length,
+          ...extra?.meta,
+        },
         startedAt: startedAtRef.current,
         endedAt: now,
       }
@@ -364,8 +503,10 @@ export function useQuizSession() {
         deckId,
         deckTitle,
         results: rows,
+        unresolved,
         itemsTotal,
         itemsCorrect,
+        retiredAfterMiss,
         nearMisses,
         accuracy,
         predictedAccuracy,
@@ -386,17 +527,24 @@ export function useQuizSession() {
   const reset = useCallback(() => {
     setPlan([])
     setQuestions([])
-    setIndex(0)
     setResults([])
     setSummary(null)
     setOptions(null)
-  }, [])
+    queueRef.current = []
+    cursorRef.current = 0
+    passesRef.current = new Map()
+    publish()
+  }, [publish])
 
   return useMemo(
     () => ({
       plan,
       questions,
+      /** Index into `plan` of the card on screen. */
       index,
+      /** Position in the round's queue. Strictly increasing, so it is the effect key. */
+      cursor,
+      progress,
       current,
       currentQuestion,
       results,
@@ -416,6 +564,8 @@ export function useQuizSession() {
       plan,
       questions,
       index,
+      cursor,
+      progress,
       current,
       currentQuestion,
       results,
