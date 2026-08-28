@@ -1,0 +1,12 @@
+<!--
+  Variant G - white on spark. The store and installed-app icon.
+
+  4px of bottom padding at 96px: `wz` has no ascenders and no descenders, so
+  optically centring it means sitting it slightly above the true centre.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect width="96" height="96" rx="26" fill="#FF6A2B"/>
+  <text x="48" y="62" text-anchor="middle"
+        font-family="Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-weight="900" font-size="48" letter-spacing="-3.84" fill="#FFFFFF">wz</text>
+</svg>

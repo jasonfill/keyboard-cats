@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import Mascot from '../components/Mascot'
+import Wordmark from '../components/Wordmark'
 import { Button, Card } from '../components/ui'
 import { hasLocalProgress } from '../lib/progress/localRepo'
 import { useAuth } from './AuthProvider'
@@ -309,7 +310,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
           <Mascot mood="idle" size={104} className="animate-floaty" />
-          <h1 className="mt-1 text-4xl font-extrabold text-ink">Cat Academy</h1>
+          <Wordmark size={44} className="mt-1" />
           <p className="text-center font-bold text-muted">Who is setting this up?</p>
         </div>
 
@@ -378,7 +379,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     <div className="mx-auto w-full max-w-md py-6">
       <div className="mb-4 flex flex-col items-center">
         <Mascot mood="idle" size={100} className="animate-floaty" />
-        <h1 className="mt-1 text-4xl font-extrabold text-ink">Cat Academy</h1>
+        <Wordmark size={44} className="mt-1" />
         <p className="text-center font-bold text-muted">
           {tab === 'signup'
             ? role === 'learner'

@@ -78,7 +78,7 @@ export default function SettingsScreen({ game, navigate }: Props) {
         </div>
 
         <p className="mt-6 text-center text-xs text-stone">
-          Cat Academy · progress is saved{' '}
+          whizzo · progress is saved{' '}
           {mode === 'cloud' ? 'to your account' : 'on this device'}.
         </p>
       </Card>

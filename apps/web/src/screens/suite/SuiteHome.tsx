@@ -1,5 +1,6 @@
 import { useAuth } from '../../auth/AuthProvider'
 import Mascot, { MASCOT_MUTED } from '../../components/Mascot'
+import Wordmark from '../../components/Wordmark'
 import AccountChip from '../../components/suite/AccountChip'
 import LearnerChip from '../../components/suite/LearnerChip'
 import { Button, Card, Pill } from '../../components/ui'
@@ -56,9 +57,12 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
 
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <LearnerChip onManage={() => navigate({ name: 'family' })} />
-        <AccountChip onOpen={() => navigate({ name: status === 'signed-in' ? 'account' : 'auth' })} />
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <Wordmark />
+        <div className="flex items-center gap-2">
+          <LearnerChip onManage={() => navigate({ name: 'family' })} />
+          <AccountChip onOpen={() => navigate({ name: status === 'signed-in' ? 'account' : 'auth' })} />
+        </div>
       </div>
 
       {older ? (
