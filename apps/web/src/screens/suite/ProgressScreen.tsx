@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
+import ChildSwitcher from '../../components/suite/ChildSwitcher'
 import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import SessionDetail from '../../components/suite/SessionDetail'
@@ -14,6 +15,10 @@ import { ACTIVITIES } from '../../lib/spelling/activities'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { addDays, todayString } from '../../lib/progress/types'
 import { breakdown, gradeBreakdown, troubleWords, turnaroundWords } from '../../lib/spelling/stats'
+import { errorPattern } from '../../lib/spelling/activities'
+import { unaidedAccuracy } from '../../lib/progress/summary'
+import { useAssignments } from '../../hooks/useAssignments'
+import { useLearners } from '../../lib/learners/LearnerProvider'
 import type { Navigate } from '../../routes'
 
 export default function ProgressScreen({ game, navigate }: { game: GameApi; navigate: Navigate }) {
@@ -39,8 +44,6 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   )
   const hiddenSessions = snapshot.sessions.length - visibleSessions.length
 
-  const last14 = useMemo(() => buildStreakStrip(snapshot.daily), [snapshot.daily])
-
   const quizTotals = useMemo(() => {
     const today = todayString()
     return allDecks(snapshot, STARTER_DECKS).reduce(
@@ -63,40 +66,76 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const typingLessons = Object.values(game.state.lessons).filter((l) => l.plays > 0).length
   const bestWpm = Math.max(0, ...Object.values(game.state.lessons).map((l) => l.bestWpm))
 
+  const { active } = useLearners()
+  const { open: openTasks, done: doneTasks } = useAssignments()
+  const unaided = unaidedAccuracy(snapshot)
+  const last21 = useMemo(() => buildActivityChart(snapshot.daily), [snapshot.daily])
+  const insight = useMemo(() => activityInsight(last21), [last21])
+
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
       <ScreenHeader
-        title="Progress 📊"
-        subtitle="Everything here comes from words you actually attempted."
+        title={active ? `${active.displayName}’s progress` : 'Progress'}
+        subtitle="Everything here comes from words they actually attempted."
         onBack={() => navigate({ name: 'home' })}
       />
 
-      {/* Headline numbers */}
+      <ChildSwitcher />
+
+      {/* Four numbers. The last inverts because the reading level is the one a
+          parent came for; the other three are context around it. */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
           label="Day streak"
           value={`${Math.max(spelling.streakDays, typing.streakDays, quiz.streakDays)}`}
-          emoji="🔥"
+          note="Days in a row with practice"
         />
-        <StatCard label="Words mastered" value={`${overall.mastered}`} emoji="📚" />
-        <StatCard label="Practice time" value={`${totalMinutes}m`} emoji="⏱️" />
-        <StatCard label="Best WPM" value={`${bestWpm}`} emoji="⌨️" />
+        <StatCard
+          label="Words mastered"
+          value={`${overall.mastered}`}
+          note={`of ${overall.total} in the curriculum`}
+        />
+        <StatCard
+          label="Unaided accuracy"
+          value={unaided === null ? '—' : `${unaided}%`}
+          note={unaided === null ? 'No graded rounds yet' : 'Graded rounds only'}
+        />
+        <StatCard
+          label="Reading level"
+          value={`Grade ${GRADES[spelling.levelIndex]?.grade ?? 2}`}
+          note={`${totalMinutes}m practised in total`}
+          invert
+        />
       </div>
 
-      {/* Activity strip */}
+      {/* Three weeks. A day with nothing on it is floored rather than dropped:
+          absence is the thing a parent most needs to be able to see. */}
       <Card className="mb-4">
-        <h2 className="mb-3 text-xl font-extrabold text-ink">The last two weeks</h2>
-        <div className="flex gap-1.5">
-          {last14.map((d) => (
-            <div key={d.day} className="flex-1 text-center" title={`${d.day}: ${d.items} items`}>
+        <h2 className="mb-3 font-display text-xl font-extrabold text-ink">The last three weeks</h2>
+        <div className="flex h-24 items-end gap-1.5">
+          {last21.map((d) => (
+            <div
+              key={d.day}
+              className="flex-1"
+              title={`${d.day}: ${d.items} ${d.items === 1 ? 'item' : 'items'}`}
+            >
               <div
-                className={`mx-auto h-12 w-full rounded-lg ${intensityClass(d.items)}`}
+                className="w-full rounded-t-md rounded-b-[3px] bg-pine"
+                style={{ height: Math.max(4, Math.round(d.items === 0 ? 0 : (d.items / Math.max(1, ...last21.map((x) => x.items))) * 96)) }}
                 aria-label={`${d.items} items on ${d.day}`}
               />
-              <span className="mt-1 block text-[10px] font-bold text-stone">{d.label}</span>
             </div>
           ))}
         </div>
+        <div className="mt-2 flex justify-between font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+          <span>{last21[0]?.day}</span>
+          <span>Today</span>
+        </div>
+        {/* Prose, not another stat. A parent reading a chart wants to be told
+            what it says. */}
+        <p className="mt-3 rounded-xl bg-spark/10 px-4 py-3 text-[14px] leading-relaxed text-[#7C4A22]">
+          {insight}
+        </p>
       </Card>
 
       {/* Spelling */}
@@ -144,10 +183,13 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
         </div>
       </Card>
 
-      {/* Word-level report */}
+      {/* The one section a parent can act on directly, which is why it is
+          named for the action rather than the data. */}
       <Card className="mb-4">
-        <h2 className="mb-1 text-xl font-extrabold text-ink">Words to work on 🎯</h2>
-        <p className="mb-3 text-sm font-bold text-muted">
+        <h2 className="mb-1 font-display text-xl font-extrabold text-ink">
+          Worth 10 minutes together
+        </h2>
+        <p className="mb-3 text-[14px] font-bold text-muted">
           Ranked by how often they have actually been missed.
         </p>
         {trouble.length === 0 ? (
@@ -156,40 +198,85 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[26rem] text-left">
+            <table className="w-full min-w-[34rem] text-left">
               <thead>
-                <tr className="text-xs font-extrabold uppercase tracking-wide text-stone">
+                <tr className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
                   <th className="py-1">Word</th>
-                  <th className="py-1">Correct</th>
-                  <th className="py-1">Missed after knowing it</th>
-                  <th className="py-1">Next review</th>
+                  <th className="py-1">Unaided</th>
+                  <th className="py-1">Slipped</th>
+                  <th className="py-1">What trips it</th>
+                  <th className="py-1">Back on</th>
                 </tr>
               </thead>
               <tbody>
-                {(limits.detailedWordReport ? trouble : trouble.slice(0, 5)).map((m) => (
+                {(limits.detailedWordReport ? trouble : trouble.slice(0, 4)).map((m) => (
                   <tr key={m.itemKey} className="border-t border-hair">
-                    <td className="py-2 font-mono font-bold text-ink">{m.itemKey}</td>
-                    <td className="py-2 font-bold text-muted">
+                    <td className="py-2 font-mono text-[15px] font-bold text-ink">{m.itemKey}</td>
+                    <td className="py-2 text-[14px] font-bold text-body">
                       {m.totalCorrect}/{m.totalAttempts}
                     </td>
-                    <td className="py-2 font-bold text-muted">{m.lapses}</td>
-                    <td className="py-2 font-bold text-muted">{m.dueOn ?? 'now'}</td>
+                    {/* Slipped after knowing it is the number that matters, so
+                        it is the one that gets a colour. */}
+                    <td className="py-2 text-[14px] font-extrabold text-[#C2410C]">{m.lapses}</td>
+                    <td className="py-2 text-[14px] text-muted">
+                      {errorPattern(m.itemKey) ?? '—'}
+                    </td>
+                    <td
+                      className={`py-2 text-[14px] font-bold ${
+                        !m.dueOn || m.dueOn <= todayString() ? 'text-pine' : 'text-muted'
+                      }`}
+                    >
+                      {!m.dueOn || m.dueOn <= todayString() ? 'today' : m.dueOn}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-        {!limits.detailedWordReport && trouble.length > 5 && (
-          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
-            Showing 5 of {trouble.length}.{' '}
+        {!limits.detailedWordReport && trouble.length > 4 && (
+          <p className="mt-3 rounded-xl bg-spark/10 px-4 py-3 text-[14px] font-bold text-[#7C4A22]">
+            Showing 4 of {trouble.length}.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
               Family Pro
             </button>{' '}
-            shows the full word-by-word report.
+            shows every word they have missed.
           </p>
         )}
       </Card>
+
+      {/* Work this grown-up set, and how far through it is. Ink, because it is
+          the one card here that is about them rather than the child. */}
+      {(openTasks.length > 0 || doneTasks.length > 0) && (
+        <div className="mb-4 rounded-3xl bg-ink p-6">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-xl font-extrabold text-white">You set</h2>
+            <Button onClick={() => navigate({ name: 'library' })}>Assign something new</Button>
+          </div>
+          <ul className="space-y-2">
+            {[...openTasks, ...doneTasks].slice(0, 6).map((t) => {
+              const done = doneTasks.some((d) => d.id === t.id)
+              return (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center gap-3 rounded-2xl bg-ink2 px-4 py-3"
+                >
+                  <span className="font-extrabold text-white">{t.title}</span>
+                  <span className="ml-auto h-2 w-24 overflow-hidden rounded-full bg-white/15">
+                    <span
+                      className={`block h-full rounded-full ${done ? 'bg-pineSoft' : 'bg-sun'}`}
+                      style={{ width: done ? '100%' : '45%' }}
+                    />
+                  </span>
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-onink">
+                    {done ? 'Done' : 'In progress'}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {turnaround.length > 0 && (
         <Card className="mb-4">
@@ -264,6 +351,17 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
                     className="flex w-full flex-wrap items-center gap-2 rounded-xl px-1 py-2 text-left hover:bg-quiet"
                   >
                     <span className="text-xs font-bold text-stone">{open ? '▾' : '▸'}</span>
+                    <span
+                      className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${
+                        !s.isTest
+                          ? 'bg-edge'
+                          : typeof s.verifiedItemsTotal === 'number' &&
+                              s.evidence === 'attempts' &&
+                              s.verifiedItemsTotal < s.itemsTotal
+                            ? 'bg-pineSoft'
+                            : 'bg-pine'
+                      }`}
+                    />
                     <span className="text-lg">{SUBJECT_EMOJI[s.subject] ?? '⌨️'}</span>
                     <span className="font-extrabold text-ink">
                       {activityLabel(s.activity, s.subject)}
@@ -271,11 +369,13 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
                     <span className="font-bold text-muted">
                       {s.itemsCorrect}/{s.itemsTotal} · {Math.round(s.accuracy)}%
                     </span>
-                    {s.isTest && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
-                        graded
-                      </span>
-                    )}
+                    {/* Load-bearing: a practice round says so, in the words
+                        the learner saw when they played it. */}
+                    <span
+                      className={`text-[13px] font-bold ${s.isTest ? 'text-pine' : 'text-muted'}`}
+                    >
+                      {s.isTest ? 'Graded' : 'Practice only · doesn’t affect level'}
+                    </span>
                     {/* Only worth saying when some of the round was not checked;
                         a fully verified round needs no caveat. */}
                     {typeof s.verifiedItemsTotal === 'number' &&
@@ -299,7 +399,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           </ul>
         )}
         {hiddenSessions > 0 && (
-          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
+          <p className="mt-3 rounded-xl bg-spark/10 px-4 py-3 text-[14px] font-bold text-[#7C4A22]">
             {hiddenSessions} older {hiddenSessions === 1 ? 'session is' : 'sessions are'} outside the
             free {limits.historyDays}-day window.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
@@ -309,6 +409,33 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           </p>
         )}
       </Card>
+
+      {/* A trust feature, not a help note. A parent who does not know what
+          moves the level cannot tell whether the level means anything. */}
+      <div className="mt-4 rounded-[20px] border border-hair bg-quiet p-6">
+        <h2 className="mb-2 font-display text-lg font-extrabold text-ink">
+          How the level is worked out
+        </h2>
+        <p className="text-[15px] leading-relaxed text-body">
+          Only answers spelled from scratch, with no hints, move the level. Practice rounds and
+          hinted words still help — they are how a word gets learned — but they are left out of the
+          number, so the level always means what it says. When a hint is taken mid-word, that word
+          stops counting for the round it is in.
+        </p>
+      </div>
+
+      {/* Stated plainly, because a parent seeing a theme in a report should be
+          told immediately that it changes nothing in the report. */}
+      <div className="mt-4 rounded-[20px] border border-hair bg-chalk p-6">
+        <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+          Their world
+        </div>
+        <p className="mt-1 text-[15px] leading-relaxed text-body">
+          {active?.displayName ?? 'They'} can pick from ten of these. It swaps the mascot and the
+          name of what gets collected, and nothing else: not the words, not the difficulty, not
+          what earns a reward. Nothing on this page changes with it.
+        </p>
+      </div>
     </div>
   )
 }
@@ -338,38 +465,78 @@ function activityLabel(activity: string, subject: string): string {
   return activity
 }
 
-function StatCard({ label, value, emoji }: { label: string; value: string; emoji: string }) {
+function StatCard({
+  label,
+  value,
+  note,
+  invert = false,
+}: {
+  label: string
+  value: string
+  note: string
+  invert?: boolean
+}) {
   return (
-    <div className="rounded-2xl bg-white/85 p-4 text-center shadow ring-1 ring-hair">
-      <div className="text-2xl">{emoji}</div>
-      <div className="text-2xl font-extrabold text-ink">{value}</div>
-      <div className="text-xs font-bold uppercase tracking-wide text-stone">{label}</div>
+    <div
+      className={`rounded-[18px] p-4 ${invert ? 'bg-ink' : 'border border-hair bg-chalk'}`}
+    >
+      <div
+        className={`font-mono text-[11px] font-bold uppercase tracking-[0.12em] ${
+          invert ? 'text-onink' : 'text-faint'
+        }`}
+      >
+        {label}
+      </div>
+      <div
+        className={`font-display text-[32px] font-extrabold leading-tight tracking-[-0.02em] ${
+          invert ? 'text-white' : 'text-ink'
+        }`}
+      >
+        {value}
+      </div>
+      <div className={`text-[13px] font-bold ${invert ? 'text-onink' : 'text-muted'}`}>{note}</div>
     </div>
   )
 }
 
-const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-
-function buildStreakStrip(daily: Array<{ day: string; items: number }>) {
+function buildActivityChart(daily: Array<{ day: string; items: number }>) {
   const byDay = new Map<string, number>()
   for (const row of daily) {
     byDay.set(row.day, (byDay.get(row.day) ?? 0) + row.items)
   }
   const today = todayString()
-  return Array.from({ length: 14 }, (_, i) => {
-    const day = addDays(today, i - 13)
-    const [y, m, d] = day.split('-').map(Number)
-    return {
-      day,
-      label: DAY_LABELS[new Date(y, m - 1, d).getDay()],
-      items: byDay.get(day) ?? 0,
-    }
+  return Array.from({ length: 21 }, (_, i) => {
+    const day = addDays(today, i - 20)
+    return { day, items: byDay.get(day) ?? 0 }
   })
 }
 
-function intensityClass(items: number): string {
-  if (items === 0) return 'bg-wash'
-  if (items < 6) return 'bg-emerald-200'
-  if (items < 15) return 'bg-emerald-400'
-  return 'bg-emerald-600'
+/**
+ * What the chart says, in a sentence.
+ *
+ * Prose rather than another number: a parent looking at twenty-one bars wants
+ * to be told what the shape of them means, and the honest reading is sometimes
+ * that not much happened.
+ */
+function activityInsight(days: Array<{ day: string; items: number }>): string {
+  const active = days.filter((d) => d.items > 0)
+  if (active.length === 0) {
+    return 'No practice in the last three weeks. Ten minutes is enough to restart a streak.'
+  }
+  const items = days.reduce((n, d) => n + d.items, 0)
+  const recent = days.slice(-7).filter((d) => d.items > 0).length
+  const earlier = days.slice(0, 7).filter((d) => d.items > 0).length
+
+  if (recent === 0) {
+    return `Nothing this week, after ${active.length} active ${
+      active.length === 1 ? 'day' : 'days'
+    } earlier in the month. The review queue keeps waiting — nothing is lost by coming back to it.`
+  }
+  if (recent > earlier) {
+    return `Picking up: ${recent} of the last 7 days had practice, against ${earlier} three weeks ago. ${items} answers in all.`
+  }
+  if (recent < earlier) {
+    return `Slowing down: ${recent} of the last 7 days had practice, against ${earlier} three weeks ago. ${items} answers in all.`
+  }
+  return `Steady — ${recent} of the last 7 days had practice, and ${items} answers over the three weeks.`
 }
