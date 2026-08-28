@@ -13,7 +13,6 @@ export interface WorldDef {
   id: string
   name: string
   emoji: string
-  color: string // tailwind gradient-ish base
   blurb: string
   lessons: LessonDef[]
 }
@@ -26,7 +25,6 @@ export const WORLDS: WorldDef[] = [
     id: 'home',
     name: 'Home Row Meadow',
     emoji: '🌼',
-    color: 'from-lime-300 to-emerald-400',
     blurb: 'Where every paw finds its resting spot.',
     lessons: [
       { id: 'home-fj', title: 'F & J — the bumps', blurb: 'Your index fingers live here.', newKeys: ['f', 'j'], kind: 'keys', catSeed: 'homefj' },
@@ -42,7 +40,6 @@ export const WORLDS: WorldDef[] = [
     id: 'top',
     name: 'Treetop Tower',
     emoji: '🌳',
-    color: 'from-sky-300 to-cyan-400',
     blurb: 'Climb up to the top row, one branch at a time.',
     lessons: [
       { id: 'top-ei', title: 'E & I', blurb: 'Middle fingers reach up.', newKeys: ['e', 'i'], kind: 'words', catSeed: 'topei' },
@@ -57,7 +54,6 @@ export const WORLDS: WorldDef[] = [
     id: 'bottom',
     name: 'Burrow Basement',
     emoji: '🕳️',
-    color: 'from-amber-300 to-orange-400',
     blurb: 'Dig down to the bottom row.',
     lessons: [
       { id: 'bot-cm', title: 'C & Comma', blurb: 'Middle fingers dig down.', newKeys: ['c', ','], kind: 'words', catSeed: 'botcm' },
@@ -72,7 +68,6 @@ export const WORLDS: WorldDef[] = [
     id: 'sentences',
     name: 'Sentence Savannah',
     emoji: '🦁',
-    color: 'from-yellow-300 to-amber-400',
     blurb: 'Put it all together into real sentences.',
     lessons: [
       { id: 'sen-1', title: 'First Sentences', blurb: 'Type whole thoughts.', newKeys: [], kind: 'sentence', catSeed: 'sen1' },
@@ -84,7 +79,6 @@ export const WORLDS: WorldDef[] = [
     id: 'numbers',
     name: 'Number Nook',
     emoji: '🔢',
-    color: 'from-rose-300 to-red-500',
     blurb: 'The top-top row: digits!',
     lessons: [
       { id: 'num-mid', title: '4 5 6 7', blurb: 'Index fingers stretch up.', newKeys: ['4', '5', '6', '7'], kind: 'keys', catSeed: 'nummid' },
@@ -99,7 +93,6 @@ export interface CurriculumLesson extends LessonDef {
   worldId: string
   worldName: string
   worldEmoji: string
-  worldColor: string
   index: number // global order index
   allowedKeys: string[] // cumulative set available at this lesson
 }
@@ -117,7 +110,6 @@ export function buildCurriculum(): CurriculumLesson[] {
         worldId: world.id,
         worldName: world.name,
         worldEmoji: world.emoji,
-        worldColor: world.color,
         index,
         allowedKeys: [...allowed],
       })

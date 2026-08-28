@@ -261,6 +261,49 @@ const MISSPELL_RULES: Array<(w: string) => string | null> = [
   },
 ]
 
+
+/**
+ * What trips this word up, in words.
+ *
+ * The same feature the proofreading distractors are built from, named rather
+ * than applied. Both the session header and the parent's trouble-word table
+ * read from here, so a word is described the same way to the child working on
+ * it and to the grown-up reading about it afterwards.
+ *
+ * Ordered like MISSPELL_RULES: the feature the word is actually teaching comes
+ * before the general-purpose ones.
+ */
+const ERROR_PATTERNS: Array<{ name: string; test: (w: string) => boolean }> = [
+  { name: 'doubled consonant', test: (w) => /([bcdfglmnprstz])\1/.test(w) },
+  { name: 'ei/ie swap', test: (w) => w.includes('ie') || w.includes('ei') },
+  { name: '-tion ending', test: (w) => w.endsWith('tion') },
+  { name: '-able/-ible', test: (w) => w.endsWith('able') || w.endsWith('ible') },
+  { name: '-ance/-ence', test: (w) => w.endsWith('ance') || w.endsWith('ence') },
+  { name: 'apostrophe', test: (w) => w.includes("'") },
+  { name: 'silent opener', test: (w) => /^(kn|wr|gn)/.test(w) },
+  { name: 'ph sound', test: (w) => w.includes('ph') },
+  { name: 'silent final e', test: (w) => /[^aeiou]e$/.test(w) },
+  {
+    name: 'schwa vowel',
+    test: (w) => {
+      const vowels = w.match(/[aeiou]/g)
+      return !!vowels && vowels.length >= 2
+    },
+  },
+]
+
+/**
+ * The pattern most likely to catch a learner out on this word, or null for a
+ * short regular word where there is nothing in particular to warn about.
+ */
+export function errorPattern(word: string): string | null {
+  const w = word.toLowerCase()
+  for (const { name, test } of ERROR_PATTERNS) {
+    if (test(w)) return name
+  }
+  return null
+}
+
 /**
  * Build distractors for the proofreading activity: `count` plausible
  * misspellings, all distinct from each other and from the real word. Always

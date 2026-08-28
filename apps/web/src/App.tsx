@@ -27,6 +27,8 @@ import TasksScreen from './screens/suite/TasksScreen'
 import CustomListsScreen from './screens/suite/CustomListsScreen'
 import ProgressScreen from './screens/suite/ProgressScreen'
 import SuiteHome from './screens/suite/SuiteHome'
+import ThemePicker from './screens/theme/ThemePicker'
+import WorldScreen from './screens/theme/WorldScreen'
 import UpgradeScreen from './screens/suite/UpgradeScreen'
 import TypingHome from './screens/TypingHome'
 import TrophyRoom from './screens/TrophyRoom'
@@ -117,6 +119,10 @@ function Router() {
       return <TasksScreen navigate={navigate} />
     case 'library':
       return <LibraryScreen navigate={navigate} />
+    case 'theme':
+      return <ThemePicker navigate={navigate} />
+    case 'world':
+      return <WorldScreen navigate={navigate} />
 
     // Typing
     case 'typing':

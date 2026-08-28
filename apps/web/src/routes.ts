@@ -20,6 +20,10 @@ export type Route =
   | { name: 'tasks' }
   /** A grown-up's own decks and lists, and the work they have set. */
   | { name: 'library' }
+  /** "Pick your world" — the ten themes. Display only; changes nothing learned. */
+  | { name: 'theme' }
+  /** The collectibles earned so far, in whichever shape the theme uses. */
+  | { name: 'world' }
   // Typing (Keyboard Cats)
   | { name: 'typing' }
   | { name: 'map' }

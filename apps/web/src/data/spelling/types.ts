@@ -20,8 +20,6 @@ export interface GradeLevel {
   grade: number
   name: string
   emoji: string
-  /** Tailwind gradient stops, matching the world cards in the typing game. */
-  color: string
   blurb: string
   lists: SpellingList[]
 }

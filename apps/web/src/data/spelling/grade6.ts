@@ -4,7 +4,6 @@ export const GRADE_6: GradeLevel = {
   grade: 6,
   name: 'Panther Plateau',
   emoji: '🐆',
-  color: 'from-rose-300 to-red-400',
   blurb: 'Endings that fight each other, and vocabulary that sounds grown up.',
   lists: [
     {

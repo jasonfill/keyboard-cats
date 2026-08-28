@@ -6,11 +6,13 @@ import type { CurriculumWord } from '../../data/spelling'
 import { wordDifficulty } from '../../data/spelling'
 import { useSpellingSession, type ItemResult } from '../../hooks/useSpellingSession'
 import { useProgress } from '../../lib/progress/ProgressProvider'
+import { useTheme } from '../../lib/theme/ThemeProvider'
 import { sfx, unlockAudio } from '../../lib/sound'
 import {
   activity as activityDef,
   buildMissingLetters,
   diffAnswer,
+  errorPattern,
   isCorrect,
   maskWordInSentence,
   proofreadChoices,
@@ -18,6 +20,7 @@ import {
   type ActivityId,
 } from '../../lib/spelling/activities'
 import { REASON_LABEL, type SessionMode } from '../../lib/spelling/session'
+import { wordHistory } from '../../lib/spelling/stats'
 import {
   dictate,
   isSpeechAvailable,
@@ -43,6 +46,7 @@ type Phase = 'prompt' | 'feedback' | 'grading' | 'done'
 export default function SpellingPlay({ activity, mode, listId, customListId, size, navigate }: Props) {
   const session = useSpellingSession()
   const { snapshot } = useProgress()
+  const { theme } = useTheme()
   const def = activityDef(activity)
 
   const [phase, setPhase] = useState<Phase>('prompt')
@@ -186,10 +190,14 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
 
   const reason = REASON_LABEL[current.reason]
   const mood: Mood = phase === 'feedback' ? (last?.correct ? 'cheer' : 'thinking') : 'idle'
+  const pattern = errorPattern(current.w)
+  const history = wordHistory(snapshot, current.w)
+  const seenBefore = history.attempts > 0
 
   return (
     <div className="mx-auto w-full max-w-2xl py-4">
-      {/* Progress rail */}
+      {/* One segment per word: filled behind you, tinted where you are, inert
+          ahead. A strip rather than a bar, because a round is countable. */}
       <div className="mb-4 flex items-center gap-3">
         <Button
           variant="ghost"
@@ -198,33 +206,58 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
             navigate({ name: 'spelling' })
           }}
         >
-          ← Quit
+          ← Leave
         </Button>
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/70 ring-1 ring-hair">
-          <div
-            className="h-full bg-accent transition-all duration-300"
-            style={{ width: `${(session.index / Math.max(1, total)) * 100}%` }}
-          />
+        <div className="flex flex-1 gap-1">
+          {Array.from({ length: total }, (_, i) => (
+            <span
+              key={i}
+              className={`h-2 flex-1 rounded-full ${
+                i < session.index ? 'bg-accent' : i === session.index ? 'bg-tintB' : 'bg-tray'
+              }`}
+            />
+          ))}
         </div>
         <span className="text-sm font-extrabold text-muted">
-          {session.index + 1}/{total}
+          {session.index + 1} / {total}
         </span>
       </div>
 
       <Card>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Pill className="bg-wash text-ink">
-            {def.emoji} {def.name}
-          </Pill>
-          {mode === 'adaptive' && (
-            <Pill className="bg-wash text-muted">
-              {reason.emoji} {reason.label}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill className="bg-tintB font-mono text-[11px] uppercase tracking-[0.1em] text-ink">
+              {def.emoji} {def.name} ·{' '}
+              {def.isTest ? 'Counts' : 'Practice'}
             </Pill>
-          )}
-          {def.isTest && (
-            <Pill className="bg-pine/10 text-pine">Counts toward your level</Pill>
-          )}
+            {mode === 'adaptive' && (
+              <Pill className="bg-wash text-muted">
+                {reason.emoji} {reason.label}
+              </Pill>
+            )}
+          </div>
+          {/* Grade and the feature that catches this word out — the same source
+              the proofreading distractors are built from. */}
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-faint">
+            Grade {Math.round(current.difficulty)}
+            {pattern && ` · ${pattern}`}
+          </span>
         </div>
+
+        {/* Load-bearing: what this round does to the level, said plainly. */}
+        <p className="mb-4 text-[13px] font-bold">
+          {def.isTest ? (
+            <span className="text-pine">Counts toward your level</span>
+          ) : (
+            <span className="text-muted">Practice only · doesn’t affect level</span>
+          )}
+          {seenBefore && (
+            <span className="text-muted">
+              {' '}
+              · You’ve had this one right {history.correct} of {history.attempts} times.
+            </span>
+          )}
+        </p>
 
         {phase === 'prompt' || !last ? (
           <PromptArea
@@ -252,9 +285,36 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
         )}
       </Card>
 
-      <div className="mt-5 flex justify-center">
-        <Mascot mood={mood} size={110} className={phase === 'prompt' ? 'animate-floaty' : ''} />
+      <div
+        className="mt-5 flex flex-wrap items-center justify-center gap-4 rounded-[22px] p-5 text-center sm:text-left"
+        style={{ background: theme.tintA }}
+      >
+        <Mascot mood={mood} size={62} className={phase === 'prompt' ? 'animate-floaty' : ''} />
+        <div>
+          {/* The theme's cheer is praise, so it only appears where praise is
+              true. A miss gets the same even tone the `thinking` mascot has:
+              not congratulation, and not disappointment either. */}
+          {phase === 'feedback' && last && !last.correct ? (
+            <>
+              <div className="font-display text-lg font-extrabold text-ink">
+                That one goes back in the pile.
+              </div>
+              <div className="text-[15px] text-body">
+                You will see it again before long — that is how it sticks.
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="font-display text-lg font-extrabold text-ink">{theme.cheer}</div>
+              <div className="text-[15px] text-body">{theme.cheerSub}</div>
+            </>
+          )}
+        </div>
       </div>
+      <p className="mt-3 text-center text-[13px] text-stone">
+        The mascot is the only part of this screen your world changes. The words, the grading
+        and the level are the same whichever one you pick.
+      </p>
       {phase === 'feedback' && last?.correct && <Confetti count={16} />}
     </div>
   )
@@ -413,9 +473,9 @@ function ListenPrompt({
         {activity !== 'test' && (
           <button
             onClick={onHint}
-            className="rounded-full bg-amber-100 px-5 py-2 text-sm font-extrabold text-amber-700"
+            className="rounded-full bg-sun/30 px-5 py-2 text-sm font-extrabold text-ink"
           >
-            💡 Hint
+            💡 Hint — this word stops counting
           </button>
         )}
       </div>
@@ -431,13 +491,13 @@ function ListenPrompt({
       )}
 
       {hints > 0 && activity !== 'test' && (
-        <div className="mt-3 rounded-2xl bg-amber-50 p-3">
-          <p className="text-sm font-bold text-amber-700">
+        <div className="mt-3 rounded-2xl bg-sun/15 p-3">
+          <p className="text-sm font-bold text-ink">
             {hints === 1
               ? `${word.length} letters, starts with "${word[0]}"`
               : `${word.slice(0, Math.ceil(word.length / 2))}${'_'.repeat(Math.floor(word.length / 2))}`}
           </p>
-          <p className="mt-1 text-xs font-bold text-amber-600">
+          <p className="mt-1 text-xs font-bold text-muted">
             Hints are fine — this one just will not count toward your level.
           </p>
         </div>
@@ -460,9 +520,9 @@ function TypedAnswer({ answer, setAnswer, inputRef, onSubmit }: PromptProps) {
         autoCapitalize="off"
         spellCheck={false}
         aria-label="Your spelling"
-        className="w-full rounded-2xl border-2 border-edge px-4 py-4 text-center font-mono text-2xl font-bold text-ink focus:border-ink focus:outline-none"
+        className="w-full rounded-[14px] border-2 border-edge px-4 py-4 text-center font-mono text-2xl font-bold text-ink caret-accent focus:border-accent focus:outline-none"
       />
-      <Button className="mt-3 w-full" onClick={onSubmit} disabled={!answer.trim()}>
+      <Button variant="play" className="mt-3 w-full" onClick={onSubmit} disabled={!answer.trim()}>
         Check it ✓
       </Button>
     </div>

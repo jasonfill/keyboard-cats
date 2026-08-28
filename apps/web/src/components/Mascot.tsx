@@ -1,5 +1,5 @@
 import { useTheme } from '../lib/theme/ThemeProvider'
-import { placeholderStripe, type ThemeId } from '../lib/themes'
+import { placeholderStripe, themeById, type ThemeId } from '../lib/themes'
 
 /**
  * Four states, not six.
@@ -25,6 +25,12 @@ interface Props {
   /** 200 hero · 108 reward · 62 session · 34 avatar. */
   size?: number
   className?: string
+  /**
+   * Draw a theme other than the active one. The picker is the only caller that
+   * needs this — it shows ten characters at once — and it exists so that
+   * showing another theme's mascot cannot be done by accident.
+   */
+  themeId?: ThemeId
 }
 
 /**
@@ -376,8 +382,15 @@ function Face({ plan, mood, p }: { plan: Plan; mood: Mood; p: Palette }) {
  * and primitive mascots can stand side by side. A theme with neither gets the
  * striped placeholder rather than a hole.
  */
-export default function Mascot({ mood = 'idle', color, size = 160, className = '' }: Props) {
-  const { theme } = useTheme()
+export default function Mascot({
+  mood = 'idle',
+  color,
+  size = 160,
+  className = '',
+  themeId,
+}: Props) {
+  const { theme: active } = useTheme()
+  const theme = themeId ? themeById(themeId) : active
   const fill = color ?? theme.accent
   const plan = PLANS[theme.id]
   const label = `${theme.name} mascot, ${mood}`

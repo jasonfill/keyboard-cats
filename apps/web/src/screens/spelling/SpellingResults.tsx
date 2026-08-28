@@ -1,10 +1,14 @@
 import { useEffect } from 'react'
 import Mascot from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
-import { Button, Card, Pill, StarRow } from '../../components/ui'
+import { Button, Card, StarRow } from '../../components/ui'
 import type { SessionSummary } from '../../hooks/useSpellingSession'
 import { sfx } from '../../lib/sound'
 import { activity as activityDef } from '../../lib/spelling/activities'
+import { useProgress } from '../../lib/progress/ProgressProvider'
+import { useTheme } from '../../lib/theme/ThemeProvider'
+import { earnedFor } from '../../lib/theme/rewards'
+import { slotLabels } from '../../lib/themes'
 import { speak } from '../../lib/spelling/speech'
 import type { Navigate } from '../../routes'
 
@@ -30,6 +34,15 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
   const abilityDelta = summary.abilityAfter - summary.abilityBefore
   const levelledUp = summary.level.direction === 'promote'
 
+  const { theme } = useTheme()
+  const { snapshot } = useProgress()
+  const beatBy = summary.accuracy - summary.predictedAccuracy
+  // The same fixed rule every theme runs on: a graded round that clears its
+  // prediction, or a promotion. Nothing here varies by theme except the noun.
+  const earnedReward = def.isTest && (beatBy >= 0 || levelledUp)
+  const earned = earnedFor(snapshot, theme)
+  const rewardName = slotLabels(theme)[Math.max(0, earned.owned - 1)] ?? theme.unitOne
+
   useEffect(() => {
     if (levelledUp || summary.accuracy === 100) sfx.win()
     else sfx.star()
@@ -39,38 +52,50 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
     <div className="mx-auto w-full max-w-2xl py-4">
       {(levelledUp || summary.accuracy >= 90) && <Confetti count={40} />}
 
-      <Card className="mb-4 text-center">
-        <Mascot
-          mood={summary.accuracy >= 80 ? 'cheer' : summary.accuracy >= 50 ? 'idle' : 'thinking'}
-          size={120}
-          className="mx-auto"
-        />
-        <h1 className="mt-2 text-3xl font-extrabold text-ink">
-          {summary.itemsCorrect} of {summary.itemsTotal} correct
-        </h1>
-        <p className="font-bold text-muted">
-          {encouragement(summary.accuracy, summary.predictedAccuracy)}
-        </p>
-
-        <div className="my-4 flex justify-center">
+      <div className="mb-4 rounded-[26px] p-7 text-center" style={{ background: theme.tintA }}>
+        <div className="flex justify-center">
           <StarRow stars={summary.stars} size={34} />
         </div>
+        <h1 className="mt-3 font-display text-3xl font-extrabold tracking-[-0.02em] text-ink">
+          {earnedReward ? theme.rewardTitle : `${summary.itemsCorrect} of ${summary.itemsTotal} correct`}
+        </h1>
 
-        <div className="flex flex-wrap justify-center gap-2">
-          <Pill className="bg-wash text-ink">{def.emoji} {def.name}</Pill>
-          <Pill className="bg-wash text-muted">🎯 {summary.accuracy}% accuracy</Pill>
-          <Pill
-            className="bg-wash text-muted"
-            title="What the app predicted you would score on this exact set of words"
-          >
-            🔮 {summary.predictedAccuracy}% predicted
-          </Pill>
-          <Pill className="bg-sun/30 text-ink">⭐ {summary.score} points</Pill>
-          <Pill className="bg-wash text-muted">
-            ⏱️ {Math.round(summary.durationMs / 1000)}s
-          </Pill>
+        {/* The curve-graded star rule, said out loud. A learner who beats a
+            hard prediction and one who aces an easy set both get told which
+            of those happened. */}
+        <p className="mx-auto mt-2 max-w-lg text-[15px] leading-relaxed text-body">
+          {summary.itemsCorrect} of {summary.itemsTotal} unaided, and you{' '}
+          {beatBy >= 0
+            ? `beat what we predicted for this set by ${beatBy} points`
+            : `came in ${Math.abs(beatBy)} points under what we predicted for this set`}
+          . {summary.stars >= 3 ? 'The third star is for that.' : encouragement(summary.accuracy, summary.predictedAccuracy)}
+        </p>
+
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <RewardStat label="Unaided" value={`${summary.itemsCorrect}/${summary.itemsTotal}`} />
+          <RewardStat label="Predicted" value={`${summary.predictedAccuracy}%`} />
+          <RewardStat label="Points" value={String(summary.score)} />
         </div>
-      </Card>
+      </div>
+
+      {/* The collectible. Only a graded round that cleared its prediction
+          reaches this branch — which is what the footnote below promises. */}
+      {earnedReward && (
+        <div className="mb-4 rounded-[26px] border border-hair bg-chalk p-6 text-center">
+          <div className="mx-auto flex justify-center">
+            <Mascot mood="cheer" size={108} />
+          </div>
+          <div className="mt-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+            New {theme.unitOne}
+          </div>
+          <div className="font-display text-2xl font-extrabold text-ink">{rewardName}</div>
+          <p className="mx-auto mt-2 max-w-md text-[15px] text-body">{theme.because}</p>
+        </div>
+      )}
+
+      <p className="mb-4 rounded-[20px] border border-hair bg-quiet p-4 text-center text-[13px] text-body">
+        Rewards are earned on graded work only. A hinted word can’t buy a {theme.unitOne}.
+      </p>
 
       {/* What the round did to the learner's level */}
       {def.isTest && (
@@ -167,6 +192,17 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
           🏠 Spelling home
         </Button>
       </div>
+    </div>
+  )
+}
+
+function RewardStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl p-3" style={{ background: '#FFFFFFB8' }}>
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
+        {label}
+      </div>
+      <div className="font-display text-xl font-extrabold text-ink">{value}</div>
     </div>
   )
 }

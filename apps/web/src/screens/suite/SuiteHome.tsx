@@ -9,6 +9,9 @@ import type { GameApi } from '../../hooks/useGameState'
 import { routeForAssignment } from '../../lib/assignments/routing'
 import { useLearners } from '../../lib/learners/LearnerProvider'
 import { useProgress } from '../../lib/progress/ProgressProvider'
+import { bestStreak, unaidedAccuracy } from '../../lib/progress/summary'
+import { useTheme } from '../../lib/theme/ThemeProvider'
+import { earnedFor } from '../../lib/theme/rewards'
 import { dueWords, levelSnapshot, totalCurriculumWords } from '../../lib/spelling/stats'
 import { breakdown } from '../../lib/spelling/stats'
 import { ALL_WORDS } from '../../data/spelling'
@@ -38,8 +41,18 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
   )
   const greeting = profile?.displayName || game.state.playerName
   const { open: openTasks } = useAssignments()
-  const { learners } = useLearners()
+  const { learners, active } = useLearners()
   const overdueTasks = openTasks.filter((t) => t.dueOn !== null && t.dueOn < today).length
+
+  const { theme } = useTheme()
+  const earned = earnedFor(snapshot, theme)
+  const unaided = unaidedAccuracy(snapshot)
+  const streak = bestStreak(snapshot)
+
+  // Layout only. The two views show the same data from the same sources; the
+  // older one just does not want a mascot the size of its head.
+  const grade = active?.gradeHint ?? profile?.gradeHint ?? level.grade
+  const older = grade >= 6
 
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
@@ -48,23 +61,77 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         <AccountChip onOpen={() => navigate({ name: status === 'signed-in' ? 'account' : 'auth' })} />
       </div>
 
-      <div className="mb-6 flex flex-col items-center">
-        <div className="flex items-end gap-2">
-          <Mascot mood="cheer" size={116} className="animate-floaty" />
-          <Mascot mood="idle" color={MASCOT_MUTED} size={82} className="animate-floaty" />
+      {older ? (
+        <div className="mb-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+                {theme.name}
+                {streak > 0 && ` · Day ${streak}`}
+              </div>
+              <h1 className="font-display text-4xl font-extrabold tracking-[-0.02em] text-ink">
+                {greeting ? `Welcome back, ${greeting}.` : 'Whizzo'}
+              </h1>
+            </div>
+            <Button variant="play" onClick={() => navigate({ name: 'spelling' })}>
+              {theme.verb} →
+            </Button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatChip label="Streak" value={streak > 0 ? `${streak} days` : '—'} />
+            <StatChip label="Unaided accuracy" value={unaided === null ? '—' : `${unaided}%`} />
+            <StatChip label="Level" value={`Grade ${level.grade}`} />
+            <StatChip
+              label={theme.unit}
+              value={`${earned.owned}/${earned.total}`}
+              tint={theme.tintA}
+            />
+          </div>
         </div>
-        <h1 className="mt-2 text-center text-5xl font-extrabold text-ink drop-shadow-sm md:text-6xl">
-          Cat Academy
-        </h1>
-        <p className="text-center text-lg font-bold text-muted">
-          {greeting ? `Welcome back, ${greeting}! 🐾` : 'Type, spell, and quiz yourself — with cats. 🐾'}
-        </p>
-        {sync === 'merging' && (
-          <Pill className="mt-2 bg-sun/30 text-ink">
-            🔄 Moving your saved progress into your account…
-          </Pill>
-        )}
-      </div>
+      ) : (
+        <div
+          className="mb-6 grid grid-cols-1 items-center gap-4 rounded-[26px] p-7 md:grid-cols-[1fr_300px]"
+          style={{ background: theme.tintA }}
+        >
+          <div>
+            <div
+              className="font-mono text-[11px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: theme.deep }}
+            >
+              {theme.name}
+              {streak > 0 && ` · Day ${streak}`}
+            </div>
+            <h1 className="mt-1 font-display text-[38px] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink md:text-[46px]">
+              {greeting ? `Hi, ${greeting}!` : 'Ready when you are.'}
+            </h1>
+            <p className="mt-2 max-w-md text-[17px] leading-relaxed text-body">
+              {due > 0
+                ? `${due} words are ready for another look.`
+                : 'Pick something below and get going.'}
+            </p>
+            <Button
+              variant="play"
+              className="mt-5 text-[19px]"
+              onClick={() => navigate({ name: 'spelling' })}
+            >
+              {theme.verb} →
+            </Button>
+          </div>
+          {/* The secondary companion stays: it is the subject you are not
+              currently in, standing a step behind. */}
+          <div className="flex items-end justify-center">
+            <Mascot mood="cheer" size={200} className="animate-floaty" />
+            <Mascot mood="idle" color={MASCOT_MUTED} size={96} className="animate-floaty" />
+          </div>
+        </div>
+      )}
+
+      {sync === 'merging' && (
+        <Pill className="mb-4 bg-sun/30 text-ink">
+          🔄 Moving your saved progress into your account…
+        </Pill>
+      )}
 
       {/* Work someone has set comes before the free choice of subjects: if a
           child has homework, that is the thing to show them first. */}
@@ -144,6 +211,59 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         />
       </div>
 
+
+      {/* Shared by both views: what you have collected, and the door to it. */}
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-[22px] border border-hair bg-chalk p-5">
+          <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+            Your {theme.unit}
+          </div>
+          <div className="mt-2 h-[14px] w-full overflow-hidden rounded-full bg-tray">
+            <div
+              className="h-full rounded-full bg-accent transition-all"
+              style={{ width: `${Math.round(earned.fraction * 100)}%` }}
+            />
+          </div>
+          <div className="mt-2 text-[15px] font-extrabold text-ink">
+            {earned.owned} of {earned.total} {theme.unit}
+          </div>
+          <p className="mt-1 text-[13px] text-muted">
+            Earned on graded rounds only — the rate is the same in every world.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate({ name: 'world' })}
+          className="rounded-[22px] p-5 text-left transition-transform hover:-translate-y-px"
+          style={{ background: theme.tintA }}
+        >
+          <div
+            className="font-mono text-[11px] font-bold uppercase tracking-[0.14em]"
+            style={{ color: theme.deep }}
+          >
+            {theme.worldNoun}
+          </div>
+          <div className="mt-3 flex gap-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-12 flex-1 rounded-xl"
+                style={
+                  i < 3
+                    ? {
+                        background: `repeating-linear-gradient(135deg, ${theme.tintB} 0 9px, ${theme.tintA} 9px 18px)`,
+                      }
+                    : { border: '2px dashed #FFFFFF' }
+                }
+              />
+            ))}
+          </div>
+          <div className="mt-3 text-[15px] font-extrabold" style={{ color: theme.deep }}>
+            See {theme.worldNoun.toLowerCase()} →
+          </div>
+        </button>
+      </div>
+
       {/* The two a grown-up needs from the child's home screen: the work set
           for them, and the people. Your own things — the library, your tutor
           code — live in your account instead. */}
@@ -158,7 +278,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Button variant="ghost" onClick={() => navigate({ name: 'progress' })}>
           📊 Progress
         </Button>
@@ -173,6 +293,9 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         </Button>
         <Button variant="ghost" onClick={() => navigate({ name: 'settings' })}>
           ⚙️ Settings
+        </Button>
+        <Button variant="ghost" onClick={() => navigate({ name: 'theme' })}>
+          🎨 {theme.name}
         </Button>
       </div>
 
@@ -199,6 +322,20 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         </button>{' '}
         adds custom word lists and printable reports.
       </p>
+    </div>
+  )
+}
+
+function StatChip({ label, value, tint }: { label: string; value: string; tint?: string }) {
+  return (
+    <div
+      className="rounded-2xl border border-hair p-3"
+      style={{ background: tint ?? '#FFF7ED' }}
+    >
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
+        {label}
+      </div>
+      <div className="font-display text-xl font-extrabold text-ink">{value}</div>
     </div>
   )
 }

@@ -5,7 +5,8 @@
       "name": "whizzo-web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace", "@whizzo/web"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
     }
   ]
 }

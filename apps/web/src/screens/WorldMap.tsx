@@ -32,7 +32,7 @@ export default function WorldMap({ game, navigate }: Props) {
         {WORLDS.map((world) => (
           <div
             key={world.id}
-            className={`rounded-3xl bg-gradient-to-r ${world.color} p-1 shadow-lg`}
+            className="rounded-3xl bg-tintB p-1"
           >
             <div className="rounded-[22px] bg-white/90 p-5">
               <div className="mb-3 flex items-center gap-2">

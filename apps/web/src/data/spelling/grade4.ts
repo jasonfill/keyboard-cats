@@ -4,7 +4,6 @@ export const GRADE_4: GradeLevel = {
   grade: 4,
   name: 'Prowler Peaks',
   emoji: '⛰️',
-  color: 'from-amber-300 to-orange-400',
   blurb: 'Prefixes, big endings, homophones, and words that sound alike.',
   lists: [
     {

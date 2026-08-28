@@ -64,7 +64,6 @@ export interface LevelSnapshot {
   grade: number
   name: string
   emoji: string
-  color: string
   blurb: string
   breakdown: MasteryBreakdown
   /** Share of the level's words at mastered band, 0..1. */
@@ -78,7 +77,6 @@ export function levelSnapshot(snapshot: ProgressSnapshot, levelIndex: number): L
     grade: grade.grade,
     name: grade.name,
     emoji: grade.emoji,
-    color: grade.color,
     blurb: grade.blurb,
     breakdown: b,
     progress: b.total > 0 ? b.mastered / b.total : 0,
@@ -94,4 +92,17 @@ export function attemptedWords(snapshot: ProgressSnapshot): ItemMastery[] {
 
 export function totalCurriculumWords(): number {
   return ALL_WORDS.length
+}
+
+/**
+ * How this learner has done on one word so far, over graded and practice
+ * attempts alike. The session quotes it back so a word that keeps coming round
+ * is visibly a word that keeps coming round, not a random draw.
+ */
+export function wordHistory(
+  snapshot: ProgressSnapshot,
+  word: string,
+): { attempts: number; correct: number } {
+  const item = snapshot.mastery[masteryKey('spelling', word.toLowerCase())]
+  return { attempts: item?.totalAttempts ?? 0, correct: item?.totalCorrect ?? 0 }
 }

@@ -28,7 +28,7 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
       />
 
       {/* Current level */}
-      <div className={`mb-5 rounded-3xl bg-gradient-to-r ${level.color} p-1 shadow-lg`}>
+      <div className="mb-5 rounded-3xl bg-tintB p-1">
         <div className="rounded-[22px] bg-white/92 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-3">

@@ -39,13 +39,17 @@ export default {
         pineSoft: '#8FC9BE',
         sun: '#FFC542',
 
-        // Theme-driven. Written by the theme provider; the fallbacks are Cats,
-        // so the tokens stay valid before it mounts. These four are the whole
-        // of "the paint" — a play surface should never need more.
-        accent: 'rgb(var(--wz-accent, 124 92 255) / <alpha-value>)',
-        accentDeep: 'rgb(var(--wz-accent-deep, 76 47 209) / <alpha-value>)',
-        tintA: 'rgb(var(--wz-tint-a, 243 239 255) / <alpha-value>)',
-        tintB: 'rgb(var(--wz-tint-b, 233 225 255) / <alpha-value>)',
+        // Theme-driven, written by the theme provider. These four are the
+        // whole of "the paint" — a play surface should never need more.
+        //
+        // No var() fallback on purpose: a comma inside one stops Tailwind's
+        // colour parser dead and the utility is silently never generated. The
+        // Cats defaults live in index.css `:root` instead, which covers the
+        // moment before the provider mounts just as well.
+        accent: 'rgb(var(--wz-accent) / <alpha-value>)',
+        accentDeep: 'rgb(var(--wz-accent-deep) / <alpha-value>)',
+        tintA: 'rgb(var(--wz-tint-a) / <alpha-value>)',
+        tintB: 'rgb(var(--wz-tint-b) / <alpha-value>)',
       },
       keyframes: {
         pop: {

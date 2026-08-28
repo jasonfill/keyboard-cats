@@ -40,7 +40,7 @@ export default function SpellingLists({ navigate }: { navigate: Navigate }) {
         {GRADES.map((g) => {
           const open = openGrade === g.grade
           return (
-            <div key={g.grade} className={`rounded-3xl bg-gradient-to-r ${g.color} p-1 shadow`}>
+            <div key={g.grade} className="rounded-3xl bg-tintB p-1">
               <div className="rounded-[22px] bg-white/92">
                 <button
                   onClick={() => setOpenGrade(open ? -1 : g.grade)}

@@ -12,8 +12,8 @@ type Variant = 'primary' | 'play' | 'secondary' | 'ghost' | 'danger' | 'success'
 // reads as being pressed back down on click.
 const variants: Record<Variant, string> = {
   primary:
-    'bg-spark text-white shadow-[0_4px_0_theme(colors.sparkD)] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_theme(colors.sparkD)]',
-  play: 'bg-accent text-white shadow-[0_4px_0_theme(colors.accentDeep)] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_theme(colors.accentDeep)]',
+    'bg-spark text-white shadow-[0_4px_0_#E14E12] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_#E14E12]',
+  play: 'bg-accent text-white shadow-[0_4px_0_rgb(var(--wz-accent-deep))] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_rgb(var(--wz-accent-deep))]',
   secondary:
     'bg-ink text-white shadow-[0_4px_0_#000000] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_#000000]',
   ghost: 'bg-chalk text-ink hover:bg-wash border-2 border-edge',
