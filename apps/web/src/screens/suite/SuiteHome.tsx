@@ -1,5 +1,5 @@
 import { useAuth } from '../../auth/AuthProvider'
-import CatMascot from '../../components/CatMascot'
+import Mascot, { MASCOT_MUTED } from '../../components/Mascot'
 import AccountChip from '../../components/suite/AccountChip'
 import LearnerChip from '../../components/suite/LearnerChip'
 import { Button, Card, Pill } from '../../components/ui'
@@ -50,8 +50,8 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
 
       <div className="mb-6 flex flex-col items-center">
         <div className="flex items-end gap-2">
-          <CatMascot mood="excited" size={116} className="animate-floaty" />
-          <CatMascot mood="happy" color="#94a3b8" size={82} className="animate-floaty" />
+          <Mascot mood="cheer" size={116} className="animate-floaty" />
+          <Mascot mood="idle" color={MASCOT_MUTED} size={82} className="animate-floaty" />
         </div>
         <h1 className="mt-2 text-center text-5xl font-extrabold text-ink drop-shadow-sm md:text-6xl">
           Cat Academy

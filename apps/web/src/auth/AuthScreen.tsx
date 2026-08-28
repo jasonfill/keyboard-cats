@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import CatMascot from '../components/CatMascot'
+import Mascot from '../components/Mascot'
 import { Button, Card } from '../components/ui'
 import { hasLocalProgress } from '../lib/progress/localRepo'
 import { useAuth } from './AuthProvider'
@@ -142,7 +142,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     return (
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
-          <CatMascot mood="excited" size={110} className="animate-floaty" />
+          <Mascot mood="cheer" size={110} className="animate-floaty" />
           <h1 className="mt-1 text-4xl font-extrabold text-ink">Hi there!</h1>
           <p className="text-center font-bold text-muted">
             Type the code and secret number your grown-up gave you.
@@ -204,7 +204,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     return (
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
-          <CatMascot mood="happy" size={104} className="animate-floaty" />
+          <Mascot mood="idle" size={104} className="animate-floaty" />
           <h1 className="mt-1 text-center text-3xl font-extrabold text-ink">
             Let's get a grown-up
           </h1>
@@ -244,7 +244,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     return (
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
-          <CatMascot mood="happy" size={104} className="animate-floaty" />
+          <Mascot mood="idle" size={104} className="animate-floaty" />
           <h1 className="mt-1 text-3xl font-extrabold text-ink">What year were you born?</h1>
         </div>
 
@@ -308,7 +308,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
     return (
       <div className="mx-auto w-full max-w-md py-6">
         <div className="mb-4 flex flex-col items-center">
-          <CatMascot mood="happy" size={104} className="animate-floaty" />
+          <Mascot mood="idle" size={104} className="animate-floaty" />
           <h1 className="mt-1 text-4xl font-extrabold text-ink">Cat Academy</h1>
           <p className="text-center font-bold text-muted">Who is setting this up?</p>
         </div>
@@ -377,7 +377,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
   return (
     <div className="mx-auto w-full max-w-md py-6">
       <div className="mb-4 flex flex-col items-center">
-        <CatMascot mood="happy" size={100} className="animate-floaty" />
+        <Mascot mood="idle" size={100} className="animate-floaty" />
         <h1 className="mt-1 text-4xl font-extrabold text-ink">Cat Academy</h1>
         <p className="text-center font-bold text-muted">
           {tab === 'signup'

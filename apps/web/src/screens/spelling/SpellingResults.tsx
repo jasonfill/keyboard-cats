@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import CatMascot from '../../components/CatMascot'
+import Mascot from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import type { SessionSummary } from '../../hooks/useSpellingSession'
@@ -40,8 +40,8 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
       {(levelledUp || summary.accuracy >= 90) && <Confetti count={40} />}
 
       <Card className="mb-4 text-center">
-        <CatMascot
-          mood={summary.accuracy >= 80 ? 'wow' : summary.accuracy >= 50 ? 'happy' : 'sad'}
+        <Mascot
+          mood={summary.accuracy >= 80 ? 'cheer' : summary.accuracy >= 50 ? 'idle' : 'thinking'}
           size={120}
           className="mx-auto"
         />

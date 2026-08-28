@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import CatMascot from '../components/CatMascot'
+import Mascot, { MASCOT_MUTED } from '../components/Mascot'
 import ScreenHeader from '../components/suite/ScreenHeader'
 import { Button, Card } from '../components/ui'
 import { TOTAL_LESSONS } from '../data/lessons'
@@ -30,8 +30,8 @@ export default function TypingHome({ game, navigate }: Props) {
       </div>
 
       <div className="flex items-end gap-2">
-        <CatMascot mood="excited" size={120} className="animate-floaty" />
-        <CatMascot mood="happy" color="#94a3b8" size={84} className="animate-floaty" />
+        <Mascot mood="cheer" size={120} className="animate-floaty" />
+        <Mascot mood="idle" color={MASCOT_MUTED} size={84} className="animate-floaty" />
       </div>
 
       <Card className="w-full max-w-md">

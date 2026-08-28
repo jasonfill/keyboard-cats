@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { catPhotoUrl } from '../lib/cats'
-import CatMascot from './CatMascot'
+import Mascot from './Mascot'
 
 interface Props {
   seed: string
@@ -17,7 +17,7 @@ export default function CatPhoto({ seed, className = '', rounded = 'rounded-2xl'
   if (failed) {
     return (
       <div className={`flex items-center justify-center bg-amber-100 ${rounded} ${className}`}>
-        <CatMascot mood="happy" size={96} />
+        <Mascot mood="idle" size={96} />
       </div>
     )
   }
@@ -26,7 +26,7 @@ export default function CatPhoto({ seed, className = '', rounded = 'rounded-2xl'
     <div className={`relative overflow-hidden bg-amber-100 ${rounded} ${className}`}>
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <CatMascot mood="sleepy" size={72} className="animate-floaty" />
+          <Mascot mood="resting" size={72} className="animate-floaty" />
         </div>
       )}
       <img

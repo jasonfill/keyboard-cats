@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import CatMascot from '../../components/CatMascot'
+import Mascot from '../../components/Mascot'
 import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
@@ -69,7 +69,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
                   : 'Study any deck today to start a streak.'}
               </p>
             </div>
-            <CatMascot mood={totals.mastered > 0 ? 'excited' : 'happy'} size={72} />
+            <Mascot mood={totals.mastered > 0 ? 'cheer' : 'idle'} size={72} />
           </div>
           <MasteryBar
             className="mt-4"

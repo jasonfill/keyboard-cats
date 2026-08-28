@@ -7,7 +7,7 @@ import { starRating } from '../lib/stats'
 import GamePlay from '../components/GamePlay'
 import ResultsCard from '../components/ResultsCard'
 import { Button, Card } from '../components/ui'
-import CatMascot from '../components/CatMascot'
+import Mascot from '../components/Mascot'
 import type { Route } from '../App'
 
 interface Props {
@@ -92,7 +92,7 @@ export default function PracticeScreen({ game, navigate }: Props) {
     <div className="mx-auto max-w-lg py-8">
       <Card>
         <div className="mb-4 flex items-center gap-3">
-          <CatMascot mood="neutral" color="#38bdf8" size={80} />
+          <Mascot mood="idle" color="#38bdf8" size={80} />
           <div>
             <h1 className="text-2xl font-extrabold text-ink">Free Practice</h1>
             <p className="text-muted">Warm up your paws with a custom round!</p>

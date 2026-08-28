@@ -1,4 +1,4 @@
-import CatMascot from '../../components/CatMascot'
+import Mascot from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import type { QuizSummary } from '../../hooks/useQuizSession'
@@ -24,8 +24,8 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
       {summary.stars >= 3 && <Confetti />}
 
       <Card className="mb-4 text-center">
-        <CatMascot
-          mood={summary.accuracy >= 80 ? 'excited' : summary.accuracy >= 50 ? 'happy' : 'sleepy'}
+        <Mascot
+          mood={summary.accuracy >= 80 ? 'cheer' : summary.accuracy >= 50 ? 'idle' : 'resting'}
           size={110}
           className="mx-auto animate-pounce"
         />

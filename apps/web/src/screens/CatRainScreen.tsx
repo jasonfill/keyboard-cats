@@ -3,7 +3,7 @@ import type { GameApi } from '../hooks/useGameState'
 import { rainWords } from '../lib/content'
 import { sfx, unlockAudio } from '../lib/sound'
 import { Button, Card } from '../components/ui'
-import CatMascot from '../components/CatMascot'
+import Mascot from '../components/Mascot'
 import ResultsCard from '../components/ResultsCard'
 import type { Route } from '../App'
 
@@ -219,7 +219,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
       <div className="mx-auto max-w-lg py-8">
         <Card className="text-center">
           <div className="mb-2 flex justify-center">
-            <CatMascot mood="excited" color="#f472b6" size={120} className="animate-floaty" />
+            <Mascot mood="cheer" color="#f472b6" size={120} className="animate-floaty" />
           </div>
           <h1 className="text-3xl font-extrabold text-ink">Cat Rain 🌧️🐱</h1>
           <p className="mx-auto mt-2 max-w-sm text-muted">
@@ -296,7 +296,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
               className="absolute flex -translate-x-1/2 flex-col items-center"
               style={{ left: `${w.x}%`, top: w.y }}
             >
-              <CatMascot mood={locked ? 'wow' : 'neutral'} color={w.color} size={44} />
+              <Mascot mood={locked ? 'cheer' : 'idle'} color={w.color} size={44} />
               <div
                 className={`mt-0.5 rounded-lg px-2 py-0.5 font-mono text-lg font-bold shadow ${
                   locked ? 'bg-white ring-2 ring-accent' : 'bg-white/90'

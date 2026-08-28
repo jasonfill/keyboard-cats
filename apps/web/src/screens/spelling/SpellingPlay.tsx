@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import CatMascot, { type Mood } from '../../components/CatMascot'
+import Mascot, { type Mood } from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
 import { Button, Card, Pill } from '../../components/ui'
 import type { CurriculumWord } from '../../data/spelling'
@@ -169,7 +169,7 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
   if (phase === 'grading' || (phase === 'done' && !session.summary)) {
     return (
       <div className="mx-auto w-full max-w-2xl py-16 text-center">
-        <CatMascot mood="happy" size={120} className="mx-auto animate-floaty" />
+        <Mascot mood="idle" size={120} className="mx-auto animate-floaty" />
         <p className="mt-4 text-lg font-bold text-muted">Adding up your round…</p>
       </div>
     )
@@ -178,14 +178,14 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
   if (!current) {
     return (
       <div className="mx-auto w-full max-w-2xl py-16 text-center">
-        <CatMascot mood="sleepy" size={120} className="mx-auto animate-floaty" />
+        <Mascot mood="resting" size={120} className="mx-auto animate-floaty" />
         <p className="mt-4 text-lg font-bold text-muted">Rounding up some words…</p>
       </div>
     )
   }
 
   const reason = REASON_LABEL[current.reason]
-  const mood: Mood = phase === 'feedback' ? (last?.correct ? 'excited' : 'sad') : 'neutral'
+  const mood: Mood = phase === 'feedback' ? (last?.correct ? 'cheer' : 'thinking') : 'idle'
 
   return (
     <div className="mx-auto w-full max-w-2xl py-4">
@@ -253,7 +253,7 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
       </Card>
 
       <div className="mt-5 flex justify-center">
-        <CatMascot mood={mood} size={110} className={phase === 'prompt' ? 'animate-floaty' : ''} />
+        <Mascot mood={mood} size={110} className={phase === 'prompt' ? 'animate-floaty' : ''} />
       </div>
       {phase === 'feedback' && last?.correct && <Confetti count={16} />}
     </div>

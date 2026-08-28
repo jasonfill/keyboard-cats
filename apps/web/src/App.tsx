@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import AuthScreen from './auth/AuthScreen'
 import Background from './components/Background'
-import CatMascot from './components/CatMascot'
+import Mascot from './components/Mascot'
 import { useGameState } from './hooks/useGameState'
 import { LearnerProvider, useLearners } from './lib/learners/LearnerProvider'
 import { ProgressProvider, useProgress } from './lib/progress/ProgressProvider'
@@ -180,7 +180,7 @@ function Router() {
 function Loading() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-      <CatMascot mood="sleepy" size={120} className="animate-floaty" />
+      <Mascot mood="resting" size={120} className="animate-floaty" />
       <p className="text-lg font-bold text-muted">Fetching your progress…</p>
     </div>
   )

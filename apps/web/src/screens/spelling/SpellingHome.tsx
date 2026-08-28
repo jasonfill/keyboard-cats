@@ -1,5 +1,5 @@
 import { GRADES } from '../../data/spelling'
-import CatMascot from '../../components/CatMascot'
+import Mascot from '../../components/Mascot'
 import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import VoicePicker from '../../components/suite/VoicePicker'
@@ -41,7 +41,7 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
                 <p className="font-bold text-muted">{level.blurb}</p>
               </div>
             </div>
-            <CatMascot mood={level.progress > 0.5 ? 'excited' : 'happy'} size={72} />
+            <Mascot mood={level.progress > 0.5 ? 'cheer' : 'idle'} size={72} />
           </div>
 
           <MasteryBar

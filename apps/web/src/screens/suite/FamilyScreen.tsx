@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import { clearSignupIntent, readSignupIntent } from '../../auth/signupIntent'
-import CatMascot from '../../components/CatMascot'
+import Mascot from '../../components/Mascot'
 import ConnectTutor from '../../components/suite/ConnectTutor'
 import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
@@ -110,7 +110,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
     return (
       <div className="mx-auto w-full max-w-lg py-6">
         <div className="mb-5 flex flex-col items-center">
-          <CatMascot mood="excited" size={110} className="animate-floaty" />
+          <Mascot mood="cheer" size={110} className="animate-floaty" />
           <h1 className="mt-1 text-center text-3xl font-extrabold text-ink">
             {selfLearner ? 'One last thing' : tutor ? 'Connect your first family' : 'Who is learning?'}
           </h1>

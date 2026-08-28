@@ -7,7 +7,7 @@ import TypingText from './TypingText'
 import Keyboard from './Keyboard'
 import Hands from './Hands'
 import Hud from './Hud'
-import CatMascot, { type Mood } from './CatMascot'
+import Mascot, { type Mood } from './Mascot'
 import { Button } from './ui'
 
 interface Props {
@@ -33,12 +33,12 @@ export default function GamePlay({
   onFinish,
   onQuit,
 }: Props) {
-  const [mood, setMood] = useState<Mood>('neutral')
+  const [mood, setMood] = useState<Mood>('idle')
   const moodTimer = useRef<number | null>(null)
   const [floaters, setFloaters] = useState<{ id: number; text: string }[]>([])
   const floatId = useRef(0)
 
-  const flashMood = useCallback((m: Mood, revert: Mood = 'neutral', ms = 500) => {
+  const flashMood = useCallback((m: Mood, revert: Mood = 'idle', ms = 500) => {
     setMood(m)
     if (moodTimer.current) window.clearTimeout(moodTimer.current)
     moodTimer.current = window.setTimeout(() => setMood(revert), ms)
@@ -59,19 +59,22 @@ export default function GamePlay({
         else if (combo >= 3) sfx.combo(combo)
         else sfx.correct()
       }
+      // Four states rather than six, so a correct keystroke at a low combo no
+      // longer has its own expression — the floaters and the sound carry that
+      // beat, and the mascot only reacts once a combo is actually going.
       if (combo > 0 && combo % 10 === 0) {
-        flashMood('wow', 'excited', 700)
+        setMood('cheer')
         addFloater('MEOW! 🐱')
       } else if (combo >= 5) {
-        setMood('excited')
+        setMood('cheer')
         if (combo % 5 === 0) addFloater(`Combo x${combo}! 🔥`)
       } else {
-        flashMood('happy', 'neutral', 300)
+        setMood('idle')
       }
     },
     onWrong: () => {
       if (sound) sfx.wrong()
-      flashMood('sad', 'neutral', 400)
+      flashMood('thinking', 'idle', 400)
     },
     onFinish: (snap: EngineSnapshot) => {
       if (sound) sfx.win()
@@ -126,7 +129,7 @@ export default function GamePlay({
 
       <div className="flex items-center gap-4">
         <div className="relative shrink-0">
-          <CatMascot mood={mood} color={catColor} size={110} className="animate-floaty" />
+          <Mascot mood={mood} color={catColor} size={110} className="animate-floaty" />
           {floaters.map((f) => (
             <span
               key={f.id}
