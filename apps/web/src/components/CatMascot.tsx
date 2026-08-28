@@ -102,7 +102,7 @@ export default function CatMascot({
 
       {/* zzz for sleepy */}
       {mood === 'sleepy' && (
-        <text x="150" y="60" fontSize="26" fill={dark} fontFamily="Baloo 2, sans-serif">
+        <text x="150" y="60" fontSize="26" fill={dark} fontFamily="Outfit Variable, Outfit, sans-serif">
           z
         </text>
       )}
