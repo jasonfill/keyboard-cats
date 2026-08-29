@@ -425,14 +425,49 @@ describe('assignments', () => {
   })
 
   it('rejects a set with no title', async () => {
+    // Under the right key: an earlier version of this sent `draft`, which the
+    // endpoint does not take, so it 400d on the missing `assignments` array and
+    // proved nothing about titles.
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST',
       url: '/api/assignments',
       headers: await auth(),
-      payload: { learnerIds: [LEARNER], draft: { subject: 'spelling', activity: 'test' } },
+      payload: {
+        learnerIds: [LEARNER],
+        assignments: [{ subject: 'spelling', activity: 'test' }],
+      },
     })
     expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects a title that is present but empty', async () => {
+    // A task nobody can read is a task nobody can do.
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/assignments',
+      headers: await auth(),
+      payload: {
+        learnerIds: [LEARNER],
+        assignments: [{ subject: 'spelling', activity: 'test', title: '' }],
+      },
+    })
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('accepts the same set once it has a title, so the refusal was about the title', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/assignments',
+      headers: await auth(),
+      payload: {
+        learnerIds: [LEARNER],
+        assignments: [{ subject: 'spelling', activity: 'test', title: 'Friday spelling' }],
+      },
+    })
+    expect(res.statusCode).toBeLessThan(400)
   })
 })
 
