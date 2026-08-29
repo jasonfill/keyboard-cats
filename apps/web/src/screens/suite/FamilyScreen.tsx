@@ -3,6 +3,8 @@ import { useAuth } from '../../auth/AuthProvider'
 import { clearSignupIntent, readSignupIntent } from '../../auth/signupIntent'
 import Mascot from '../../components/Mascot'
 import ConnectTutor from '../../components/suite/ConnectTutor'
+import ThemeChoice from '../../components/suite/ThemeChoice'
+import { themeById } from '../../lib/themes'
 import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill } from '../../components/ui'
@@ -304,6 +306,10 @@ function LearnerRow({
             {age !== null ? `${age} years old` : 'Age not set'}
             {' · '}
             <SignInLabel learner={learner} />
+            {/* Which world they are in, so a parent can see it without opening
+                anything — and so the setting advertises that it exists. */}
+            {' · '}
+            {themeById(learner.theme).name}
             {!isOwner && ' · shared with you'}
           </p>
         </div>
@@ -476,6 +482,17 @@ function ManagePanel({
 
   return (
     <div className="mt-5 flex flex-col gap-5 border-t-2 border-hair pt-5">
+      <section>
+        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-stone">
+          {learner.displayName}’s world
+        </h3>
+        <p className="mb-3 text-sm font-bold text-muted">
+          Swaps the mascot and what gets collected — never the words, the difficulty, or what
+          earns a reward. {learner.displayName} can change it themselves too.
+        </p>
+        <ThemeChoice learner={learner} onChanged={() => void onChanged()} />
+      </section>
+
       <section>
         <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-stone">
           Grown-ups who can see {learner.displayName}

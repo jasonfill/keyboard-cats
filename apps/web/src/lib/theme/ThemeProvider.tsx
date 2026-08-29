@@ -41,7 +41,16 @@ import {
 interface ThemeContextValue {
   theme: Theme
   themes: Theme[]
+  /** Set the world for whoever is currently active. */
   setTheme: (id: ThemeId) => void
+  /**
+   * Set the world for a named learner, who may not be the active one.
+   *
+   * The family screen needs this: a parent managing three children sets a
+   * world for one of them without first switching the whole app over to that
+   * child. Resolves once the write has landed so the caller can refresh.
+   */
+  setThemeFor: (learnerId: string, id: ThemeId) => Promise<void>
   /** Where the current value came from, so a screen can say so honestly. */
   source: 'learner' | 'guest'
 }
@@ -111,6 +120,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.setProperty('--wz-tint-b', hexToRgbTriple(theme.tintB))
   }, [themeId])
 
+  const setThemeFor = useCallback(
+    async (learnerId: string, id: ThemeId) => {
+      // Optimistic for the active learner too, so setting a world from the
+      // family screen repaints immediately when it happens to be the child
+      // currently on screen.
+      setPending({ learnerId, id })
+      try {
+        await updateLearner(learnerId, { theme: id })
+        await refresh()
+      } catch (err) {
+        console.warn('[whizzo] could not save theme', err)
+        setPending(null)
+        throw err
+      }
+    },
+    [refresh],
+  )
+
   const setTheme = useCallback(
     (id: ThemeId) => {
       if (!signedIn || !active) {
@@ -138,9 +165,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       theme: themeById(themeId),
       themes: THEMES,
       setTheme,
+      setThemeFor,
       source: signedIn ? 'learner' : 'guest',
     }),
-    [themeId, setTheme, signedIn],
+    [themeId, setTheme, setThemeFor, signedIn],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

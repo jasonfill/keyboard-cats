@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import ChildSwitcher from '../../components/suite/ChildSwitcher'
+import ThemeChoice from '../../components/suite/ThemeChoice'
 import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import SessionDetail from '../../components/suite/SessionDetail'
@@ -68,7 +69,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const bestWpm = Math.max(0, ...Object.values(game.state.lessons).map((l) => l.bestWpm))
 
   const { active } = useLearners()
-  const { theme, themes, setTheme, source } = useTheme()
+  const { theme } = useTheme()
   const { open: openTasks, done: doneTasks } = useAssignments()
   const unaided = unaidedAccuracy(snapshot)
   const last21 = useMemo(() => buildActivityChart(snapshot.daily), [snapshot.daily])
@@ -443,40 +444,9 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           it.
         </p>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {themes.map((t) => {
-            const on = t.id === theme.id
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
-                aria-pressed={on}
-                className={`rounded-full px-3.5 py-1.5 text-[14px] font-extrabold transition-colors ${
-                  on
-                    ? 'bg-ink text-white'
-                    : 'border border-edge bg-chalk text-muted hover:bg-wash'
-                }`}
-              >
-                {t.name}
-                {/* Advisory, never a gate: the band is shown so a parent has
-                    somewhere to start, and every one of the ten stays
-                    clickable whatever grade the child is in. */}
-                <span
-                  className={`ml-1.5 font-mono text-[10px] font-bold tracking-[0.08em] ${
-                    on ? 'text-onink' : 'text-faint'
-                  }`}
-                >
-                  {t.bands}
-                </span>
-              </button>
-            )
-          })}
+        <div className="mt-4">
+          <ThemeChoice learner={active} />
         </div>
-        {source === 'guest' && (
-          <p className="mt-3 text-[13px] font-bold text-muted">
-            Saved on this device only until they have an account.
-          </p>
-        )}
       </div>
     </div>
   )
