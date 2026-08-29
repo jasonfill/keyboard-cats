@@ -46,9 +46,14 @@ function learner(id: string, displayName = 'Ada', ownerId = 'u1'): Learner {
 }
 
 function Probe() {
-  const { learners, active, status, isOwner, select } = useLearners()
+  const { learners, active, status, isOwner, select, create, refresh, error } = useLearners()
   return (
     <div>
+      <span data-testid="error">{error ?? ''}</span>
+      <button onClick={() => void create({ displayName: 'Ben' } as never).catch(() => {})}>
+        add
+      </button>
+      <button onClick={() => void refresh()}>refresh</button>
       <span data-testid="status">{status}</span>
       <span data-testid="active">{active?.id ?? 'none'}</span>
       <span data-testid="count">{learners.length}</span>
@@ -165,6 +170,96 @@ describe('signed in', () => {
     renderProvider()
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('ready'))
     expect(screen.getByTestId('active')).toHaveTextContent('none')
+  })
+})
+
+describe('adding a learner', () => {
+  beforeEach(() => {
+    authStatus = 'signed-in'
+    user = { id: 'u1' }
+  })
+
+  it('makes them the active one, because that is why they were added', async () => {
+    listLearners.mockResolvedValue([learner('a')])
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent('a'))
+    await userEvent.click(screen.getByText('add'))
+    await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent('new'))
+    expect(screen.getByTestId('count')).toHaveTextContent('2')
+  })
+
+  it('does not send an owner id, because the API takes it from the token', async () => {
+    listLearners.mockResolvedValue([])
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('ready'))
+    await userEvent.click(screen.getByText('add'))
+    await waitFor(() => expect(createLearner).toHaveBeenCalled())
+    expect(createLearner.mock.calls[0]![0]).not.toHaveProperty('ownerId')
+  })
+
+  it('refuses before anyone is signed in', async () => {
+    authStatus = 'signed-out'
+    user = null
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('unavailable'))
+    await userEvent.click(screen.getByText('add'))
+    expect(createLearner).not.toHaveBeenCalled()
+  })
+})
+
+describe('refreshing the list', () => {
+  beforeEach(() => {
+    authStatus = 'signed-in'
+    user = { id: 'u1' }
+  })
+
+  it('does not yank a child out of a lesson when a sibling is added', async () => {
+    // The selection survives a refresh if the learner is still there.
+    listLearners.mockResolvedValue([learner('a'), learner('b', 'Ben')])
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('ready'))
+    await userEvent.click(screen.getByText('pick-b'))
+    listLearners.mockResolvedValue([learner('a'), learner('b', 'Ben'), learner('c', 'Cal')])
+    await userEvent.click(screen.getByText('refresh'))
+    await waitFor(() => expect(screen.getByTestId('count')).toHaveTextContent('3'))
+    expect(screen.getByTestId('active')).toHaveTextContent('b')
+  })
+
+  it('picks again when the selected learner has gone', async () => {
+    listLearners.mockResolvedValue([learner('a'), learner('b', 'Ben')])
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('ready'))
+    await userEvent.click(screen.getByText('pick-b'))
+    listLearners.mockResolvedValue([learner('a')])
+    await userEvent.click(screen.getByText('refresh'))
+    await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent('a'))
+  })
+
+  it('clears the error once a retry works', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    listLearners.mockRejectedValueOnce(new Error('offline'))
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('error'))
+    listLearners.mockResolvedValue([learner('a')])
+    await userEvent.click(screen.getByText('refresh'))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('ready'))
+    expect(screen.getByTestId('error')).toHaveTextContent('')
+    warn.mockRestore()
+  })
+
+  it('reports a failure that was not an Error at all', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    listLearners.mockRejectedValue('something odd')
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent('Could not load learners'))
+    warn.mockRestore()
+  })
+
+  it('waits rather than guessing while sign-in is still settling', async () => {
+    authStatus = 'loading'
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('loading'))
+    expect(listLearners).not.toHaveBeenCalled()
   })
 })
 
