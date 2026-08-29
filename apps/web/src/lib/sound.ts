@@ -55,8 +55,8 @@ export const sfx = {
   wrong() {
     blip(160, 120, 'sawtooth', 0.05)
   },
-  meow() {
-    // Two-tone "meow" wobble.
+  chime() {
+    // Two-tone wobble, the milestone sound.
     blip(700, 140, 'sine', 0.09)
     setTimeout(() => blip(520, 180, 'sine', 0.08), 120)
   },

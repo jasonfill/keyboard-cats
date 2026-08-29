@@ -5,6 +5,7 @@ import { Button, Card } from '../components/ui'
 import { TOTAL_LESSONS } from '../data/lessons'
 import type { GameApi } from '../hooks/useGameState'
 import type { Navigate } from '../routes'
+import { useTheme } from '../lib/theme/ThemeProvider'
 
 interface Props {
   game: GameApi
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function TypingHome({ game, navigate }: Props) {
+  const { theme } = useTheme()
   const { state, setPlayerName } = game
   const [name, setName] = useState(state.playerName)
 
@@ -23,9 +25,9 @@ export default function TypingHome({ game, navigate }: Props) {
       <div className="w-full">
         <ScreenHeader
           title="Typing ⌨️"
-          subtitle="Learn to type &amp; collect cats!"
+          subtitle={`Learn to type and collect ${theme.unit}.`}
           onBack={() => navigate({ name: 'home' })}
-          backLabel="← Academy"
+          backLabel="← Home"
         />
       </div>
 
@@ -59,7 +61,7 @@ export default function TypingHome({ game, navigate }: Props) {
           </Button>
           <div className="grid grid-cols-2 gap-3">
             <Button variant="secondary" onClick={() => navigate({ name: 'rain' })}>
-              🌧️ Cat Rain
+              🌧️ Word Rain
             </Button>
             <Button variant="secondary" onClick={() => navigate({ name: 'practice' })}>
               ⌨️ Practice
@@ -79,7 +81,7 @@ export default function TypingHome({ game, navigate }: Props) {
       <div className="flex gap-6 text-center">
         <Stat big={`${state.totalStars}`} label="⭐ Stars" />
         <Stat big={`${doneLessons}/${TOTAL_LESSONS}`} label="Lessons" />
-        <Stat big={`${state.collectedCats.length}`} label="🐱 Cats" />
+        <Stat big={`${state.collectedCats.length}`} label={theme.unit} />
       </div>
     </div>
   )

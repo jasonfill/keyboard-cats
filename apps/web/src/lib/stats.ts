@@ -48,8 +48,8 @@ export function computeScore(
 
 // Encouraging, age-appropriate feedback line.
 export function feedbackLine(accuracy: number): string {
-  if (accuracy >= 98) return 'Purr-fect accuracy! You are a typing wizard! 🧙'
-  if (accuracy >= 95) return 'Amazing! Your paws barely missed a key! 🐾'
+  if (accuracy >= 98) return 'Near-perfect accuracy. You are a typing wizard! 🧙'
+  if (accuracy >= 95) return 'Amazing — you barely missed a key!'
   if (accuracy >= 90) return 'Great job! So smooth and steady! ✨'
   if (accuracy >= 80) return 'Nice work! Slow down a touch for even better aim. 🎯'
   if (accuracy >= 65) return 'Good effort! Focus on hitting the right keys. 💪'

@@ -31,7 +31,7 @@ export default function SettingsScreen({ game, navigate }: Props) {
           onChange={(v) => {
             setSetting('sound', v)
             setSoundEnabled(v)
-            if (v) sfx.meow()
+            if (v) sfx.chime()
           }}
         />
         <Toggle
@@ -53,7 +53,7 @@ export default function SettingsScreen({ game, navigate }: Props) {
           ) : (
             <div className="space-y-2 text-center">
               <p className="font-bold text-red-500">
-                Are you sure? This erases stars, cats &amp; scores!
+                Are you sure? This erases stars, collectibles &amp; scores!
               </p>
               <div className="flex gap-2">
                 <Button

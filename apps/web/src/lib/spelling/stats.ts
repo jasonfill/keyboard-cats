@@ -62,8 +62,6 @@ export function turnaroundWords(snapshot: ProgressSnapshot, limit = 12): ItemMas
 
 export interface LevelSnapshot {
   grade: number
-  name: string
-  emoji: string
   blurb: string
   breakdown: MasteryBreakdown
   /** Share of the level's words at mastered band, 0..1. */
@@ -75,8 +73,6 @@ export function levelSnapshot(snapshot: ProgressSnapshot, levelIndex: number): L
   const b = gradeBreakdown(snapshot, grade.grade)
   return {
     grade: grade.grade,
-    name: grade.name,
-    emoji: grade.emoji,
     blurb: grade.blurb,
     breakdown: b,
     progress: b.total > 0 ? b.mastered / b.total : 0,

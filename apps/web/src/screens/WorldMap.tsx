@@ -1,7 +1,7 @@
 import type { GameApi } from '../hooks/useGameState'
 import { WORLDS, CURRICULUM } from '../data/lessons'
 import { Button, StarRow } from '../components/ui'
-import CatPhoto from '../components/CatPhoto'
+import Collectible from '../components/Collectible'
 import type { Route } from '../App'
 
 interface Props {
@@ -60,7 +60,7 @@ export default function WorldMap({ game, navigate }: Props) {
                     >
                       <div className="relative h-14 w-14 shrink-0">
                         {unlocked ? (
-                          <CatPhoto seed={lesson.catSeed} className="h-14 w-14" rounded="rounded-xl" />
+                          <Collectible seed={lesson.catSeed} className="h-14 w-14" rounded="rounded-xl" />
                         ) : (
                           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-tray text-2xl">
                             🔒

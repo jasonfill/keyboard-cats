@@ -4,6 +4,8 @@ import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import { GRADES } from '../../data/spelling'
 import { masteryBand } from '../../lib/adaptive'
+import { useTheme } from '../../lib/theme/ThemeProvider'
+import { levelNameFor } from '../../lib/themes'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { ACTIVITIES } from '../../lib/spelling/activities'
 import { listBreakdown } from '../../lib/spelling/stats'
@@ -18,6 +20,7 @@ const BAND_STYLE: Record<string, string> = {
 }
 
 export default function SpellingLists({ navigate }: { navigate: Navigate }) {
+  const { theme } = useTheme()
   const { snapshot, skill } = useProgress()
   const state = skill('spelling')
   const [openGrade, setOpenGrade] = useState<number>(GRADES[state.levelIndex]?.grade ?? 2)
@@ -46,10 +49,12 @@ export default function SpellingLists({ navigate }: { navigate: Navigate }) {
                   onClick={() => setOpenGrade(open ? -1 : g.grade)}
                   className="flex w-full items-center gap-3 p-5 text-left"
                 >
-                  <span className="text-3xl">{g.emoji}</span>
+                  <span className="text-3xl">
+                    {levelNameFor(theme, GRADES.indexOf(g), g.grade).emoji}
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xl font-extrabold text-ink">
-                      Grade {g.grade} · {g.name}
+                      Grade {g.grade} · {levelNameFor(theme, GRADES.indexOf(g), g.grade).name}
                     </span>
                     <span className="block truncate font-bold text-muted">{g.blurb}</span>
                   </span>

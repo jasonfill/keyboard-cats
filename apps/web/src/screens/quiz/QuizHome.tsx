@@ -49,7 +49,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
         title="Quiz 🃏"
         subtitle="Flashcards for anything you need to learn by heart."
         onBack={() => navigate({ name: 'home' })}
-        backLabel="← Academy"
+        backLabel="← Home"
       />
 
       {/* Streak and totals */}

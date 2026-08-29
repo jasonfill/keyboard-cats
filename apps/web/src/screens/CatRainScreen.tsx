@@ -102,6 +102,8 @@ export default function CatRainScreen({ game, navigate }: Props) {
         score: g.score,
         wpm: 0,
         accuracy,
+        // Stored on the high-score row. Left as-is on purpose: changing it
+        // would relabel every score already set.
         mode: 'Cat Rain',
         date: Date.now(),
       })
@@ -199,7 +201,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
           g.pop.push({ id: target.id, x: target.x, y: target.y })
           g.words = g.words.filter((w) => w.id !== target!.id)
           g.lockedId = null
-          if (soundOn) sfx.meow()
+          if (soundOn) sfx.chime()
         }
       } else {
         g.wrong += 1
@@ -221,9 +223,9 @@ export default function CatRainScreen({ game, navigate }: Props) {
           <div className="mb-2 flex justify-center">
             <Mascot mood="cheer" color="#f472b6" size={120} className="animate-floaty" />
           </div>
-          <h1 className="text-3xl font-extrabold text-ink">Cat Rain 🌧️🐱</h1>
+          <h1 className="text-3xl font-extrabold text-ink">Word Rain 🌧️</h1>
           <p className="mx-auto mt-2 max-w-sm text-muted">
-            Cat-words fall from the sky! <b>Type a word</b> to make the kitty pounce and pop it
+            Words fall from the sky! <b>Type a word</b> to pop it before it lands
             before it reaches the ground. Miss 3 and it&apos;s game over. Keep a combo for bonus points!
           </p>
           <div className="mt-6 flex justify-center gap-3">
@@ -256,7 +258,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
             score: g.score,
           }}
           stars={g.score >= 800 ? 3 : g.score >= 400 ? 2 : 1}
-          title="Cat Rain"
+          title="Word Rain"
           soundOn={soundOn}
           onReplay={start}
           onMenu={() => navigate({ name: 'typing' })}
@@ -316,7 +318,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
             className="pointer-events-none absolute -translate-x-1/2 animate-pop text-3xl"
             style={{ left: `${p.x}%`, top: p.y }}
           >
-            💥🐾
+            💥
           </div>
         ))}
 

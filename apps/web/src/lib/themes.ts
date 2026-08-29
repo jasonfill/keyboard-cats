@@ -83,6 +83,16 @@ export interface Theme {
   parts?: string[]
   /** Assembly stage heading, e.g. 'Stegosaurus'. `assembly` themes only. */
   assemblyOf?: string
+  /**
+   * What each grade band is called in this world, easiest first — one per
+   * grade from 2 to 8, matching GRADES order.
+   *
+   * The curriculum owns the grade and what it teaches; the theme owns only
+   * what the rung is called. A learner on Ocean climbs Tide Pools to The
+   * Trench and one on Robots goes Parts Bin to Full System, and both are
+   * spelling the identical words in the identical order.
+   */
+  levels: Array<{ name: string; emoji: string }>
   /** Art for the mascot slot. Absent themes fall back to the striped placeholder. */
   mascotSrc?: string
 }
@@ -133,6 +143,15 @@ export const THEMES: Theme[] = [
       'Turkish van',
       'Snowshoe',
     ],
+    levels: [
+      { name: 'Kitten Corner', emoji: '🧶' },
+      { name: 'Whisker Woods', emoji: '🌲' },
+      { name: 'Prowler Peaks', emoji: '⛰️' },
+      { name: 'Lynx Lookout', emoji: '🔭' },
+      { name: 'Panther Plateau', emoji: '🐆' },
+      { name: 'Cougar Canyon', emoji: '🏜️' },
+      { name: 'Tiger Summit', emoji: '🐯' },
+    ],
   },
   {
     id: 'dogs',
@@ -173,6 +192,15 @@ export const THEMES: Theme[] = [
       'Catch',
       'Balance',
     ],
+    levels: [
+      { name: 'Puppy Park', emoji: '🐾' },
+      { name: 'Fetch Field', emoji: '🎾' },
+      { name: 'Trick Trail', emoji: '🦴' },
+      { name: 'Agility Ridge', emoji: '🏅' },
+      { name: 'Scent Summit', emoji: '👃' },
+      { name: 'Working Line', emoji: '🐕' },
+      { name: 'Best in Show', emoji: '🏆' },
+    ],
   },
   {
     id: 'football',
@@ -202,6 +230,15 @@ export const THEMES: Theme[] = [
       'Goal line',
       'Touchdown',
       'Trophy',
+    ],
+    levels: [
+      { name: 'Practice Squad', emoji: '🏈' },
+      { name: 'Kickoff Line', emoji: '🏟️' },
+      { name: 'Midfield', emoji: '🥅' },
+      { name: 'Red Zone', emoji: '🎯' },
+      { name: 'Goal Line', emoji: '🚩' },
+      { name: 'Playoff Push', emoji: '🏅' },
+      { name: 'Championship', emoji: '🏆' },
     ],
   },
   {
@@ -233,6 +270,15 @@ export const THEMES: Theme[] = [
       'Neptune',
       'Deep field',
     ],
+    levels: [
+      { name: 'Launchpad', emoji: '🚀' },
+      { name: 'Low Orbit', emoji: '🛰️' },
+      { name: 'The Moon', emoji: '🌙' },
+      { name: 'Mars', emoji: '🔴' },
+      { name: 'Asteroid Belt', emoji: '☄️' },
+      { name: 'Outer Planets', emoji: '🪐' },
+      { name: 'Deep Field', emoji: '🌌' },
+    ],
   },
   {
     id: 'dinosaurs',
@@ -255,6 +301,15 @@ export const THEMES: Theme[] = [
     because: 'Bones only come out of graded digs. Hinted words leave the ground.',
     parts: ['Skull', 'Jaw', 'Ribs', 'Spine', 'Tail', 'Claws', 'Legs', 'Plates'],
     assemblyOf: 'Stegosaurus',
+    levels: [
+      { name: 'First Dig', emoji: '⛏️' },
+      { name: 'Bone Bed', emoji: '🦴' },
+      { name: 'Fossil Ridge', emoji: '🪨' },
+      { name: 'Amber Grove', emoji: '🟠' },
+      { name: 'Tar Pits', emoji: '🕳️' },
+      { name: 'Great Rift', emoji: '🌋' },
+      { name: 'Museum Hall', emoji: '🦕' },
+    ],
   },
   {
     id: 'ocean',
@@ -284,6 +339,15 @@ export const THEMES: Theme[] = [
       'Midnight',
       'Abyss',
       'Trench',
+    ],
+    levels: [
+      { name: 'Tide Pools', emoji: '🐚' },
+      { name: 'The Reef', emoji: '🐠' },
+      { name: 'Kelp Forest', emoji: '🌿' },
+      { name: 'Open Water', emoji: '🌊' },
+      { name: 'Twilight Zone', emoji: '🔦' },
+      { name: 'Midnight Zone', emoji: '🦑' },
+      { name: 'The Trench', emoji: '🕳️' },
     ],
   },
   {
@@ -316,6 +380,15 @@ export const THEMES: Theme[] = [
       'Nitro',
     ],
     assemblyOf: 'Your car',
+    levels: [
+      { name: 'Pit Lane', emoji: '🔧' },
+      { name: 'Time Trial', emoji: '⏱️' },
+      { name: 'Club Circuit', emoji: '🏁' },
+      { name: 'Street Course', emoji: '🏙️' },
+      { name: 'Night Race', emoji: '🌃' },
+      { name: 'Endurance', emoji: '🕛' },
+      { name: 'Grand Prix', emoji: '🏆' },
+    ],
   },
   {
     id: 'horses',
@@ -352,6 +425,15 @@ export const THEMES: Theme[] = [
       'Vaulting',
       'Polo',
       'Grand prix',
+    ],
+    levels: [
+      { name: 'Pony Paddock', emoji: '🐴' },
+      { name: 'Trail Ride', emoji: '🌾' },
+      { name: 'Cross Rails', emoji: '🚧' },
+      { name: 'Show Ring', emoji: '🎪' },
+      { name: 'Dressage Court', emoji: '🎗️' },
+      { name: 'Cross Country', emoji: '🌳' },
+      { name: 'Grand Prix', emoji: '🏆' },
     ],
   },
   {
@@ -395,6 +477,15 @@ export const THEMES: Theme[] = [
       'Encore',
       'Closer',
     ],
+    levels: [
+      { name: 'First Chords', emoji: '🎵' },
+      { name: 'Garage Band', emoji: '🎸' },
+      { name: 'Open Mic', emoji: '🎤' },
+      { name: 'Club Night', emoji: '🎹' },
+      { name: 'Studio Session', emoji: '🎧' },
+      { name: 'Festival Stage', emoji: '🎪' },
+      { name: 'Headline Show', emoji: '🌟' },
+    ],
   },
   {
     id: 'robots',
@@ -426,6 +517,15 @@ export const THEMES: Theme[] = [
       'Jetpack',
     ],
     assemblyOf: 'Your bot',
+    levels: [
+      { name: 'Parts Bin', emoji: '🔩' },
+      { name: 'Test Bench', emoji: '🔌' },
+      { name: 'First Steps', emoji: '🦿' },
+      { name: 'Sensor Array', emoji: '📡' },
+      { name: 'Autonomy', emoji: '🧠' },
+      { name: 'Field Trial', emoji: '🛠️' },
+      { name: 'Full System', emoji: '🤖' },
+    ],
   },
 ]
 
@@ -551,4 +651,19 @@ export function journeyLines(
     now: `${stops[at]}, ${owned} of ${theme.total} ${theme.unit}.`,
     next: `Next up is ${stops[at + 1]}. Clear a graded round above its predicted score to get there.`,
   }
+}
+
+/**
+ * What this world calls the rung at `levelIndex` (0 = grade 2).
+ *
+ * Falls back to a plain grade label rather than a wrong name if a theme is
+ * ever short an entry — a nameless rung is better than one borrowed from
+ * another world.
+ */
+export function levelNameFor(
+  theme: Theme,
+  levelIndex: number,
+  grade: number,
+): { name: string; emoji: string } {
+  return theme.levels[levelIndex] ?? { name: `Grade ${grade}`, emoji: '' }
 }

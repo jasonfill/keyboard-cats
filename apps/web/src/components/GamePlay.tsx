@@ -8,6 +8,7 @@ import Keyboard from './Keyboard'
 import Hands from './Hands'
 import Hud from './Hud'
 import Mascot, { type Mood } from './Mascot'
+import { useTheme } from '../lib/theme/ThemeProvider'
 import { Button } from './ui'
 
 interface Props {
@@ -33,6 +34,7 @@ export default function GamePlay({
   onFinish,
   onQuit,
 }: Props) {
+  const { theme } = useTheme()
   const [mood, setMood] = useState<Mood>('idle')
   const moodTimer = useRef<number | null>(null)
   const [floaters, setFloaters] = useState<{ id: number; text: string }[]>([])
@@ -55,7 +57,7 @@ export default function GamePlay({
   const { snapshot, handleChar } = useTypingEngine(text, {
     onCorrect: (_char, combo) => {
       if (sound) {
-        if (combo > 0 && combo % 10 === 0) sfx.meow()
+        if (combo > 0 && combo % 10 === 0) sfx.chime()
         else if (combo >= 3) sfx.combo(combo)
         else sfx.correct()
       }
@@ -64,7 +66,7 @@ export default function GamePlay({
       // beat, and the mascot only reacts once a combo is actually going.
       if (combo > 0 && combo % 10 === 0) {
         setMood('cheer')
-        addFloater('MEOW! 🐱')
+        addFloater(theme.cheer)
       } else if (combo >= 5) {
         setMood('cheer')
         if (combo % 5 === 0) addFloater(`Combo x${combo}! 🔥`)

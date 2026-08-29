@@ -86,7 +86,7 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
           </Button>
         </div>
 
-        <label className="mb-2 block text-sm font-bold text-muted">Your cat</label>
+        <label className="mb-2 block text-sm font-bold text-muted">Your avatar</label>
         <div className="flex flex-wrap gap-2">
           {AVATARS.map((emoji) => (
             <button

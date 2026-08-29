@@ -8,9 +8,12 @@ import { expectedCorrect } from '../../lib/adaptive'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { ACTIVITIES } from '../../lib/spelling/activities'
 import { dueWords, levelSnapshot, troubleWords } from '../../lib/spelling/stats'
+import { useTheme } from '../../lib/theme/ThemeProvider'
+import { levelNameFor } from '../../lib/themes'
 import type { Navigate } from '../../routes'
 
 export default function SpellingHome({ navigate }: { navigate: Navigate }) {
+  const { theme } = useTheme()
   const { snapshot, skill } = useProgress()
   const state = skill('spelling')
   const level = levelSnapshot(snapshot, state.levelIndex)
@@ -24,7 +27,7 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
         title="Spelling"
         subtitle="Words picked for you, based on how you actually did."
         onBack={() => navigate({ name: 'home' })}
-        backLabel="← Academy"
+        backLabel="← Home"
       />
 
       {/* Current level */}
@@ -32,12 +35,14 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
         <div className="rounded-[22px] bg-white/92 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{level.emoji}</span>
+              <span className="text-4xl">{levelNameFor(theme, state.levelIndex, level.grade).emoji}</span>
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wide text-stone">
                   Grade {level.grade} level
                 </p>
-                <h2 className="text-2xl font-extrabold text-ink">{level.name}</h2>
+                <h2 className="text-2xl font-extrabold text-ink">
+                  {levelNameFor(theme, state.levelIndex, level.grade).name}
+                </h2>
                 <p className="font-bold text-muted">{level.blurb}</p>
               </div>
             </div>
@@ -166,13 +171,13 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
             const chance = expectedCorrect(state.ability, g.grade)
             return (
               <div key={g.grade} className="flex items-center gap-3">
-                <span className="w-8 text-xl">{g.emoji}</span>
+                <span className="w-8 text-xl">{levelNameFor(theme, i, g.grade).emoji}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <span
                       className={`truncate text-sm font-extrabold ${reachable ? 'text-ink' : 'text-stone'}`}
                     >
-                      Grade {g.grade} · {g.name}
+                      Grade {g.grade} · {levelNameFor(theme, i, g.grade).name}
                     </span>
                     <span className="shrink-0 text-xs font-bold text-stone">
                       {snap.breakdown.mastered}/{snap.breakdown.total} mastered

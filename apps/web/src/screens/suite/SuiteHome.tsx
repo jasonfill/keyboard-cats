@@ -197,7 +197,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           stats={[
             { label: 'Lessons done', value: `${typingLessons}/${TOTAL_LESSONS}` },
             { label: 'Stars', value: String(game.state.totalStars) },
-            { label: 'Cats collected', value: String(game.state.collectedCats.length) },
+            { label: theme.unit, value: String(game.state.collectedCats.length) },
           ]}
           cta="Keep typing"
           onClick={() => navigate({ name: 'typing' })}

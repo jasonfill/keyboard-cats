@@ -83,7 +83,8 @@ export function useGameState() {
           plays: (existing?.plays ?? 0) + 1,
         }
 
-        // Collect a cat card the first time a lesson is finished.
+        // Collect a reward the first time a lesson is finished. The seed is
+        // stored; which of the theme's items it names is worked out at render.
         let collectedCat: string | null = null
         const collectedCats = [...prev.collectedCats]
         if (!existing && !collectedCats.includes(catSeed)) {

@@ -556,7 +556,7 @@ function Feedback({
   return (
     <div className="text-center">
       <p className={`mb-2 text-2xl font-extrabold ${result.correct ? 'text-emerald-600' : 'text-rose-500'}`}>
-        {result.correct ? 'Purr-fect! 🎉' : 'Not quite 🐾'}
+        {result.correct ? 'That’s it! 🎉' : 'Not quite'}
       </p>
 
       {!result.correct && (

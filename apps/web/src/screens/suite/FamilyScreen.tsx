@@ -156,12 +156,12 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
               onClick={() =>
                 finish({
                   displayName: profile?.displayName?.trim() || 'Me',
-                  avatarEmoji: profile?.avatarEmoji ?? '🐱',
+                  avatarEmoji: profile?.avatarEmoji ?? '🙂',
                   birthYear: intent?.birthYear ?? null,
                 })
               }
             >
-              🐱 Start learning
+              Start learning
             </Button>
           </Card>
         ) : (
@@ -179,11 +179,11 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
                 onClick={() =>
                   finish({
                     displayName: profile?.displayName?.trim() || 'Me',
-                    avatarEmoji: profile?.avatarEmoji ?? '🐱',
+                    avatarEmoji: profile?.avatarEmoji ?? '🙂',
                   })
                 }
               >
-                🐱 I am the one learning
+                I am the one learning
               </Button>
             </Card>
           </>
@@ -718,7 +718,7 @@ function AddLearner({
         </label>
 
         <div>
-          <p className="text-sm font-extrabold text-muted">Pick a cat</p>
+          <p className="text-sm font-extrabold text-muted">Pick an avatar</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {AVATARS.map((a) => (
               <button
@@ -828,7 +828,7 @@ function JoinWithCode({
       </div>
       {done && (
         <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
-          🐾 Added! You can see their progress now.
+          Added! You can see their progress now.
         </p>
       )}
     </Card>

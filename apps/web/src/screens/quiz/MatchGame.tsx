@@ -144,7 +144,7 @@ export default function MatchGame({
 
       <Card className="mb-4">
         <p className="text-center font-bold text-muted">
-          Tap a card, then tap its partner. Beat the clock. 🐾
+          Tap a card, then tap its partner. Beat the clock.
         </p>
       </Card>
 

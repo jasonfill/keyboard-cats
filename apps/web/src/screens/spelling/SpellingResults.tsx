@@ -25,7 +25,7 @@ function encouragement(accuracy: number, predicted: number): string {
   if (accuracy >= predicted) return 'You beat what we predicted for these words. Nicely done! ✨'
   if (accuracy >= 60) return 'Solid round. The tricky ones will come back for another go. 💪'
   if (accuracy >= 40) return 'Good effort! These words are now on your review list. 🎯'
-  return 'These were hard ones. We will bring them back easier next time. 🐾'
+  return 'These were hard ones. We will bring them back easier next time.'
 }
 
 export default function SpellingResults({ summary, navigate, onAgain }: Props) {

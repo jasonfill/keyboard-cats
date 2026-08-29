@@ -2,8 +2,6 @@ import type { GradeLevel } from './types'
 
 export const GRADE_4: GradeLevel = {
   grade: 4,
-  name: 'Prowler Peaks',
-  emoji: '⛰️',
   blurb: 'Prefixes, big endings, homophones, and words that sound alike.',
   lists: [
     {

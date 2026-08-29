@@ -181,7 +181,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
             )}
 
             <Button type="submit" disabled={busy || loginCode.length < 6 || pin.length < 4}>
-              {busy ? 'One moment…' : '🐾 Let me in!'}
+              {busy ? 'One moment…' : 'Let me in!'}
             </Button>
           </form>
 
@@ -226,7 +226,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
               clearError()
             }}
           >
-            🐾 Sign in with a code
+            Sign in with a code
           </Button>
           <button
             onClick={onGuest}
@@ -368,7 +368,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
             }}
             className="mt-2 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
-            🐾 Kids: sign in with a code
+            Kids: sign in with a code
           </button>
         </Card>
       </div>
@@ -479,7 +479,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
           }}
           className="mt-4 w-full rounded-2xl border-2 border-edge py-2.5 text-sm font-extrabold text-ink transition-colors hover:bg-quiet"
         >
-          🐾 Kids: sign in with a code
+          Kids: sign in with a code
         </button>
 
         {tab === 'signin' && (
@@ -493,7 +493,7 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
 
         {guestProgress && tab === 'signup' && (
           <p className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
-            🐾 We found progress saved on this device. It will be added to your new account
+            We found progress saved on this device. It will be added to your new account
             automatically.
           </p>
         )}

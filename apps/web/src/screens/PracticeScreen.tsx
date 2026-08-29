@@ -95,7 +95,7 @@ export default function PracticeScreen({ game, navigate }: Props) {
           <Mascot mood="idle" color="#38bdf8" size={80} />
           <div>
             <h1 className="text-2xl font-extrabold text-ink">Free Practice</h1>
-            <p className="text-muted">Warm up your paws with a custom round!</p>
+            <p className="text-muted">Warm up with a custom round.</p>
           </div>
         </div>
 

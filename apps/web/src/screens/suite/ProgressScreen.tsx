@@ -473,7 +473,7 @@ function activityLabel(activity: string, subject: string): string {
   const known = ACTIVITIES.find((a) => a.id === activity)
   if (known) return known.name
   if (activity === 'lesson') return 'Typing lesson'
-  if (activity === 'cat-rain') return 'Cat Rain'
+  if (activity === 'cat-rain') return 'Word Rain'
   return activity
 }
 

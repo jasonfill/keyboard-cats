@@ -12,7 +12,7 @@ export default function AccountChip({ onOpen }: { onOpen: () => void }) {
 
   const label =
     status === 'signed-in' ? (profile?.displayName ?? 'Account') : configured ? 'Sign in' : 'Guest'
-  const emoji = status === 'signed-in' ? (profile?.avatarEmoji ?? '🐱') : '👋'
+  const emoji = status === 'signed-in' ? (profile?.avatarEmoji ?? '🙂') : '👋'
 
   return (
     <button

@@ -5,17 +5,19 @@ import { QUIZ_ACHIEVEMENTS } from '../data/quizAchievements'
 import { SPELLING_ACHIEVEMENTS } from '../data/spellingAchievements'
 import { useProgress } from '../lib/progress/ProgressProvider'
 import { Button, Card } from '../components/ui'
-import CatPhoto from '../components/CatPhoto'
+import Collectible from '../components/Collectible'
 import type { Route } from '../App'
+import { useTheme } from '../lib/theme/ThemeProvider'
 
 interface Props {
   game: GameApi
   navigate: (r: Route) => void
 }
 
-type Tab = 'scores' | 'badges' | 'cats'
+type Tab = 'scores' | 'badges' | 'collection'
 
 export default function TrophyRoom({ game, navigate }: Props) {
+  const { theme } = useTheme()
   const [tab, setTab] = useState<Tab>('scores')
   const { state } = game
   const { snapshot } = useProgress()
@@ -39,15 +41,15 @@ export default function TrophyRoom({ game, navigate }: Props) {
         <TabButton active={tab === 'badges'} onClick={() => setTab('badges')}>
           🎖️ Badges
         </TabButton>
-        <TabButton active={tab === 'cats'} onClick={() => setTab('cats')}>
-          🐱 Cat Cards
+        <TabButton active={tab === 'collection'} onClick={() => setTab('collection')}>
+          {theme.unit}
         </TabButton>
       </div>
 
       {tab === 'scores' && (
         <Card>
           {state.highScores.length === 0 ? (
-            <Empty text="No scores yet — play Cat Rain or Practice to set a record!" />
+            <Empty text="No scores yet — play Word Rain or Practice to set a record!" />
           ) : (
             <ol className="divide-y divide-hair">
               {state.highScores.map((h, i) => (
@@ -93,15 +95,15 @@ export default function TrophyRoom({ game, navigate }: Props) {
         </div>
       )}
 
-      {tab === 'cats' && (
+      {tab === 'collection' && (
         <Card>
           {state.collectedCats.length === 0 ? (
-            <Empty text="No cat cards yet — finish lessons to collect adorable cats!" />
+            <Empty text={`No ${theme.unit} yet — finish lessons to start collecting.`} />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {state.collectedCats.map((seed) => (
                 <div key={seed} className="rounded-2xl bg-white p-2 shadow ring-1 ring-hair">
-                  <CatPhoto seed={seed} className="h-28 w-full" />
+                  <Collectible seed={seed} className="h-28 w-full" showLabel />
                 </div>
               ))}
             </div>

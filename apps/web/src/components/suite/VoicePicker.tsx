@@ -51,7 +51,7 @@ export default function VoicePicker({ className = '' }: { className?: string }) 
       <Button
         variant="ghost"
         className="px-4 py-2 text-sm"
-        onClick={() => speak('Spell the word: whiskers. The cat twitched its whiskers.')}
+        onClick={() => speak('Spell the word: journey. It was a long journey home.')}
       >
         ▶︎ Hear it
       </Button>

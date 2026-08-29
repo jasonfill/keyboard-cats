@@ -2,11 +2,12 @@ import { useEffect } from 'react'
 import type { RoundResult } from '../lib/stats'
 import { feedbackLine } from '../lib/stats'
 import type { Achievement } from '../data/achievements'
-import { randomCatFact } from '../lib/cats'
+import { randomTypingFact } from '../lib/facts'
 import { sfx } from '../lib/sound'
 import { Button, Card, StarRow } from './ui'
 import Confetti from './Confetti'
-import CatPhoto from './CatPhoto'
+import Collectible from './Collectible'
+import { useTheme } from '../lib/theme/ThemeProvider'
 
 interface Props {
   result: RoundResult
@@ -31,6 +32,8 @@ export default function ResultsCard({
   onNext,
   onMenu,
 }: Props) {
+  const { theme } = useTheme()
+
   useEffect(() => {
     if (soundOn && stars >= 1) {
       const t = window.setTimeout(() => sfx.star(), 250)
@@ -38,7 +41,7 @@ export default function ResultsCard({
     }
   }, [soundOn, stars])
 
-  const fact = randomCatFact()
+  const fact = randomTypingFact()
 
   return (
     <div className="relative mx-auto w-full max-w-2xl">
@@ -58,9 +61,9 @@ export default function ResultsCard({
         </div>
 
         {collectedCat && (
-          <div className="mt-5 rounded-2xl bg-amber-50 p-4 ring-2 ring-amber-200">
-            <p className="mb-2 font-extrabold text-amber-600">📸 New cat card unlocked!</p>
-            <CatPhoto seed={collectedCat} className="mx-auto h-40 w-56" />
+          <div className="mt-5 rounded-2xl bg-tintA p-4">
+            <p className="mb-2 font-extrabold text-ink">New {theme.unitOne} unlocked!</p>
+            <Collectible seed={collectedCat} className="mx-auto h-40 w-56" showLabel />
           </div>
         )}
 
@@ -79,7 +82,7 @@ export default function ResultsCard({
         )}
 
         <p className="mt-5 rounded-xl bg-quiet p-3 text-sm font-semibold text-body">
-          🐱 Cat fact: {fact}
+          ⌨️ Typing fact: {fact}
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
