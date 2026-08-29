@@ -12,50 +12,50 @@ export interface Achievement {
 export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first-steps',
-    name: 'First Pawsteps',
-    emoji: '🐾',
+    name: 'First Steps',
+    emoji: '👣',
     description: 'Finish your very first lesson.',
     test: (s) => Object.values(s.lessons).some((l) => l.plays > 0),
   },
   {
     id: 'three-stars',
-    name: 'Star Kitty',
+    name: 'Three Stars',
     emoji: '⭐',
     description: 'Earn 3 stars on any lesson.',
     test: (s) => Object.values(s.lessons).some((l) => l.stars >= 3),
   },
   {
     id: 'ten-stars',
-    name: 'Constellation Cat',
+    name: 'Constellation',
     emoji: '🌟',
     description: 'Collect 10 stars in total.',
     test: (s) => s.totalStars >= 10,
   },
   {
     id: 'sharp-claws',
-    name: 'Sharp Claws',
+    name: 'Sharp Eyes',
     emoji: '🎯',
     description: 'Finish a round with 95%+ accuracy.',
     test: (s) => Object.values(s.lessons).some((l) => l.bestAccuracy >= 95),
   },
   {
     id: 'speedy-paws',
-    name: 'Speedy Paws',
+    name: 'Picking Up Speed',
     emoji: '⚡',
     description: 'Reach 20 WPM in any round.',
     test: (s) => Object.values(s.lessons).some((l) => l.bestWpm >= 20),
   },
   {
     id: 'zoomies',
-    name: 'The Zoomies',
+    name: 'Flying',
     emoji: '💨',
     description: 'Reach 35 WPM in any round.',
     test: (s) => Object.values(s.lessons).some((l) => l.bestWpm >= 35),
   },
   {
     id: 'home-master',
-    name: 'Meadow Master',
-    emoji: '🌼',
+    name: 'Home Row Master',
+    emoji: '🎹',
     description: 'Earn 3 stars on every Home Row lesson.',
     test: (s) => {
       const ids = ['home-fj', 'home-dk', 'home-sl', 'home-a-semi', 'home-gh', 'home-space', 'home-review']
@@ -64,14 +64,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'collector',
-    name: 'Cat Collector',
-    emoji: '📸',
-    description: 'Collect 5 cat cards.',
+    name: 'Collector',
+    emoji: '🗂️',
+    description: 'Collect 5 rewards.',
     test: (s) => s.collectedCats.length >= 5,
   },
   {
     id: 'high-scorer',
-    name: 'Top Cat',
+    name: 'High Scorer',
     emoji: '🏆',
     description: 'Land a score of 1000+ in one round.',
     test: (s) =>

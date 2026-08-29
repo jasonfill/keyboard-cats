@@ -1,5 +1,7 @@
 import type { GameApi } from '../hooks/useGameState'
 import { WORLDS, CURRICULUM } from '../data/lessons'
+import { useTheme } from '../lib/theme/ThemeProvider'
+import { typingWorldFor } from '../lib/themes'
 import { Button, StarRow } from '../components/ui'
 import Collectible from '../components/Collectible'
 import type { Route } from '../App'
@@ -10,6 +12,7 @@ interface Props {
 }
 
 export default function WorldMap({ game, navigate }: Props) {
+  const { theme } = useTheme()
   const { state } = game
 
   // A lesson is unlocked if it's the first, or the previous one has been played.
@@ -29,16 +32,16 @@ export default function WorldMap({ game, navigate }: Props) {
       </div>
 
       <div className="space-y-6">
-        {WORLDS.map((world) => (
+        {WORLDS.map((world, wi) => (
           <div
             key={world.id}
             className="rounded-3xl bg-tintB p-1"
           >
             <div className="rounded-[22px] bg-white/90 p-5">
               <div className="mb-3 flex items-center gap-2">
-                <span className="text-3xl">{world.emoji}</span>
+                <span className="text-3xl">{typingWorldFor(theme, wi).emoji}</span>
                 <div>
-                  <h2 className="text-xl font-extrabold text-ink">{world.name}</h2>
+                  <h2 className="text-xl font-extrabold text-ink">{typingWorldFor(theme, wi).name}</h2>
                   <p className="text-sm text-muted">{world.blurb}</p>
                 </div>
               </div>

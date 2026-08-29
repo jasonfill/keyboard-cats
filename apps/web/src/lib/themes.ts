@@ -93,6 +93,15 @@ export interface Theme {
    * spelling the identical words in the identical order.
    */
   levels: Array<{ name: string; emoji: string }>
+  /**
+   * What the five typing worlds are called here, in curriculum order:
+   * home row, top row, bottom row, sentences, numbers.
+   *
+   * Name only. Which keys a world teaches is curriculum and stays in its
+   * blurb, so a themed name can never leave a learner unsure which row they
+   * are on.
+   */
+  worlds: Array<{ name: string; emoji: string }>
   /** Art for the mascot slot. Absent themes fall back to the striped placeholder. */
   mascotSrc?: string
 }
@@ -143,6 +152,13 @@ export const THEMES: Theme[] = [
       'Turkish van',
       'Snowshoe',
     ],
+    worlds: [
+      { name: 'Home Row Meadow', emoji: '🌼' },
+      { name: 'Treetop Tower', emoji: '🌳' },
+      { name: 'Burrow Basement', emoji: '🕳️' },
+      { name: 'Sentence Savannah', emoji: '🦁' },
+      { name: 'Number Nook', emoji: '🔢' },
+    ],
     levels: [
       { name: 'Kitten Corner', emoji: '🧶' },
       { name: 'Whisker Woods', emoji: '🌲' },
@@ -192,6 +208,13 @@ export const THEMES: Theme[] = [
       'Catch',
       'Balance',
     ],
+    worlds: [
+      { name: 'The Kennel', emoji: '🏠' },
+      { name: 'Over the Jumps', emoji: '🪜' },
+      { name: 'The Dig Pit', emoji: '🕳️' },
+      { name: 'The Long Walk', emoji: '🦮' },
+      { name: 'Counting Treats', emoji: '🦴' },
+    ],
     levels: [
       { name: 'Puppy Park', emoji: '🐾' },
       { name: 'Fetch Field', emoji: '🎾' },
@@ -230,6 +253,13 @@ export const THEMES: Theme[] = [
       'Goal line',
       'Touchdown',
       'Trophy',
+    ],
+    worlds: [
+      { name: 'The Huddle', emoji: '🏈' },
+      { name: 'The Long Ball', emoji: '🎯' },
+      { name: 'The Ground Game', emoji: '🥾' },
+      { name: 'Full Drive', emoji: '🏟️' },
+      { name: 'The Scoreboard', emoji: '🔢' },
     ],
     levels: [
       { name: 'Practice Squad', emoji: '🏈' },
@@ -270,6 +300,13 @@ export const THEMES: Theme[] = [
       'Neptune',
       'Deep field',
     ],
+    worlds: [
+      { name: 'The Launchpad', emoji: '🚀' },
+      { name: 'Upper Atmosphere', emoji: '☁️' },
+      { name: 'Landing Site', emoji: '🌑' },
+      { name: 'Full Mission', emoji: '🛰️' },
+      { name: 'Flight Numbers', emoji: '🔢' },
+    ],
     levels: [
       { name: 'Launchpad', emoji: '🚀' },
       { name: 'Low Orbit', emoji: '🛰️' },
@@ -301,6 +338,13 @@ export const THEMES: Theme[] = [
     because: 'Bones only come out of graded digs. Hinted words leave the ground.',
     parts: ['Skull', 'Jaw', 'Ribs', 'Spine', 'Tail', 'Claws', 'Legs', 'Plates'],
     assemblyOf: 'Stegosaurus',
+    worlds: [
+      { name: 'Base Camp', emoji: '⛺' },
+      { name: 'The High Ridge', emoji: '🏔️' },
+      { name: 'The Dig Pit', emoji: '⛏️' },
+      { name: 'Full Skeleton', emoji: '🦴' },
+      { name: 'Field Notes', emoji: '🔢' },
+    ],
     levels: [
       { name: 'First Dig', emoji: '⛏️' },
       { name: 'Bone Bed', emoji: '🦴' },
@@ -339,6 +383,13 @@ export const THEMES: Theme[] = [
       'Midnight',
       'Abyss',
       'Trench',
+    ],
+    worlds: [
+      { name: 'The Shallows', emoji: '🐚' },
+      { name: 'The Surface', emoji: '🌅' },
+      { name: 'The Deep', emoji: '🌑' },
+      { name: 'Open Ocean', emoji: '🌊' },
+      { name: 'Depth Gauge', emoji: '🔢' },
     ],
     levels: [
       { name: 'Tide Pools', emoji: '🐚' },
@@ -380,6 +431,13 @@ export const THEMES: Theme[] = [
       'Nitro',
     ],
     assemblyOf: 'Your car',
+    worlds: [
+      { name: 'The Grid', emoji: '🏁' },
+      { name: 'The Straight', emoji: '🛣️' },
+      { name: 'The Chicane', emoji: '🌀' },
+      { name: 'Full Lap', emoji: '🏎️' },
+      { name: 'Lap Times', emoji: '⏱️' },
+    ],
     levels: [
       { name: 'Pit Lane', emoji: '🔧' },
       { name: 'Time Trial', emoji: '⏱️' },
@@ -425,6 +483,13 @@ export const THEMES: Theme[] = [
       'Vaulting',
       'Polo',
       'Grand prix',
+    ],
+    worlds: [
+      { name: 'The Paddock', emoji: '🐴' },
+      { name: 'Over the Jumps', emoji: '🚧' },
+      { name: 'The Trail', emoji: '🌾' },
+      { name: 'Full Course', emoji: '🏇' },
+      { name: 'Ribbon Count', emoji: '🔢' },
     ],
     levels: [
       { name: 'Pony Paddock', emoji: '🐴' },
@@ -477,6 +542,13 @@ export const THEMES: Theme[] = [
       'Encore',
       'Closer',
     ],
+    worlds: [
+      { name: 'First Position', emoji: '🎵' },
+      { name: 'The High Notes', emoji: '🎼' },
+      { name: 'The Low Notes', emoji: '🎹' },
+      { name: 'Full Song', emoji: '🎤' },
+      { name: 'Counting Bars', emoji: '🥁' },
+    ],
     levels: [
       { name: 'First Chords', emoji: '🎵' },
       { name: 'Garage Band', emoji: '🎸' },
@@ -517,6 +589,13 @@ export const THEMES: Theme[] = [
       'Jetpack',
     ],
     assemblyOf: 'Your bot',
+    worlds: [
+      { name: 'The Chassis', emoji: '🔩' },
+      { name: 'Upper Servos', emoji: '🦾' },
+      { name: 'Lower Servos', emoji: '🦿' },
+      { name: 'Full Assembly', emoji: '🤖' },
+      { name: 'Binary Bay', emoji: '🔢' },
+    ],
     levels: [
       { name: 'Parts Bin', emoji: '🔩' },
       { name: 'Test Bench', emoji: '🔌' },
@@ -666,4 +745,14 @@ export function levelNameFor(
   grade: number,
 ): { name: string; emoji: string } {
   return theme.levels[levelIndex] ?? { name: `Grade ${grade}`, emoji: '' }
+}
+
+/**
+ * What this world calls typing world `index` (0 = home row).
+ *
+ * Same rule as the spelling rungs: the theme names it, the curriculum says
+ * what it teaches.
+ */
+export function typingWorldFor(theme: Theme, index: number): { name: string; emoji: string } {
+  return theme.worlds[index] ?? { name: `World ${index + 1}`, emoji: '' }
 }

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import type { GameApi, LessonOutcome } from '../hooks/useGameState'
 import { CURRICULUM, getLesson } from '../data/lessons'
 import { generateLessonText } from '../lib/content'
+import { useTheme } from '../lib/theme/ThemeProvider'
+import { typingWorldFor } from '../lib/themes'
 import type { RoundResult } from '../lib/stats'
 import GamePlay from '../components/GamePlay'
 import ResultsCard from '../components/ResultsCard'
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export default function LessonScreen({ game, lessonId, navigate }: Props) {
+  const { theme } = useTheme()
   const lesson = getLesson(lessonId)
   const [attempt, setAttempt] = useState(0)
   const [outcome, setOutcome] = useState<LessonOutcome | null>(null)
@@ -75,7 +78,7 @@ export default function LessonScreen({ game, lessonId, navigate }: Props) {
       <GamePlay
         key={attempt}
         text={text}
-        title={`${lesson.worldEmoji} ${lesson.title}`}
+        title={`${typingWorldFor(theme, lesson.worldIndex).emoji} ${lesson.title}`}
         subtitle={lesson.blurb}
         showKeyboard={game.state.settings.showKeyboard}
         showHands={game.state.settings.showHands}
