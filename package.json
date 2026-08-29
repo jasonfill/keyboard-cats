@@ -15,14 +15,15 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "validate:words": "npm run validate:words --workspace @whizzo/web",
     "simulate:adaptive": "npm run simulate:adaptive --workspace @whizzo/web",
-    "test": "npm run typecheck && npm run lint && npm run validate:words && npm run simulate:adaptive",
+    "test": "npm run typecheck && npm run lint && npm run test:unit && npm run validate:words && npm run simulate:adaptive",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
     "local:env": "node scripts/local-env.mjs",
     "dev:all": "concurrently -n api,web -c cyan,magenta \"npm run dev:api\" \"npm run dev\"",
-    "test:db": "node scripts/test-db.mjs"
+    "test:db": "node scripts/test-db.mjs",
+    "test:unit": "npm run test:unit --workspaces --if-present"
   },
   "engines": {
     "node": ">=20 <23"
