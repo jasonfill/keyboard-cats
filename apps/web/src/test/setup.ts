@@ -9,6 +9,9 @@ import { cleanup } from '@testing-library/react'
 
 // Speech synthesis drives dictation. jsdom has none.
 Object.defineProperty(window, 'speechSynthesis', {
+  // Configurable so a test can swap in a device with no voices at all, which
+  // is the case the speech module exists to handle.
+  configurable: true,
   writable: true,
   value: {
     speak: vi.fn(),
@@ -28,7 +31,16 @@ Object.defineProperty(window, 'speechSynthesis', {
     return { connect: vi.fn(), start: vi.fn(), stop: vi.fn(), frequency: { value: 0 }, type: '' }
   }
   createGain() {
-    return { connect: vi.fn(), gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() } }
+    return {
+      connect: vi.fn(),
+      gain: {
+        value: 0,
+        setValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
+        cancelScheduledValues: vi.fn(),
+      },
+    }
   }
   get destination() {
     return {}
