@@ -24,6 +24,7 @@ const adminApi = vi.hoisted(() => ({
     data: { properties: { hashed_token: 'tok' } },
     error: null,
   })),
+  getUserById: vi.fn(async () => ({ data: { user: { email: 'dev@example.test' } }, error: null })),
 }))
 const supabaseAuth = vi.hoisted(() => ({
   signInWithPassword: vi.fn(async () => ({
@@ -31,7 +32,10 @@ const supabaseAuth = vi.hoisted(() => ({
     error: null,
   })),
   verifyOtp: vi.fn(async () => ({
-    data: { session: { access_token: 'a', refresh_token: 'r' } },
+    data: {
+      user: { id: 'auth-1' },
+      session: { access_token: 'a', refresh_token: 'r', expires_in: 3600, expires_at: 1 },
+    },
     error: null,
   })),
 }))
@@ -49,7 +53,7 @@ const envValues = vi.hoisted(() => ({
   CHILD_LOGIN_SECRET: 'a-child-login-secret-long-enough-to-derive-with',
   CHILD_EMAIL_DOMAIN: 'learners.test',
   DEV_LOGIN_SECRET: 'a-dev-login-secret-long-enough',
-  DEV_LOGIN_EMAILS: 'dev@example.test',
+  DEV_LOGIN_ACCOUNTS: ['dev@example.test'],
   PG_POOL_MAX: 4,
   NODE_ENV: 'test',
   PORT: 8099,
@@ -213,6 +217,126 @@ describe('the developer login', () => {
       remoteAddress: '127.0.0.1',
     })
     expect(res.statusCode).toBe(400)
+  })
+
+  it('mints a session for a nominated account, without touching its password', async () => {
+    // The point of the magic-link route: an earlier draft reset the password to
+    // mint a session, which locks a real person out of their own account.
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: { secret: envValues.DEV_LOGIN_SECRET, email: 'dev@example.test' },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().session.accessToken).toBe('a')
+    expect(adminApi.updateUserById).not.toHaveBeenCalled()
+    expect(adminApi.generateLink).toHaveBeenCalled()
+  })
+
+  it('accepts a nominated account named by id, resolving it to an address', async () => {
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: {
+        secret: envValues.DEV_LOGIN_SECRET,
+        userId: '00000000-0000-4000-8000-000000000001',
+      },
+      remoteAddress: '127.0.0.1',
+    })
+    // Not on the allow-list by id, so it is refused — the allow-list has no
+    // wildcard, and an id that was never nominated buys nothing.
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('resolves an id that was nominated', async () => {
+    const previous = envValues.DEV_LOGIN_ACCOUNTS
+    envValues.DEV_LOGIN_ACCOUNTS = ['00000000-0000-4000-8000-000000000001'] as never
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: {
+        secret: envValues.DEV_LOGIN_SECRET,
+        userId: '00000000-0000-4000-8000-000000000001',
+      },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(200)
+    expect(adminApi.getUserById).toHaveBeenCalled()
+    envValues.DEV_LOGIN_ACCOUNTS = previous
+  })
+
+  it('answers 404 for an id with no account behind it', async () => {
+    const previous = envValues.DEV_LOGIN_ACCOUNTS
+    envValues.DEV_LOGIN_ACCOUNTS = ['00000000-0000-4000-8000-000000000001'] as never
+    adminApi.getUserById.mockResolvedValueOnce({ data: { user: null }, error: null } as never)
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: {
+        secret: envValues.DEV_LOGIN_SECRET,
+        userId: '00000000-0000-4000-8000-000000000001',
+      },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(404)
+    envValues.DEV_LOGIN_ACCOUNTS = previous
+  })
+
+  it('reports a token it could not mint', async () => {
+    adminApi.generateLink.mockResolvedValueOnce({ data: { properties: null }, error: null } as never)
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: { secret: envValues.DEV_LOGIN_SECRET, email: 'dev@example.test' },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(500)
+  })
+
+  it('reports a token it could not redeem', async () => {
+    supabaseAuth.verifyOtp.mockResolvedValueOnce({
+      data: { session: null },
+      error: { message: 'expired' },
+    } as never)
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: { secret: envValues.DEV_LOGIN_SECRET, email: 'dev@example.test' },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(500)
+  })
+
+  it('matches the allow-list without regard to case', async () => {
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: { secret: envValues.DEV_LOGIN_SECRET, email: 'DEV@Example.Test' },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('refuses a secret of the right length but the wrong bytes', async () => {
+    // The comparison is constant-time over equal-length buffers; a same-length
+    // wrong secret is the case that would slip through a sloppy one.
+    const same = 'b'.repeat(envValues.DEV_LOGIN_SECRET.length)
+    const app = await buildApp('dev')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/dev/login',
+      payload: { secret: same, email: 'dev@example.test' },
+      remoteAddress: '127.0.0.1',
+    })
+    expect(res.statusCode).toBe(404)
   })
 
   it('refuses an account that is not on the allow-list', async () => {

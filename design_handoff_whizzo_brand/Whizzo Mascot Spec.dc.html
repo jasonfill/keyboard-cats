@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; background: #FAF6EF; font-family: Nunito, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: #C2410C; text-decoration: none; }
+a:hover { color: #7C2D12; text-decoration: underline; }
+</style>
+</helmet>
+
+<main style="max-width: 1240px; margin: 0 auto; padding: 52px 44px 100px; display: flex; flex-direction: column; gap: 34px; color: #1C1A16;">
+
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 780px;">
+    <div style="font: 700 12px/1 'Space Grotesk', monospace; letter-spacing: 0.18em; text-transform: uppercase; color: #8A8375;">Whizzo · mascot specification</div>
+    <h1 style="margin: 0; font: 800 42px/1.04 Outfit, sans-serif; letter-spacing: -0.025em;">Ten mascots, one set of rules</h1>
+    <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #57524A; text-wrap: pretty;">This is the commissioning document. A primitive-built <strong>v1 set already exists</strong> in <span style="font: 700 15px/1 'Space Grotesk', monospace;">Whizzo Mascots.dc.html</span> — ten characters assembled from circles, rounded rectangles and triangles, good enough to ship ten themes now. Slots fall back to the striped placeholder only where v1 is not used, or in the reward-art sets that do not exist yet. Below: the geometry every version has to survive, the four states each mascot needs, and a per-theme brief specific enough to hand to an illustrator or an image model when you replace v1 with drawn work.</p>
+  </div>
+
+  <section style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+    <div style="padding: 26px 28px; border-radius: 22px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; font: 800 20px/1 Outfit, sans-serif;">The slots, at real size</h2>
+      <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <span style="width: 200px; height: 200px; border-radius: 20px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px); display: flex; align-items: center; justify-content: center; font: 700 10px/1 'Space Grotesk', monospace; color: #4C2FD1;">HERO</span>
+          <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #A29A8A;">200 · K–5 HOME</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <span style="width: 108px; height: 108px; border-radius: 18px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px); display: flex; align-items: center; justify-content: center; font: 700 9px/1 'Space Grotesk', monospace; color: #4C2FD1;">REWARD</span>
+          <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #A29A8A;">108</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <span style="width: 62px; height: 62px; border-radius: 16px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px); display: flex; align-items: center; justify-content: center; font: 700 8px/1 'Space Grotesk', monospace; color: #4C2FD1;">SESSION</span>
+          <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #A29A8A;">62</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <span style="width: 34px; height: 34px; border-radius: 11px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px);"></span>
+          <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #A29A8A;">34 · AVATAR</span>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #6B6558; text-wrap: pretty;">One drawing has to work at all four. <strong>34px is the constraint that decides the design</strong> — if the silhouette is not recognisable as a filled shape at 34px, it is the wrong silhouette. Deliver SVG plus 2× PNG at each size.</p>
+    </div>
+
+    <div style="padding: 26px 28px; border-radius: 22px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; font: 800 20px/1 Outfit, sans-serif;">Four states, no more</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="height: 86px; border-radius: 14px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px);"></span>
+          <span style="font: 800 13px/1 Nunito, sans-serif;">Idle</span>
+          <span style="font-size: 12px; line-height: 1.4; color: #8A8375;">Default. Awake, relaxed, looking at the learner.</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="height: 86px; border-radius: 14px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px);"></span>
+          <span style="font: 800 13px/1 Nunito, sans-serif;">Cheer</span>
+          <span style="font-size: 12px; line-height: 1.4; color: #8A8375;">Correct answer and reward screens. One pose only.</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="height: 86px; border-radius: 14px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px);"></span>
+          <span style="font: 800 13px/1 Nunito, sans-serif;">Thinking</span>
+          <span style="font-size: 12px; line-height: 1.4; color: #8A8375;">Question on screen. Attentive, never worried.</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="height: 86px; border-radius: 14px; background: repeating-linear-gradient(135deg, #E9E1FF 0 9px, #F3EFFF 9px 18px);"></span>
+          <span style="font: 800 13px/1 Nunito, sans-serif;">Resting</span>
+          <span style="font-size: 12px; line-height: 1.4; color: #8A8375;">Loading, empty states, nothing due today.</span>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #6B6558; text-wrap: pretty;">There is deliberately <strong>no sad or disappointed state</strong>. A wrong answer is expected at the edge of ability — a crestfallen mascot teaches a kid that working at their level is failing. Wrong answers get Thinking.</p>
+    </div>
+  </section>
+
+  <section style="padding: 26px 28px; border-radius: 22px; background: #1C1A16; color: #FAF6EF; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;">
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A8A092;">HOUSE STYLE — ALL TEN</div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #DDD7CB; text-wrap: pretty;">Flat vector, no gradients, no outlines. Three to four flats per character plus one darker shade for form. Rounded terminals to match Outfit and the 20px radii. Chunky proportions: head roughly 45% of total height. Full body, feet visible, facing three-quarters toward the learner.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A8A092;">COLOR RULE</div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #DDD7CB; text-wrap: pretty;">Each mascot's palette is built from its own theme accent plus paper and ink — never Spark orange, which belongs to the brand and to buttons. The mascot must read against its own tinted slot and against white, so no near-white body fills.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A8A092;">HARD NOS</div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #DDD7CB; text-wrap: pretty;">No speech bubbles, no held signage, no school props (pencils, books, blackboards). No real team, brand or franchise resemblance. No spectacles or graduation caps. Nothing that has to be redrawn to localise.</p>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <h2 style="margin: 0; font: 800 26px/1 Outfit, sans-serif; letter-spacing: -0.02em;">Per-theme briefs</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
+      <sc-for list="{{ briefs }}" as="b" hint-placeholder-count="10">
+        <div style="display: flex; gap: 20px; padding: 22px 24px; border-radius: 22px; background: #fff; border: 1px solid #EDE5D7;">
+          <div style="display: flex; flex-direction: column; gap: 9px; flex: none;">
+            <span style="width: 128px; height: 128px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font: 700 9px/1 'Space Grotesk', monospace; letter-spacing: 0.08em; background: {{ b.stripe }}; color: {{ b.deep }}">MASCOT SLOT</span>
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 34px; height: 34px; border-radius: 11px; background: {{ b.stripe }}"></span>
+              <span style="width: 22px; height: 22px; border-radius: 7px; background: {{ b.stripe }}"></span>
+              <span style="font: 700 9px/1 'Space Grotesk', monospace; color: #A29A8A;">34 · 22</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <div style="display: flex; align-items: center; gap: 9px;">
+              <span style="width: 13px; height: 13px; border-radius: 999px; background: {{ b.accent }}"></span>
+              <span style="font: 800 20px/1 Outfit, sans-serif;">{{ b.name }}</span>
+            </div>
+            <div style="font: 800 14px/1.3 Nunito, sans-serif; color: {{ b.deep }}">{{ b.character }}</div>
+            <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #57524A; text-wrap: pretty;">{{ b.brief }}</p>
+            <div style="margin-top: auto; padding-top: 6px;">
+              <div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A; margin-bottom: 5px;">SILHOUETTE TEST</div>
+              <div style="font-size: 13px; line-height: 1.45; color: #6B6558;">{{ b.silhouette }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding: 28px 30px; border-radius: 22px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 7px; max-width: 720px;">
+      <h2 style="margin: 0; font: 800 20px/1 Outfit, sans-serif;">Mapping onto the component that already ships</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #57524A; text-wrap: pretty;">The app already has <span style="font: 700 14px/1 'Space Grotesk', monospace;">apps/web/src/components/CatMascot.tsx</span> with <span style="font: 700 14px/1 'Space Grotesk', monospace;">mood</span>, <span style="font: 700 14px/1 'Space Grotesk', monospace;">color</span>, <span style="font: 700 14px/1 'Space Grotesk', monospace;">size</span> and <span style="font: 700 14px/1 'Space Grotesk', monospace;">className</span>. Renaming the state set without a mapping breaks that contract silently, so here it is explicitly. Rename the component <span style="font: 700 14px/1 'Space Grotesk', monospace;">Mascot</span> and keep the prop names — <span style="font: 700 14px/1 'Space Grotesk', monospace;">color</span> becomes the theme accent and <span style="font: 700 14px/1 'Space Grotesk', monospace;">size</span> takes 200 / 108 / 62 / 34.</p>
+    </div>
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #A29A8A;">
+          <th style="padding: 0 0 10px;">SHIPPED MOOD</th>
+          <th style="padding: 0 0 10px;">USED WHERE</th>
+          <th style="padding: 0 0 10px;">NEW STATE</th>
+          <th style="padding: 0 0 10px;">NOTE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top: 1px solid #F1EADC;"><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">neutral</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">Component default · <span style="font: 700 12px/1 'Space Grotesk', monospace;">PracticeScreen:95</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">CatRainScreen:299</span> (unlocked world)</td><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">idle</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">Straight rename.</td></tr>
+        <tr style="border-top: 1px solid #F1EADC;"><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">happy</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;"><span style="font: 700 12px/1 'Space Grotesk', monospace;">AuthScreen:207/247/311/362</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">CatPhoto:20</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingPlay:172</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">SuiteHome:54</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">TypingHome:34</span> · plus the fallback branch of <span style="font: 700 12px/1 'Space Grotesk', monospace;">QuizHome:72</span>, <span style="font: 700 12px/1 'Space Grotesk', monospace;">QuizResults:28</span>, <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingHome:44</span>, <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingResults:44</span></td><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">idle</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">Merged with neutral — two flavours of contentment was one too many.</td></tr>
+        <tr style="border-top: 1px solid #F1EADC;"><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">excited</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;"><span style="font: 700 12px/1 'Space Grotesk', monospace;">AuthScreen:145</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">SuiteHome:53</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">FamilyScreen:108</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">TypingHome:33</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">CatRainScreen:222</span> · high branches of <span style="font: 700 12px/1 'Space Grotesk', monospace;">QuizHome:72</span>, <span style="font: 700 12px/1 'Space Grotesk', monospace;">QuizResults:28</span>, <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingHome:44</span></td><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">cheer</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">Straight rename.</td></tr>
+        <tr style="border-top: 1px solid #F1EADC;"><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">wow</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;"><span style="font: 700 12px/1 'Space Grotesk', monospace;">CatRainScreen:299</span> (locked world) · <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingResults:44</span> at accuracy ≥ 80</td><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">cheer</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">Merged into cheer.</td></tr>
+        <tr style="border-top: 1px solid #F1EADC;"><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">sleepy</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;"><span style="font: 700 12px/1 'Space Grotesk', monospace;">App.tsx:177</span> (loading) · <span style="font: 700 12px/1 'Space Grotesk', monospace;">CatPhoto:29</span> · <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingPlay:181</span> · low branch of <span style="font: 700 12px/1 'Space Grotesk', monospace;">QuizResults:28</span></td><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #1F7A6B;">resting</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">Keeps the loading-screen use as-is.</td></tr>
+        <tr style="border-top: 1px solid #F1EADC;"><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #C2410C;">sad</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;">One site: <span style="font: 700 12px/1 'Space Grotesk', monospace;">SpellingResults:44</span>, the <span style="font: 700 12px/1 'Space Grotesk', monospace;">accuracy < 50</span> branch</td><td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif; color: #C2410C;">thinking</td><td style="padding: 11px 0; color: #6B6558; font-size: 13px; line-height: 1.5;"><strong>Retired on purpose</strong> — and that single call site is exactly why: it shows a sad cat to the learner who scored lowest. Point that branch at thinking and remove <span style="font: 700 12px/1 'Space Grotesk', monospace;">sad</span> from the union.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #57524A; text-wrap: pretty;">Six moods become four states across <strong>24 call sites in 14 files</strong> (paths relative to <span style="font: 700 13px/1 'Space Grotesk', monospace;">apps/web/src/</span>) — 17 passing a literal, 5 computing the mood in a ternary, and 2 passing it as a state variable (<span style="font: 700 13px/1 'Space Grotesk', monospace;">GamePlay:129</span>, <span style="font: 700 13px/1 'Space Grotesk', monospace;">SpellingPlay:256</span>). Those last two import the <span style="font: 700 13px/1 'Space Grotesk', monospace;">Mood</span> type, so the union rename is a type change there, not a find-and-replace.</p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #57524A; text-wrap: pretty;"><strong>On the <span style="font: 700 13px/1 'Space Grotesk', monospace;">color</span> prop:</strong> theme accent becomes the <em>default</em> (replacing <span style="font: 700 13px/1 'Space Grotesk', monospace;">#f59e0b</span>), and an explicit <span style="font: 700 13px/1 'Space Grotesk', monospace;">color</span> still wins — six sites pass one deliberately: <span style="font: 700 13px/1 'Space Grotesk', monospace;">#94a3b8</span> at SuiteHome:54 and TypingHome:34, <span style="font: 700 13px/1 'Space Grotesk', monospace;">#f472b6</span> at CatRainScreen:222, <span style="font: 700 13px/1 'Space Grotesk', monospace;">#38bdf8</span> at PracticeScreen:95, per-world <span style="font: 700 13px/1 'Space Grotesk', monospace;">w.color</span> at CatRainScreen:299, and <span style="font: 700 13px/1 'Space Grotesk', monospace;">catColor</span> passed into GamePlay:129. Recolouring those silently would break decorative intent. The two <span style="font: 700 13px/1 'Space Grotesk', monospace;">#94a3b8</span> cases are the secondary-companion mascot: give those a named muted variant rather than a hex.</p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #8A8375;"><span style="font: 700 13px/1 'Space Grotesk', monospace;">apps/web/public/cat.svg</span> (the favicon cat) is superseded by the app icon set, not by a mascot.</p>
+  </section>
+
+  <section style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+    <div style="padding: 26px 28px; border-radius: 22px; background: #F6F1E7; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font: 800 20px/1 Outfit, sans-serif;">Reward art is a separate commission</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #57524A; text-wrap: pretty;">The mascot is one character per theme. The collectibles are a set: 24 cat cards, 18 tricks, 15 ribbons, 20 tracks, 8 fossil bones, 8 car parts, 8 bot parts, and 8 stops each for Football, Space and Ocean. That is roughly 145 small pieces — spec them at 108px in the same flat style, and ship them per theme so themes can launch one at a time.</p>
+    </div>
+    <div style="padding: 26px 28px; border-radius: 22px; background: #F6F1E7; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font: 800 20px/1 Outfit, sans-serif;">Order of work</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #57524A; text-wrap: pretty;">Ship the v1 primitive set across all ten themes now — it is consistent and it unblocks launch. Then commission drawn replacements in this order: <strong>Racing first</strong>, because a red triangular ear on a round red head fights being a fox and it is the weakest of the ten; then <strong>Cats, Space and Robots</strong> as the style test — youngest, middle and oldest of the range. If one illustrator holds across those three, they hold across all ten. Themes swap art independently, so drawn and primitive mascots can coexist in production, and any theme without art still falls back to the striped placeholder.</p>
+    </div>
+  </section>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BRIEFS = [
+  { name: 'Cats', accent: '#7C5CFF', deep: '#4C2FD1', tintA: '#F3EFFF', tintB: '#E9E1FF',
+    character: 'A round, unbothered housecat.',
+    brief: 'Sitting upright, tail up behind with a pale flicked tip. Half-lidded eyes — knows more than it says. Lavender-grey body with a paler chest patch. Note this REPLACES the shipped cat rather than matching it: CatMascot.tsx draws a head only on a 200×200 viewBox — amber #f59e0b, pink inner ears, pink nose, whiskers, and a z glyph for sleepy. Full-body was chosen because the 200px hero slot needs a posture and nine other characters need one rule; the swap is deliberate, not drift.',
+    silhouette: 'Ears plus an upright tail. Reads even as one flat purple shape.' },
+  { name: 'Dogs', accent: '#C2410C', deep: '#7C2D12', tintA: '#FDEEE6', tintB: '#F8E0D2',
+    character: 'A young mutt, all enthusiasm.',
+    brief: 'Front paws planted, rear end high, tail mid-wag. Long hanging ears and a short snout — that pairing is what stops a round head reading as a bear. Warm tan body, cream muzzle. Younger and clumsier than the cat, never yappy.',
+    silhouette: 'Two long low ears and an upswept tail. Must not read as the cat or a bear.' },
+  { name: 'Football', accent: '#1F7A6B', deep: '#10493F', tintA: '#E6F4EF', tintB: '#D6ECE4',
+    character: 'A whistle-carrying pitch bird.',
+    brief: 'A stocky ground bird — think a magpie build — in a plain green-and-cream kit with no crest, number or sponsor. Feet apart, ready stance, whistle on a cord. Coach energy rather than star player, so it can address the learner.',
+    silhouette: 'Wide stance, blunt beak, cord across the chest.' },
+  { name: 'Space', accent: '#4338CA', deep: '#2A2199', tintA: '#ECEBFF', tintB: '#DEDCFB',
+    character: 'A small suited navigator.',
+    brief: 'Rounded suit, oversized bubble helmet, no visible face — a soft indigo glow inside instead. Ambiguous species on purpose, so no kid is excluded from being it. Floating slightly, one arm out for balance.',
+    silhouette: 'Bubble helmet on a bulky torso. Cleanest of the ten at 34px.' },
+  { name: 'Dinosaurs', accent: '#4D7C0F', deep: '#33520A', tintA: '#EFF4E2', tintB: '#E2EBD0',
+    character: 'A stubby herbivore with a dig hat.',
+    brief: 'Stegosaurus build, oversized head, four square feet, back plates rounded rather than sharp. Olive body with cream plates. Soft canvas hat is the only prop allowed. Friendly and slow — not a predator, no teeth.',
+    silhouette: 'Row of back plates plus a low heavy tail.' },
+  { name: 'Ocean', accent: '#0E7490', deep: '#0A4E61', tintA: '#E4F3F7', tintB: '#D2EAF1',
+    character: 'A curious octopus.',
+    brief: 'Big domed head, three or four visible arms only — eight reads as noise at small sizes. Teal body with a paler underside. One arm raised in a small wave. Calm and observant; it goes deeper as the learner does.',
+    silhouette: 'Dome plus two or three curling arms.' },
+  { name: 'Racing', accent: '#B91C1C', deep: '#7F1313', tintA: '#FCEAEA', tintB: '#F7D9D9',
+    character: 'A pit-crew fox.',
+    brew: '',
+    brief: 'Lean fox standing, plain red coveralls, wrench in one paw. Ears tilted outward with dark tips and cream cheek tufts — without both, a red triangular ear reads as a horn. Confident and quick. No sponsor logos, no real livery, no team colours anyone owns.',
+    silhouette: 'Outward-tilted dark-tipped ears, bushy tail, cream cheek tufts.' },
+  { name: 'Horses', accent: '#92400E', deep: '#63290A', tintA: '#F6EEE2', tintB: '#EEE1CC',
+    character: 'A steady pony.',
+    brief: 'Short-legged pony, mane down the neck with a cream forelock at the brow, standing square. Chestnut body, cream mane. Halter only — no saddle, no rider, ever. The calmest of the ten; this theme skews toward learners who want quiet.',
+    silhouette: 'Mane, forelock, and four planted legs.' },
+  { name: 'Music', accent: '#BE185D', deep: '#831043', tintA: '#FCE9F2', tintB: '#F8D7E7',
+    character: 'A songbird with a mic.',
+    brief: 'Small round bird on a stand mic, beak open mid-note, one wing lifted. Deep pink body, cream throat. No instruments, no notes floating in the air, no genre signalling — this theme has to work for grade 11 as well as grade 4.',
+    silhouette: 'Round bird plus the vertical mic line.' },
+  { name: 'Robots', accent: '#475569', deep: '#2F3947', tintA: '#EDF0F3', tintB: '#DFE4EA',
+    character: 'A boxy helper bot.',
+    brief: 'Square head, single wide visor eye, blocky torso on treads rather than legs. Steel grey with one warm accent light. Deliberately the least cute of the ten — this is the theme a fourteen-year-old picks to avoid a mascot, so it reads as equipment with a personality.',
+    silhouette: 'Square head, wide visor, tread base.' },
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      briefs: BRIEFS.map((b) => ({
+        name: b.name, accent: b.accent, deep: b.deep,
+        character: b.character, brief: b.brief, silhouette: b.silhouette,
+        stripe: 'repeating-linear-gradient(135deg, ' + b.tintB + ' 0 9px, ' + b.tintA + ' 9px 18px)',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

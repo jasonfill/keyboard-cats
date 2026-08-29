@@ -159,6 +159,56 @@ describe('withAdmin', () => {
   })
 })
 
+describe('withAdmin, when things go wrong', () => {
+  it('rolls back and rethrows', async () => {
+    await expect(withAdmin(async () => { throw new Error('boom') })).rejects.toThrow('boom')
+    expect(statements()).toContain('rollback')
+  })
+
+  it('still releases when the rollback itself fails', async () => {
+    client.query.mockImplementation(async (sql: string) => {
+      if (String(sql) === 'rollback') throw new Error('connection is gone')
+      return { rows: [], rowCount: 0 }
+    })
+    await expect(withAdmin(async () => { throw new Error('boom') })).rejects.toThrow('boom')
+    expect(client.release).toHaveBeenCalled()
+  })
+})
+
+describe('explainConnectionError', () => {
+  // The IPv6-only direct-connection host fails as ENOTFOUND, which reads like a
+  // typo. Saying what it actually is saves an afternoon.
+  it('explains the Supabase direct-connection host', async () => {
+    const { explainConnectionError } = await import('./db.js')
+    const explained = explainConnectionError({
+      code: 'ENOTFOUND',
+      hostname: 'db.abcdefgh.supabase.co',
+    })
+    expect(explained.message).toContain('pooler')
+    expect(explained.message).toContain('6543')
+  })
+
+  it('leaves an unrelated ENOTFOUND alone', async () => {
+    const { explainConnectionError } = await import('./db.js')
+    const original = Object.assign(new Error('nope'), {
+      code: 'ENOTFOUND',
+      hostname: 'example.test',
+    })
+    expect(explainConnectionError(original)).toBe(original)
+  })
+
+  it('wraps something that was never an Error', async () => {
+    const { explainConnectionError } = await import('./db.js')
+    expect(explainConnectionError('a string').message).toBe('a string')
+  })
+
+  it('passes an ordinary failure straight through', async () => {
+    const { explainConnectionError } = await import('./db.js')
+    const err = new Error('ECONNREFUSED')
+    expect(explainConnectionError(err)).toBe(err)
+  })
+})
+
 describe('insertMany', () => {
   // Typed loosely on purpose: what matters is the SQL and the values, not the
   // full pg client surface.

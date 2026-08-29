@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; background: #FAF6EF; font-family: Nunito, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: #C2410C; text-decoration: none; }
+a:hover { color: #7C2D12; text-decoration: underline; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #FAF6EF; color: #1C1A16;">
+
+  <header style="position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 40px; background: #FAF6EFEE; backdrop-filter: blur(8px); border-bottom: 1px solid #E9E0D0;">
+    <div style="display: flex; align-items: center; gap: 28px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 12px; background: #1C1A16;"><span style="display: block; width: 12px; height: 12px; border-radius: 4px 12px 4px 12px; background: #FF6A2B;"></span></span>
+        <span style="font: 900 24px/1 Outfit, sans-serif; letter-spacing: -0.035em;">whizzo</span>
+        <span style="padding: 4px 9px; border-radius: 999px; background: #EFE8DA; font: 800 11px/1 Nunito, sans-serif; letter-spacing: 0.06em; color: #6B6558;">FAMILY</span>
+      </div>
+      <nav style="display: flex; gap: 4px;">
+        <a href="#" style="padding: 8px 14px; border-radius: 10px; background: #1C1A16; color: #FAF6EF; font: 800 14px/1 Nunito, sans-serif;">Overview</a>
+        <a href="#" style="padding: 8px 14px; border-radius: 10px; color: #6B6558; font: 800 14px/1 Nunito, sans-serif;" style-hover="background: #F1EADC; color: #1C1A16">Assignments</a>
+        <a href="#" style="padding: 8px 14px; border-radius: 10px; color: #6B6558; font: 800 14px/1 Nunito, sans-serif;" style-hover="background: #F1EADC; color: #1C1A16">Word lists</a>
+        <a href="#" style="padding: 8px 14px; border-radius: 10px; color: #6B6558; font: 800 14px/1 Nunito, sans-serif;" style-hover="background: #F1EADC; color: #1C1A16">Reports</a>
+        <a href="#" style="padding: 8px 14px; border-radius: 10px; color: #6B6558; font: 800 14px/1 Nunito, sans-serif;" style-hover="background: #F1EADC; color: #1C1A16">Plan</a>
+      </nav>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button style="padding: 10px 16px; border-radius: 12px; border: 2px solid #DCD3C2; background: transparent; font: 800 13px/1 Nunito, sans-serif; color: #1C1A16; cursor: pointer;" style-hover="border-color: #1C1A16">Print report</button>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: #F1EADC;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 999px; background: #1F7A6B; color: #fff; font: 800 12px/1 Nunito, sans-serif;">DM</span>
+        <span style="font: 800 13px/1 Nunito, sans-serif;">Dana M.</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1180px; margin: 0 auto; padding: 34px 40px 90px; display: flex; flex-direction: column; gap: 22px;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <h1 style="margin: 0; font: 800 34px/1.1 Outfit, sans-serif; letter-spacing: -0.02em;">This week at home</h1>
+        <p style="margin: 0; font-size: 15px; color: #6B6558;">Everything below comes from work your kids actually attempted — nothing is estimated.</p>
+      </div>
+      <div style="display: flex; gap: 8px; padding: 6px; border-radius: 16px; background: #F1EADC;">
+        <button style="display: flex; align-items: center; gap: 9px; padding: 8px 14px 8px 8px; border: none; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(28,26,22,0.12); cursor: pointer;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 10px; background: #EDE4FF; font: 800 12px/1 Nunito, sans-serif; color: #6B4FE0;">EL</span>
+          <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <span style="font: 800 14px/1 Nunito, sans-serif; color: #1C1A16;">Ella</span>
+            <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #8A8375;">GRADE 4 · CATS</span>
+          </span>
+        </button>
+        <button style="display: flex; align-items: center; gap: 9px; padding: 8px 14px 8px 8px; border: none; border-radius: 12px; background: transparent; cursor: pointer;" style-hover="background: #E8DFCE">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 10px; background: #E2F0EC; font: 800 12px/1 Nunito, sans-serif; color: #1F7A6B;">MI</span>
+          <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <span style="font: 800 14px/1 Nunito, sans-serif; color: #1C1A16;">Milo</span>
+            <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #8A8375;">GRADE 2 · FOOTBALL</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+      <div style="padding: 18px 20px; border-radius: 18px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A;">DAY STREAK</div>
+        <div style="font: 800 32px/1 Outfit, sans-serif; letter-spacing: -0.02em;">12</div>
+        <div style="font-size: 13px; color: #6B6558;">Longest yet was 15 in March.</div>
+      </div>
+      <div style="padding: 18px 20px; border-radius: 18px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A;">PRACTICE TIME</div>
+        <div style="font: 800 32px/1 Outfit, sans-serif; letter-spacing: -0.02em;">1h 48m</div>
+        <div style="font-size: 13px; color: #6B6558;">Last 7 days · 14m/day average.</div>
+      </div>
+      <div style="padding: 18px 20px; border-radius: 18px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A;">WORDS MASTERED</div>
+        <div style="font: 800 32px/1 Outfit, sans-serif; letter-spacing: -0.02em;">147</div>
+        <div style="font-size: 13px; color: #1F7A6B; font-weight: 700;">+19 this week</div>
+      </div>
+      <div style="padding: 18px 20px; border-radius: 18px; background: #1C1A16; color: #FAF6EF; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A8A092;">READING LEVEL</div>
+        <div style="font: 800 32px/1 Outfit, sans-serif; letter-spacing: -0.02em;">Grade 4.6</div>
+        <div style="font-size: 13px; color: #C9C2B4;">Up from 4.1 six weeks ago.</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; align-items: start;">
+
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+
+        <section style="padding: 24px 26px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px;">
+            <h2 style="margin: 0; font: 800 19px/1 Outfit, sans-serif;">Last 21 days</h2>
+            <span style="font-size: 13px; color: #8A8375;">Each bar is items attempted</span>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 6px; height: 96px;">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="21">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end;" title="{{ d.title }}">
+                <div style="width: 100%; border-radius: 6px 6px 3px 3px; background: #1F7A6B; min-height: 4px; height: {{ d.h }}"></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 10px; font: 700 11px/1 'Space Grotesk', monospace; color: #A29A8A;">
+            <span>3 WEEKS AGO</span><span>LAST WEEK</span><span>TODAY</span>
+          </div>
+          <div style="margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: #FFF8F2; border: 1px solid #F6E3D3; font-size: 14px; line-height: 1.5; color: #7C4A22;">Two quiet days last weekend, then the longest run since she started. Sessions are shortest on Wednesdays.</div>
+        </section>
+
+        <section style="padding: 24px 26px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <h2 style="margin: 0; font: 800 19px/1 Outfit, sans-serif;">Subjects</h2>
+            <span style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #A29A8A;">MASTERED / TOTAL</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                <span style="font: 800 15px/1 Nunito, sans-serif;">Spelling <span style="font-weight: 700; color: #8A8375;">· grade 4 band</span></span>
+                <span style="font: 800 14px/1 Nunito, sans-serif; color: #6B6558;">38 / 60</span>
+              </div>
+              <div style="height: 12px; border-radius: 999px; background: #F1EADC; overflow: hidden; display: flex;">
+                <div style="width: 63%; background: #1F7A6B;"></div>
+                <div style="width: 18%; background: #8FC9BE;"></div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                <span style="font: 800 15px/1 Nunito, sans-serif;">Vocabulary decks <span style="font-weight: 700; color: #8A8375;">· 4 decks</span></span>
+                <span style="font: 800 14px/1 Nunito, sans-serif; color: #6B6558;">92 / 160</span>
+              </div>
+              <div style="height: 12px; border-radius: 999px; background: #F1EADC; overflow: hidden; display: flex;">
+                <div style="width: 57%; background: #1F7A6B;"></div>
+                <div style="width: 14%; background: #8FC9BE;"></div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                <span style="font: 800 15px/1 Nunito, sans-serif;">Multiplication facts <span style="font-weight: 700; color: #8A8375;">· to 12×12</span></span>
+                <span style="font: 800 14px/1 Nunito, sans-serif; color: #6B6558;">104 / 144</span>
+              </div>
+              <div style="height: 12px; border-radius: 999px; background: #F1EADC; overflow: hidden; display: flex;">
+                <div style="width: 72%; background: #1F7A6B;"></div>
+                <div style="width: 11%; background: #8FC9BE;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 18px; padding-top: 4px; font-size: 13px; color: #8A8375;">
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #1F7A6B;"></span>Mastered</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #8FC9BE;"></span>Getting there</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #F1EADC;"></span>Not started</span>
+          </div>
+        </section>
+
+        <section style="padding: 24px 26px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+            <h2 style="margin: 0; font: 800 19px/1 Outfit, sans-serif;">Worth 10 minutes together</h2>
+            <a href="#" style="font: 800 13px/1 Nunito, sans-serif;">Print practice sheet →</a>
+          </div>
+          <p style="margin: 0 0 16px; font-size: 14px; color: #8A8375;">Ranked by how often each one has been missed after she'd already got it right.</p>
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #A29A8A;">
+                <th style="padding: 0 0 10px;">WORD</th>
+                <th style="padding: 0 0 10px;">UNAIDED</th>
+                <th style="padding: 0 0 10px;">SLIPPED</th>
+                <th style="padding: 0 0 10px;">WHAT TRIPS IT</th>
+                <th style="padding: 0 0 10px; text-align: right;">BACK ON</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-top: 1px solid #F1EADC;">
+                <td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif;">necessary</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #6B6558;">2/7</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #C2410C;">3×</td>
+                <td style="padding: 11px 0; color: #6B6558; font-size: 14px;">Doubled consonant</td>
+                <td style="padding: 11px 0; text-align: right; font-weight: 700; color: #1F7A6B;">today</td>
+              </tr>
+              <tr style="border-top: 1px solid #F1EADC;">
+                <td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif;">separate</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #6B6558;">3/8</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #C2410C;">2×</td>
+                <td style="padding: 11px 0; color: #6B6558; font-size: 14px;">Schwa vowel</td>
+                <td style="padding: 11px 0; text-align: right; font-weight: 700; color: #1F7A6B;">today</td>
+              </tr>
+              <tr style="border-top: 1px solid #F1EADC;">
+                <td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif;">their / there</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #6B6558;">5/9</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #C2410C;">2×</td>
+                <td style="padding: 11px 0; color: #6B6558; font-size: 14px;">Homophone</td>
+                <td style="padding: 11px 0; text-align: right; font-weight: 700; color: #6B6558;">in 2 days</td>
+              </tr>
+              <tr style="border-top: 1px solid #F1EADC;">
+                <td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif;">weigh</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #6B6558;">4/6</td>
+                <td style="padding: 11px 0; font-weight: 700; color: #8A8375;">1×</td>
+                <td style="padding: 11px 0; color: #6B6558; font-size: 14px;">ei / ie swap</td>
+                <td style="padding: 11px 0; text-align: right; font-weight: 700; color: #6B6558;">in 4 days</td>
+              </tr>
+              <sc-if value="{{ isPro }}" hint-placeholder-val="{{ true }}">
+                <tr style="border-top: 1px solid #F1EADC;">
+                  <td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif;">knowledge</td>
+                  <td style="padding: 11px 0; font-weight: 700; color: #6B6558;">6/9</td>
+                  <td style="padding: 11px 0; font-weight: 700; color: #8A8375;">1×</td>
+                  <td style="padding: 11px 0; color: #6B6558; font-size: 14px;">Silent opener</td>
+                  <td style="padding: 11px 0; text-align: right; font-weight: 700; color: #6B6558;">in 6 days</td>
+                </tr>
+                <tr style="border-top: 1px solid #F1EADC;">
+                  <td style="padding: 11px 0; font: 800 15px/1 Nunito, sans-serif;">responsible</td>
+                  <td style="padding: 11px 0; font-weight: 700; color: #6B6558;">5/8</td>
+                  <td style="padding: 11px 0; font-weight: 700; color: #8A8375;">1×</td>
+                  <td style="padding: 11px 0; color: #6B6558; font-size: 14px;">-able / -ible</td>
+                  <td style="padding: 11px 0; text-align: right; font-weight: 700; color: #6B6558;">in 9 days</td>
+                </tr>
+              </sc-if>
+            </tbody>
+          </table>
+          <sc-if value="{{ isFree }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-radius: 14px; background: #FFF8F2; border: 1px solid #F6E3D3;">
+              <span style="font-size: 14px; font-weight: 700; color: #7C4A22;">Showing 4 of 11 words. Family Pro shows the full word-by-word report and keeps history past 30 days.</span>
+              <button style="border: none; padding: 11px 18px; border-radius: 12px; background: #FF6A2B; color: #fff; font: 800 13px/1 Nunito, sans-serif; box-shadow: 0 3px 0 #E14E12; cursor: pointer; white-space: nowrap;">See Family Pro</button>
+            </div>
+          </sc-if>
+        </section>
+
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+
+        <section style="padding: 22px 24px; border-radius: 20px; background: #1C1A16; color: #FAF6EF; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">You set</h2>
+            <span style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #A8A092;">THIS WEEK</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="padding: 14px; border-radius: 14px; background: #2A2621; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font: 800 14px/1 Nunito, sans-serif;">Unit 12 spelling list</span><span style="font: 800 13px/1 Nunito, sans-serif; color: #8FC9BE;">Done</span></div>
+              <div style="height: 8px; border-radius: 999px; background: #3D3831; overflow: hidden;"><div style="width: 100%; height: 100%; background: #8FC9BE;"></div></div>
+              <span style="font-size: 12px; color: #C9C2B4;">Graded test Tuesday · 18/20 unaided</span>
+            </div>
+            <div style="padding: 14px; border-radius: 14px; background: #2A2621; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font: 800 14px/1 Nunito, sans-serif;">State capitals deck</span><span style="font: 800 13px/1 Nunito, sans-serif; color: #FFC542;">14 / 25</span></div>
+              <div style="height: 8px; border-radius: 999px; background: #3D3831; overflow: hidden;"><div style="width: 56%; height: 100%; background: #FFC542;"></div></div>
+              <span style="font-size: 12px; color: #C9C2B4;">Due Friday · 11 cards still unseen</span>
+            </div>
+          </div>
+          <button style="border: none; padding: 12px; border-radius: 12px; background: #FF6A2B; color: #fff; font: 800 14px/1 Nunito, sans-serif; box-shadow: 0 3px 0 #E14E12; cursor: pointer;">Assign something new</button>
+        </section>
+
+        <section style="padding: 22px 24px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 14px;">
+          <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">Recent sessions</h2>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column;">
+            <li style="display: flex; align-items: center; gap: 10px; padding: 11px 0;">
+              <span style="width: 8px; height: 8px; border-radius: 999px; background: #1F7A6B; flex: none;"></span>
+              <span style="font: 800 14px/1.3 Nunito, sans-serif; flex: 1;">Spelling test<br><span style="font-weight: 700; font-size: 12px; color: #8A8375;">18/20 · unaided · graded</span></span>
+              <span style="font: 700 12px/1 'Space Grotesk', monospace; color: #A29A8A;">TUE</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid #F1EADC;">
+              <span style="width: 8px; height: 8px; border-radius: 999px; background: #8FC9BE; flex: none;"></span>
+              <span style="font: 800 14px/1.3 Nunito, sans-serif; flex: 1;">Listen &amp; spell<br><span style="font-weight: 700; font-size: 12px; color: #8A8375;">22/28 · 2 hints taken</span></span>
+              <span style="font: 700 12px/1 'Space Grotesk', monospace; color: #A29A8A;">MON</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid #F1EADC;">
+              <span style="width: 8px; height: 8px; border-radius: 999px; background: #DCD3C2; flex: none;"></span>
+              <span style="font: 800 14px/1.3 Nunito, sans-serif; flex: 1;">Word scramble<br><span style="font-weight: 700; font-size: 12px; color: #8A8375;">Practice only · doesn't affect level</span></span>
+              <span style="font: 700 12px/1 'Space Grotesk', monospace; color: #A29A8A;">MON</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid #F1EADC;">
+              <span style="width: 8px; height: 8px; border-radius: 999px; background: #8FC9BE; flex: none;"></span>
+              <span style="font: 800 14px/1.3 Nunito, sans-serif; flex: 1;">Vocab · Learn mode<br><span style="font-weight: 700; font-size: 12px; color: #8A8375;">31/40 · 9 written answers</span></span>
+              <span style="font: 700 12px/1 'Space Grotesk', monospace; color: #A29A8A;">SUN</span>
+            </li>
+          </ul>
+          <a href="#" style="font: 800 13px/1 Nunito, sans-serif;">All sessions →</a>
+        </section>
+
+        <section style="padding: 22px 24px; border-radius: 20px; background: #F6F1E7; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+          <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">How the level is worked out</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #57524A; text-wrap: pretty;">Only unaided answers move Ella's level — scrambles, multiple choice and anything with a hint are practice, and we label them that way. A word she misses comes back the same sitting, then on a widening schedule.</p>
+          <a href="#" style="font: 800 13px/1 Nunito, sans-serif;">Read the whole method →</a>
+        </section>
+
+        <section style="padding: 22px 24px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+          <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">Ella's theme</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 14px; background: repeating-linear-gradient(135deg, #F3EFFF 0 8px, #EBE4FF 8px 16px); font: 700 9px/1 'Space Grotesk', monospace; color: #6B4FE0;">CATS</span>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font: 800 14px/1 Nunito, sans-serif;">Cats · switched 9 days ago</span>
+              <span style="font-size: 13px; color: #8A8375;">Kids pick their own. It changes nothing you see here.</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;plan&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Free&quot;,&quot;Family Pro&quot;],&quot;default&quot;:&quot;Family Pro&quot;,&quot;tsType&quot;:&quot;'Free' | 'Family Pro'&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const items = [14, 22, 0, 9, 18, 26, 12, 31, 24, 0, 0, 17, 28, 22, 35, 19, 30, 41, 26, 33, 21];
+    const max = Math.max(...items);
+    const plan = this.props.plan ?? 'Family Pro';
+    return {
+      isPro: plan === 'Family Pro',
+      isFree: plan === 'Free',
+      days: items.map((n, i) => ({
+        h: n === 0 ? '4px' : Math.round((n / max) * 100) + '%',
+        title: n + ' items, day ' + (i + 1),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

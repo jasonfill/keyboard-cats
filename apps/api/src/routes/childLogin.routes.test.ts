@@ -106,8 +106,7 @@ async function buildApp() {
 
 beforeEach(() => {
   query.mockReset().mockResolvedValue({ rows: [learnerRow()], rowCount: 1 })
-  adminApi.createUser.mockClear()
-  adminApi.updateUserById.mockClear()
+  for (const fn of Object.values(adminApi)) fn.mockClear()
 })
 
 describe('who may set up a child sign-in', () => {
@@ -265,5 +264,132 @@ describe('provisioning', () => {
     })
     expect(res.statusCode).toBe(400)
     expect(query).not.toHaveBeenCalled()
+  })
+})
+
+describe('turning a child sign-in off again', () => {
+  // The teardown has to leave the learner in a coherent state: the auth user
+  // gone, the stored credential gone, and auth_kind back to 'none'. A learner
+  // left claiming a provisioned login they no longer have is a learner nobody
+  // can sign in as and nobody can re-provision either.
+  function provisioned(over: Record<string, unknown> = {}) {
+    query.mockResolvedValue({
+      rows: [learnerRow({ auth_kind: 'provisioned', auth_user_id: 'auth-1', ...over })],
+      rowCount: 1,
+    })
+  }
+
+  it('removes the auth account, the credential and the mode', async () => {
+    provisioned()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(),
+    })
+    expect(res.statusCode).toBe(204)
+    expect(adminApi.deleteUser).toHaveBeenCalledWith('auth-1')
+    const ran = query.mock.calls.map(([s]) => String(s))
+    expect(ran.some((s) => /delete from public\.learner_credentials/i.test(s))).toBe(true)
+    expect(ran.some((s) => /auth_kind = 'none'/i.test(s))).toBe(true)
+  })
+
+  it('refuses somebody who is not the owner', async () => {
+    provisioned()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(STRANGER),
+    })
+    expect(res.statusCode).toBe(403)
+    expect(adminApi.deleteUser).not.toHaveBeenCalled()
+  })
+
+  it('answers 404 for a learner that is not there', async () => {
+    query.mockResolvedValue({ rows: [], rowCount: 0 })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(),
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('refuses a learner who never had one', async () => {
+    provisioned({ auth_kind: 'none' })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(),
+    })
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('refuses an unauthenticated caller', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/learners/${LEARNER}/child-login`,
+    })
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('rejects a malformed learner id', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/api/learners/not-a-uuid/child-login',
+      headers: await auth(),
+    })
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('when the auth server will not play along', () => {
+  // These are 502s rather than 500s on purpose: nothing here is wrong with the
+  // request, and the grown-up retrying it is the right next move.
+  it('reports a failure to create the account', async () => {
+    adminApi.createUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'rate limited' } })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(),
+      payload: { pin: '1234' },
+    })
+    expect(res.statusCode).toBe(502)
+    expect(res.json().error.message).toContain('rate limited')
+  })
+
+  it('reports a failure to change an existing PIN', async () => {
+    query.mockResolvedValue({
+      rows: [learnerRow({ auth_kind: 'provisioned', auth_user_id: 'auth-1' })],
+      rowCount: 1,
+    })
+    adminApi.updateUserById.mockResolvedValueOnce({ data: { user: null }, error: { message: 'nope' } })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(),
+      payload: { pin: '1234' },
+    })
+    expect(res.statusCode).toBe(502)
+  })
+
+  it('leaves nothing half-done: no code is stored when the account could not be made', async () => {
+    adminApi.createUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'no' } })
+    const app = await buildApp()
+    await app.inject({
+      method: 'POST',
+      url: `/api/learners/${LEARNER}/child-login`,
+      headers: await auth(),
+      payload: { pin: '1234' },
+    })
+    const ran = query.mock.calls.map(([s]) => String(s))
+    expect(ran.some((s) => /attach_provisioned_login/.test(s))).toBe(false)
   })
 })
