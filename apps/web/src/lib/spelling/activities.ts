@@ -335,6 +335,16 @@ export function misspellings(word: string, count = 3): string[] {
     cursor++
   }
 
+  // A one-letter word has nothing to swap, so every rule above declines and the
+  // proofreading question would render with the answer as its only option.
+  // 'a' and 'I' are real words and a grown-up can put them in a custom list, so
+  // this pads with plausible near-misses rather than leaving the question
+  // unanswerable.
+  for (const suffix of ['e', 'h', 'y', 'a']) {
+    if (out.length >= count) break
+    add(target + suffix)
+  }
+
   return out.slice(0, count)
 }
 
