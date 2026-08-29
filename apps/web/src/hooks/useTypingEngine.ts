@@ -77,6 +77,7 @@ export function useTypingEngine(target: string, cbs: EngineCallbacks = {}) {
       if (expected === undefined) return prev
 
       // Start the timer on the first real keystroke.
+      const started = true
       if (!prev.started) {
         const t = Date.now()
         setStartTime(t)
@@ -96,6 +97,7 @@ export function useTypingEngine(target: string, cbs: EngineCallbacks = {}) {
           correct: prev.correct + 1,
           combo,
           maxCombo,
+          started,
           finished,
           lastWrong: null,
         }
@@ -114,6 +116,7 @@ export function useTypingEngine(target: string, cbs: EngineCallbacks = {}) {
         ...prev,
         incorrect: prev.incorrect + 1,
         combo: 0,
+        started,
         lastWrong: expected,
         errorsByChar,
       }

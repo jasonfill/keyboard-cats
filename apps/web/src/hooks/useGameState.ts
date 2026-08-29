@@ -71,51 +71,62 @@ export function useGameState() {
       catSeed: string,
     ): LessonOutcome => {
       const stars = starRating(result.accuracy, result.wpm)
-      let outcome!: LessonOutcome
 
-      setState((prev) => {
-        const existing = prev.lessons[lessonId]
-        const merged = {
-          stars: Math.max(existing?.stars ?? 0, stars),
-          bestWpm: Math.max(existing?.bestWpm ?? 0, result.wpm),
-          bestAccuracy: Math.max(existing?.bestAccuracy ?? 0, result.accuracy),
-          bestScore: Math.max(existing?.bestScore ?? 0, result.score),
-          plays: (existing?.plays ?? 0) + 1,
-        }
+      // Computed from the ref rather than inside the state updater.
+      //
+      // This used to build `outcome` inside `setState` and return it
+      // afterwards, which only worked because React eagerly evaluates an
+      // updater when nothing else is pending. The moment a second round landed
+      // before a re-render, the updater was deferred, `outcome` was still
+      // undefined, and the caller read `.stars` off it. An updater has to be
+      // pure and may be skipped, replayed, or run later; nothing outside is
+      // allowed to depend on when it ran.
+      const prev = stateRef.current
+      const existing = prev.lessons[lessonId]
+      const merged = {
+        stars: Math.max(existing?.stars ?? 0, stars),
+        bestWpm: Math.max(existing?.bestWpm ?? 0, result.wpm),
+        bestAccuracy: Math.max(existing?.bestAccuracy ?? 0, result.accuracy),
+        bestScore: Math.max(existing?.bestScore ?? 0, result.score),
+        plays: (existing?.plays ?? 0) + 1,
+      }
 
-        // Collect a reward the first time a lesson is finished. The seed is
-        // stored; which of the theme's items it names is worked out at render.
-        let collectedCat: string | null = null
-        const collectedCats = [...prev.collectedCats]
-        if (!existing && !collectedCats.includes(catSeed)) {
-          collectedCats.push(catSeed)
-          collectedCat = catSeed
-        }
+      // Collect a reward the first time a lesson is finished. The seed is
+      // stored; which of the theme's items it names is worked out at render.
+      let collectedCat: string | null = null
+      const collectedCats = [...prev.collectedCats]
+      if (!existing && !collectedCats.includes(catSeed)) {
+        collectedCats.push(catSeed)
+        collectedCat = catSeed
+      }
 
-        let next: GameState = {
-          ...prev,
-          lessons: { ...prev.lessons, [lessonId]: merged },
-          collectedCats,
-        }
-        next = recomputeTotals(next)
+      let next: GameState = {
+        ...prev,
+        lessons: { ...prev.lessons, [lessonId]: merged },
+        collectedCats,
+      }
+      next = recomputeTotals(next)
 
-        const unlocked = ACHIEVEMENTS.filter(
-          (a) => a.test(next) && !next.achievements.includes(a.id),
-        )
-        next = {
-          ...next,
-          achievements: [...next.achievements, ...unlocked.map((a) => a.id)],
-        }
+      const unlocked = ACHIEVEMENTS.filter(
+        (a) => a.test(next) && !next.achievements.includes(a.id),
+      )
+      next = {
+        ...next,
+        achievements: [...next.achievements, ...unlocked.map((a) => a.id)],
+      }
 
-        outcome = {
-          ...result,
-          lessonId,
-          stars,
-          newAchievements: unlocked,
-          collectedCat,
-        }
-        return next
-      })
+      const outcome: LessonOutcome = {
+        ...result,
+        lessonId,
+        stars,
+        newAchievements: unlocked,
+        collectedCat,
+      }
+
+      // Keep the ref in step so two rounds recorded back to back build on each
+      // other rather than both starting from the same snapshot.
+      stateRef.current = next
+      setState(next)
 
       const previous = skill('typing')
       const blended =
@@ -177,21 +188,23 @@ export function useGameState() {
   )
 
   const addHighScore = useCallback((entry: HighScore): Achievement[] => {
-    let unlocked: Achievement[] = []
-    setState((prev) => {
-      const highScores = [...prev.highScores, entry]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 20)
-      let next: GameState = { ...prev, highScores }
-      unlocked = ACHIEVEMENTS.filter(
-        (a) => a.test(next) && !next.achievements.includes(a.id),
-      )
-      next = {
-        ...next,
-        achievements: [...next.achievements, ...unlocked.map((a) => a.id)],
-      }
-      return next
-    })
+    // Same reasoning as recordLesson: what this returns cannot be assembled
+    // inside the state updater, because nothing guarantees the updater has run
+    // by the time the caller reads the result.
+    const prev = stateRef.current
+    const highScores = [...prev.highScores, entry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20)
+    let next: GameState = { ...prev, highScores }
+    const unlocked = ACHIEVEMENTS.filter(
+      (a) => a.test(next) && !next.achievements.includes(a.id),
+    )
+    next = {
+      ...next,
+      achievements: [...next.achievements, ...unlocked.map((a) => a.id)],
+    }
+    stateRef.current = next
+    setState(next)
 
     void commit({
       highScore: {
