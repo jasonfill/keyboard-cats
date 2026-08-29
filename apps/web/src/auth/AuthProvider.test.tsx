@@ -62,8 +62,30 @@ function Probe() {
       <button onClick={() => void auth.signInWithCode('abc123', '1234').catch(() => {})}>code</button>
       <button onClick={() => void auth.signOut()}>sign-out</button>
       <button onClick={() => auth.clearError()}>clear</button>
+      <span data-testid="profile">{auth.profile?.displayName ?? ''}</span>
+      <span data-testid="plan">{auth.profile?.plan ?? ''}</span>
+      <button onClick={() => void auth.signUp('a@b.test', 'pw', 'Sam').catch(() => {})}>
+        sign-up
+      </button>
+      <button onClick={() => void auth.sendPasswordReset('a@b.test').catch(() => {})}>
+        reset
+      </button>
+      <button onClick={() => void auth.updateProfile({ displayName: 'Renamed' })}>rename</button>
     </div>
   )
+}
+
+/** A signed-in session, with `profiles` answering with `row`. */
+function signedInWith(row: Record<string, unknown> | null) {
+  authApi.getSession.mockResolvedValue({
+    data: { session: { user: { id: 'u1' } } },
+    error: null,
+  } as never)
+  supabaseMock.from.mockReturnValue({
+    select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: row, error: null }) }) }),
+    insert: () => ({ select: () => ({ maybeSingle: async () => ({ data: row, error: null }) }) }),
+    update: () => ({ eq: async () => ({ error: null }) }),
+  } as never)
 }
 
 function renderAuth() {
@@ -87,6 +109,13 @@ beforeEach(() => {
   authApi.onAuthStateChange.mockReturnValue({
     data: { subscription: { unsubscribe: vi.fn() } },
   })
+  authApi.signUp.mockResolvedValue({ data: { session: null }, error: null } as never)
+  authApi.resetPasswordForEmail.mockResolvedValue({ error: null } as never)
+  supabaseMock.from.mockReturnValue({
+    select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+    insert: () => ({ select: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+    update: () => ({ eq: async () => ({ error: null }) }),
+  } as never)
   apiRequest.mockReset()
 })
 
@@ -203,6 +232,254 @@ describe('signing out', () => {
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
     await click('sign-out')
     expect(authApi.signOut).toHaveBeenCalled()
+  })
+})
+
+describe('creating an account', () => {
+  it('passes the display name through, and falls back to the address', async () => {
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('sign-up')
+    expect(authApi.signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'a@b.test',
+        options: expect.objectContaining({ data: { display_name: 'Sam' } }),
+      }),
+    )
+  })
+
+  it('softens a blunt refusal into something a person can act on', async () => {
+    authApi.signUp.mockResolvedValue({
+      data: { session: null },
+      error: new Error('User already registered'),
+    } as never)
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('sign-up')
+    await waitFor(() =>
+      expect(screen.getByTestId('error')).toHaveTextContent(
+        'There is already an account with that email.',
+      ),
+    )
+  })
+
+  it('softens the short-password and rate-limit refusals too', async () => {
+    for (const [raw, friendly] of [
+      ['Password should be at least 6 characters', 'Passwords need at least 6 characters.'],
+      ['Email rate limit exceeded', 'Too many attempts just now — try again in a minute.'],
+    ] as const) {
+      authApi.signUp.mockResolvedValue({
+        data: { session: null },
+        error: new Error(raw),
+      } as never)
+      const view = renderAuth()
+      await waitFor(() => expect(view.getAllByTestId('status')[0]).toBeTruthy())
+      await act(async () => {
+        view.getAllByText('sign-up').slice(-1)[0]!.click()
+      })
+      await waitFor(() =>
+        expect(view.getAllByTestId('error').slice(-1)[0]!).toHaveTextContent(friendly),
+      )
+      view.unmount()
+    }
+  })
+
+  it('passes an unrecognised message through as it came', async () => {
+    authApi.signUp.mockResolvedValue({
+      data: { session: null },
+      error: new Error('Something odd happened'),
+    } as never)
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('sign-up')
+    await waitFor(() =>
+      expect(screen.getByTestId('error')).toHaveTextContent('Something odd happened'),
+    )
+  })
+})
+
+describe('a password reset', () => {
+  it('is sent to the address given', async () => {
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('reset')
+    expect(authApi.resetPasswordForEmail).toHaveBeenCalledWith(
+      'a@b.test',
+      expect.objectContaining({ redirectTo: 'https://whizzo.test/auth/callback' }),
+    )
+  })
+
+  it('reports a refusal', async () => {
+    authApi.resetPasswordForEmail.mockResolvedValue({
+      error: new Error('Email rate limit exceeded'),
+    } as never)
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('reset')
+    await waitFor(() => expect(screen.getByTestId('error')).not.toHaveTextContent(''))
+  })
+})
+
+describe('the profile behind a session', () => {
+  it('is loaded, with sensible stand-ins for anything missing', async () => {
+    signedInWith({ id: 'u1', display_name: null, avatar_emoji: null, plan: null })
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('signed-in'))
+    expect(screen.getByTestId('profile')).toHaveTextContent('Friend')
+    expect(screen.getByTestId('plan')).toHaveTextContent('free')
+  })
+
+  it('is created when the sign-up trigger never made one', async () => {
+    // An account made before the migration ran would otherwise leave the app
+    // sitting in a half-signed-in state forever.
+    authApi.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    } as never)
+    const insert = vi.fn(() => ({
+      select: () => ({
+        maybeSingle: async () => ({ data: { id: 'u1', display_name: 'Made' }, error: null }),
+      }),
+    }))
+    supabaseMock.from.mockReturnValue({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+      insert,
+      update: () => ({ eq: async () => ({ error: null }) }),
+    } as never)
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('profile')).toHaveTextContent('Made'))
+    expect(insert).toHaveBeenCalledWith({ id: 'u1' })
+  })
+
+  it('signs in anyway when the profile cannot be read', async () => {
+    authApi.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    } as never)
+    supabaseMock.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: null, error: { message: 'rls' } }) }),
+      }),
+      update: () => ({ eq: async () => ({ error: null }) }),
+    } as never)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('signed-in'))
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('shows a rename straight away rather than waiting for the round trip', async () => {
+    signedInWith({ id: 'u1', display_name: 'Sam' })
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('profile')).toHaveTextContent('Sam'))
+    await click('rename')
+    expect(screen.getByTestId('profile')).toHaveTextContent('Renamed')
+  })
+
+  it('does nothing when there is no profile to edit', async () => {
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('rename')
+    expect(screen.getByTestId('profile')).toHaveTextContent('')
+  })
+})
+
+describe('when the auth service cannot be reached', () => {
+  it('opens as a guest rather than spinning forever', async () => {
+    // A child on a flaky connection gets to practise, not a spinner.
+    vi.useFakeTimers()
+    let settle: (v: unknown) => void = () => {}
+    authApi.getSession.mockReturnValue(new Promise((r) => { settle = r }) as never)
+    renderAuth()
+    expect(screen.getByTestId('status')).toHaveTextContent('loading')
+    await act(async () => {
+      vi.advanceTimersByTime(6001)
+    })
+    expect(screen.getByTestId('status')).toHaveTextContent('guest')
+    settle({ data: { session: null }, error: null })
+    vi.useRealTimers()
+  })
+
+  it('carries on as a guest when the session lookup throws', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    authApi.getSession.mockRejectedValue(new Error('network'))
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+})
+
+describe('a session that changes underneath the app', () => {
+  it('notices a sign-in that happened elsewhere', async () => {
+    let handler: ((e: string, s: unknown) => Promise<void>) | null = null
+    authApi.onAuthStateChange.mockImplementation((fn: never) => {
+      handler = fn as never
+      return { data: { subscription: { unsubscribe: vi.fn() } } } as never
+    })
+    supabaseMock.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: { id: 'u1', display_name: 'Sam' }, error: null }) }),
+      }),
+      update: () => ({ eq: async () => ({ error: null }) }),
+    } as never)
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await act(async () => {
+      await handler!('SIGNED_IN', { user: { id: 'u1' } })
+    })
+    expect(screen.getByTestId('status')).toHaveTextContent('signed-in')
+    expect(screen.getByTestId('profile')).toHaveTextContent('Sam')
+  })
+
+  it('drops the profile when the session ends elsewhere', async () => {
+    let handler: ((e: string, s: unknown) => Promise<void>) | null = null
+    authApi.onAuthStateChange.mockImplementation((fn: never) => {
+      handler = fn as never
+      return { data: { subscription: { unsubscribe: vi.fn() } } } as never
+    })
+    signedInWith({ id: 'u1', display_name: 'Sam' })
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('profile')).toHaveTextContent('Sam'))
+    await act(async () => {
+      await handler!('SIGNED_OUT', null)
+    })
+    expect(screen.getByTestId('status')).toHaveTextContent('guest')
+    expect(screen.getByTestId('profile')).toHaveTextContent('')
+  })
+
+  it('unsubscribes when it goes away', async () => {
+    const unsubscribe = vi.fn()
+    authApi.onAuthStateChange.mockReturnValue({
+      data: { subscription: { unsubscribe } },
+    } as never)
+    const view = renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    view.unmount()
+    expect(unsubscribe).toHaveBeenCalled()
+  })
+})
+
+describe('a build with no credentials at all', () => {
+  it('refuses each action with something a developer can read', async () => {
+    supabaseMock.configured = false
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    for (const label of ['sign-in', 'sign-up', 'google', 'code', 'reset']) {
+      await click(label)
+    }
+    // Nothing reached Supabase, and nothing crashed the screen.
+    expect(authApi.signInWithPassword).not.toHaveBeenCalled()
+    expect(screen.getByTestId('status')).toHaveTextContent('guest')
+  })
+
+  it('signing out is a no-op rather than a crash', async () => {
+    supabaseMock.configured = false
+    renderAuth()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('guest'))
+    await click('sign-out')
+    expect(authApi.signOut).not.toHaveBeenCalled()
   })
 })
 

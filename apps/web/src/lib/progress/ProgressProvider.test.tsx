@@ -6,7 +6,7 @@
 // same guest pile into two siblings would give the second child work they
 // never did.
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProgressProvider, useProgress } from './ProgressProvider'
 import { defaultSkillState, emptySnapshot } from './types'
@@ -25,6 +25,13 @@ vi.mock('../learners/LearnerProvider', () => ({
 const cloudLoad = vi.fn(async () => emptySnapshot())
 const pushSnapshot = vi.fn(async (_s: ProgressSnapshot) => {})
 const persist = vi.fn(async () => {})
+const localReset = vi.fn(async () => {})
+const cloudSaveLists = vi.fn(async (l: unknown[]) => l)
+const cloudDeleteList = vi.fn(async (_id: string) => {})
+const cloudSaveDecks = vi.fn(async (d: unknown[]) => d)
+const cloudDeleteDeck = vi.fn(async (_id: string) => {})
+const cloudReset = vi.fn(async () => {})
+const cloudAttempts = vi.fn(async () => [{ id: 'attempt-1' }])
 
 vi.mock('./apiRepo', () => ({
   ApiProgressRepo: class {
@@ -33,8 +40,12 @@ vi.mock('./apiRepo', () => ({
     load = cloudLoad
     pushSnapshot = pushSnapshot
     persist = persist
-    reset = vi.fn(async () => {})
-    attemptsForSession = vi.fn(async () => [])
+    saveCustomLists = cloudSaveLists
+    deleteCustomList = cloudDeleteList
+    saveDecks = cloudSaveDecks
+    deleteDeck = cloudDeleteDeck
+    reset = cloudReset
+    attemptsForSession = cloudAttempts
   },
 }))
 
@@ -50,7 +61,7 @@ vi.mock('./localRepo', () => ({
     kind = 'local'
     load = vi.fn(async () => localSnapshot)
     persist = persist
-    reset = vi.fn(async () => {})
+    reset = localReset
     attemptsForSession = vi.fn(async () => [])
   },
   loadLocalSnapshot: () => localSnapshot,
@@ -68,14 +79,44 @@ function withPractice(attempts: number): ProgressSnapshot {
 }
 
 function Probe() {
-  const { mode, ready, snapshot } = useProgress()
+  const p = useProgress()
+  const { mode, ready, snapshot } = p
   return (
     <div>
       <span data-testid="mode">{mode}</span>
       <span data-testid="ready">{String(ready)}</span>
+      <span data-testid="sync">{p.sync}</span>
       <span data-testid="attempts">{snapshot.skills.spelling?.totalAttempts ?? 0}</span>
+      <span data-testid="lists">{snapshot.customLists.map((l) => l.id).join(',')}</span>
+      <span data-testid="decks">{snapshot.decks.map((d) => d.id).join(',')}</span>
+      <span data-testid="level">{p.skill('spelling').levelIndex}</span>
+      <button onClick={() => void p.saveCustomLists([{ id: 'list-1', title: 'Week 1' } as never])}>
+        save-list
+      </button>
+      <button onClick={() => void p.deleteCustomList('list-1')}>delete-list</button>
+      <button onClick={() => void p.saveDeck({ id: 'deck-1', title: 'Capitals' } as never)}>
+        save-deck
+      </button>
+      <button onClick={() => void p.deleteDeck('deck-1')}>delete-deck</button>
+      <button
+        onClick={() =>
+          void p.commit({
+            skill: { ...defaultSkillState('spelling'), totalAttempts: 7 },
+          } as never)
+        }
+      >
+        commit
+      </button>
+      <button onClick={() => void p.reset()}>reset</button>
+      <button onClick={() => void p.attemptsForSession('s1')}>attempts</button>
     </div>
   )
+}
+
+const click = async (label: string) => {
+  await act(async () => {
+    screen.getByText(label).click()
+  })
 }
 
 function renderProvider() {
@@ -91,6 +132,9 @@ const learner = (id: string): Learner => ({ id, displayName: 'Ada' }) as Learner
 beforeEach(() => {
   vi.clearAllMocks()
   cloudLoad.mockResolvedValue(emptySnapshot())
+  cloudSaveLists.mockImplementation(async (l: unknown[]) => l)
+  cloudSaveDecks.mockImplementation(async (d: unknown[]) => d)
+  cloudAttempts.mockResolvedValue([{ id: 'attempt-1' }] as never)
   localSnapshot = emptySnapshot()
   authStatus = 'signed-out'
   active = null
@@ -201,6 +245,126 @@ describe('the sign-in merge', () => {
     await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
     expect(pushSnapshot).not.toHaveBeenCalled()
     expect(clearLocalProgress).not.toHaveBeenCalled()
+  })
+})
+
+describe('a round of practice', () => {
+  it('shows immediately, and is written afterwards', async () => {
+    // A flaky connection must never interrupt a child mid-round, so the UI
+    // moves first and the write follows.
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'))
+    await click('commit')
+    expect(screen.getByTestId('attempts')).toHaveTextContent('7')
+    expect(persist).toHaveBeenCalled()
+  })
+
+  it('reads a skill nobody has practised as a fresh one', async () => {
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'))
+    expect(screen.getByTestId('level')).toHaveTextContent('0')
+  })
+
+  it('empties the store on a reset', async () => {
+    localSnapshot = withPractice(9)
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('attempts')).toHaveTextContent('9'))
+    await click('reset')
+    expect(localReset).toHaveBeenCalled()
+    expect(screen.getByTestId('attempts')).toHaveTextContent('0')
+  })
+
+  it('fetches the answers behind a round from whichever store is in use', async () => {
+    authStatus = 'signed-in'
+    learnerStatus = 'ready'
+    active = learner('l1')
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
+    await click('attempts')
+    expect(cloudAttempts).toHaveBeenCalledWith('s1')
+  })
+})
+
+describe('material a learner owns', () => {
+  describe('as a guest', () => {
+    it('is saved through the ordinary local write', async () => {
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'))
+      await click('save-list')
+      expect(screen.getByTestId('lists')).toHaveTextContent('list-1')
+      expect(persist).toHaveBeenCalled()
+    })
+
+    it('is removed the same way', async () => {
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'))
+      await click('save-list')
+      await click('delete-list')
+      expect(screen.getByTestId('lists')).toHaveTextContent('')
+    })
+
+    it('holds decks too', async () => {
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'))
+      await click('save-deck')
+      expect(screen.getByTestId('decks')).toHaveTextContent('deck-1')
+      await click('delete-deck')
+      expect(screen.getByTestId('decks')).toHaveTextContent('')
+    })
+  })
+
+  describe('signed in', () => {
+    beforeEach(() => {
+      authStatus = 'signed-in'
+      learnerStatus = 'ready'
+      active = learner('l1')
+    })
+
+    it('goes to its own endpoint rather than riding the snapshot', async () => {
+      // A word list is not a round of practice; sending it through the change
+      // stream would rewrite the whole pile to save one list.
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
+      await click('save-list')
+      expect(cloudSaveLists).toHaveBeenCalled()
+      expect(screen.getByTestId('lists')).toHaveTextContent('list-1')
+    })
+
+    it('takes the server’s version of what was saved', async () => {
+      cloudSaveLists.mockResolvedValueOnce([{ id: 'list-server' } as never])
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
+      await click('save-list')
+      expect(screen.getByTestId('lists')).toHaveTextContent('list-server')
+    })
+
+    it('deletes a list on the server and locally', async () => {
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
+      await click('save-list')
+      await click('delete-list')
+      expect(cloudDeleteList).toHaveBeenCalledWith('list-1')
+      expect(screen.getByTestId('lists')).toHaveTextContent('')
+    })
+
+    it('saves and deletes decks the same way', async () => {
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
+      await click('save-deck')
+      expect(cloudSaveDecks).toHaveBeenCalled()
+      expect(screen.getByTestId('decks')).toHaveTextContent('deck-1')
+      await click('delete-deck')
+      expect(cloudDeleteDeck).toHaveBeenCalledWith('deck-1')
+      expect(screen.getByTestId('decks')).toHaveTextContent('')
+    })
+
+    it('keeps the deck it was given when the server returned nothing', async () => {
+      cloudSaveDecks.mockResolvedValueOnce([])
+      renderProvider()
+      await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('cloud'))
+      await click('save-deck')
+      expect(screen.getByTestId('decks')).toHaveTextContent('deck-1')
+    })
   })
 })
 
