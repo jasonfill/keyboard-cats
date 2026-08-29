@@ -414,10 +414,11 @@ describe('when the auth service cannot be reached', () => {
 describe('a session that changes underneath the app', () => {
   it('notices a sign-in that happened elsewhere', async () => {
     let handler: ((e: string, s: unknown) => Promise<void>) | null = null
-    authApi.onAuthStateChange.mockImplementation((fn: never) => {
-      handler = fn as never
-      return { data: { subscription: { unsubscribe: vi.fn() } } } as never
-    })
+    ;(authApi.onAuthStateChange as unknown as { mockImplementation: (f: unknown) => void })
+      .mockImplementation((fn: unknown) => {
+        handler = fn as never
+        return { data: { subscription: { unsubscribe: vi.fn() } } }
+      })
     supabaseMock.from.mockReturnValue({
       select: () => ({
         eq: () => ({ maybeSingle: async () => ({ data: { id: 'u1', display_name: 'Sam' }, error: null }) }),
@@ -435,10 +436,11 @@ describe('a session that changes underneath the app', () => {
 
   it('drops the profile when the session ends elsewhere', async () => {
     let handler: ((e: string, s: unknown) => Promise<void>) | null = null
-    authApi.onAuthStateChange.mockImplementation((fn: never) => {
-      handler = fn as never
-      return { data: { subscription: { unsubscribe: vi.fn() } } } as never
-    })
+    ;(authApi.onAuthStateChange as unknown as { mockImplementation: (f: unknown) => void })
+      .mockImplementation((fn: unknown) => {
+        handler = fn as never
+        return { data: { subscription: { unsubscribe: vi.fn() } } }
+      })
     signedInWith({ id: 'u1', display_name: 'Sam' })
     renderAuth()
     await waitFor(() => expect(screen.getByTestId('profile')).toHaveTextContent('Sam'))

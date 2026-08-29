@@ -6,7 +6,7 @@
 // rather than silently enforced, and the fact that a deck cannot be saved into
 // a state no round could use.
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../auth/AuthProvider', async () => (await import('../test/mockProviders')).authMock())
@@ -40,7 +40,7 @@ function deck(over: Record<string, unknown> = {}) {
       { id: 'c1', term: 'Paris', definition: 'France', hint: null, difficulty: 3 },
       { id: 'c2', term: 'Rome', definition: 'Italy', hint: null, difficulty: 3 },
     ],
-    source: 'user',
+    source: 'user' as const,
     termLabel: 'City',
     definitionLabel: 'Country',
     createdAt: 0,
@@ -334,9 +334,9 @@ describe('word lists', () => {
     expect(screen.getByText('Save 3 words')).toBeTruthy()
     fireEvent.click(screen.getByText('Save 3 words'))
     await waitFor(() => expect(spies.saveCustomLists).toHaveBeenCalled())
-    const [saved] = spies.saveCustomLists.mock.calls[0]![0] as Array<{
-      words: Array<{ w: string; s: string }>
-    }>
+    const [saved] = (spies.saveCustomLists.mock.calls as unknown as Array<
+      [Array<{ words: Array<{ w: string; s: string }> }>]
+    >)[0]![0]
     expect(saved.words[1]).toEqual({ w: 'friend', s: 'My friend sits next to me.' })
   })
 
@@ -347,9 +347,9 @@ describe('word lists', () => {
     fireEvent.change(document.querySelector('textarea')!, { target: { value: 'because' } })
     fireEvent.click(screen.getByText('Save 1 words'))
     await waitFor(() => expect(spies.saveCustomLists).toHaveBeenCalled())
-    const [saved] = spies.saveCustomLists.mock.calls[0]![0] as Array<{
-      words: Array<{ w: string; s: string }>
-    }>
+    const [saved] = (spies.saveCustomLists.mock.calls as unknown as Array<
+      [Array<{ words: Array<{ w: string; s: string }> }>]
+    >)[0]![0]
     expect(saved.words[0]!.s).toBe('Please spell the word because.')
   })
 

@@ -6,7 +6,7 @@
 // list, the session log with each round openable, and the two places the free
 // plan draws a line and says so rather than quietly showing less.
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../auth/AuthProvider', async () =>

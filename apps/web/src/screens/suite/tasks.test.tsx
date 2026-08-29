@@ -7,7 +7,7 @@
 // opens a finished task and sees the actual answers, including which ones the
 // app checked and which the child graded themselves.
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../auth/AuthProvider', async () =>

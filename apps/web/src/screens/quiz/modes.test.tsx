@@ -5,7 +5,7 @@
 // answer; Match checks every pair itself. A mode may change how hard a round
 // feels — it may never change what an answer is worth without saying so.
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../auth/AuthProvider', async () =>

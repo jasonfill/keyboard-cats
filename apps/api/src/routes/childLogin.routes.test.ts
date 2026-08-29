@@ -352,7 +352,10 @@ describe('when the auth server will not play along', () => {
   // These are 502s rather than 500s on purpose: nothing here is wrong with the
   // request, and the grown-up retrying it is the right next move.
   it('reports a failure to create the account', async () => {
-    adminApi.createUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'rate limited' } })
+    adminApi.createUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: 'rate limited' },
+    } as never)
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST',
@@ -369,7 +372,10 @@ describe('when the auth server will not play along', () => {
       rows: [learnerRow({ auth_kind: 'provisioned', auth_user_id: 'auth-1' })],
       rowCount: 1,
     })
-    adminApi.updateUserById.mockResolvedValueOnce({ data: { user: null }, error: { message: 'nope' } })
+    adminApi.updateUserById.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: 'nope' },
+    } as never)
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST',
@@ -381,7 +387,10 @@ describe('when the auth server will not play along', () => {
   })
 
   it('leaves nothing half-done: no code is stored when the account could not be made', async () => {
-    adminApi.createUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'no' } })
+    adminApi.createUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: 'no' },
+    } as never)
     const app = await buildApp()
     await app.inject({
       method: 'POST',

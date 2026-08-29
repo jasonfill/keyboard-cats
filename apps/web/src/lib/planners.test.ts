@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { kindFor, masteryOf, planStudy } from './quiz/session'
 import { planPlacement, planSession } from './spelling/session'
 import { allDecks, deckStats, findDeck, normalizeDeck, parseImport } from './quiz/decks'
-import { defaultSkillState, emptySnapshot, listKey, masteryKey, todayString } from './progress/types'
+import { defaultSkillState, emptySnapshot, masteryKey, todayString } from './progress/types'
 import type { ProgressSnapshot, QuizDeck } from './progress/types'
 
 function deck(cards: number, over: Record<string, unknown> = {}): QuizDeck {
@@ -197,19 +197,19 @@ describe('planning a spelling round', () => {
   })
 
   it('fills a round to the size asked for', () => {
-    const plan = planSession(emptySnapshot(), state, { size: 10 })
+    const plan = planSession(emptySnapshot(), state, { mode: 'adaptive', size: 10 })
     expect(plan).toHaveLength(10)
   })
 
   it('never repeats a word inside one round', () => {
-    const plan = planSession(emptySnapshot(), state, { size: 12 })
+    const plan = planSession(emptySnapshot(), state, { mode: 'adaptive', size: 12 })
     expect(new Set(plan.map((p) => p.w)).size).toBe(plan.length)
   })
 
   it('caps review, so a round is not made entirely of past failures', () => {
     // Accurate and demoralising is still demoralising.
     let snapshot = emptySnapshot()
-    const words = planSession(emptySnapshot(), state, { size: 30 })
+    const words = planSession(emptySnapshot(), state, { mode: 'adaptive', size: 30 })
     for (const w of words) {
       snapshot = {
         ...snapshot,
@@ -234,7 +234,7 @@ describe('planning a spelling round', () => {
         },
       }
     }
-    const plan = planSession(snapshot, state, { size: 10 })
+    const plan = planSession(snapshot, state, { mode: 'adaptive', size: 10 })
     const relearn = plan.filter((p) => p.reason === 'relearn').length
     expect(relearn).toBeLessThanOrEqual(Math.ceil(10 * 0.4))
   })
@@ -242,7 +242,7 @@ describe('planning a spelling round', () => {
   it('mixes review in with new material rather than clumping it', () => {
     // Ten review words in a row and then ten new ones is two rounds stapled
     // together, not one.
-    const plan = planSession(emptySnapshot(), state, { size: 10 })
+    const plan = planSession(emptySnapshot(), state, { mode: 'adaptive', size: 10 })
     expect(plan.every((p) => typeof p.reason === 'string')).toBe(true)
   })
 

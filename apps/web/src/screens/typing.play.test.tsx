@@ -5,7 +5,7 @@
 // score written afterwards is the one the round produced, and that the arcade
 // ends when the lives run out rather than whenever the clock feels like it.
 
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../lib/theme/ThemeProvider', async () =>

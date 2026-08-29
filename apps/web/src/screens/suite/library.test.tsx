@@ -80,7 +80,7 @@ function deck(over: Record<string, unknown> = {}) {
     description: '',
     tags: [],
     cards: [{ id: 'c1', term: 'Paris', definition: 'France', hint: null, difficulty: 3 }],
-    source: 'user',
+    source: 'user' as const,
     termLabel: 'Term',
     definitionLabel: 'Definition',
     createdAt: 0,
@@ -185,7 +185,9 @@ describe('copying a learner’s material in', () => {
     testState.snapshot = {
       ...emptySnapshot(),
       decks: [deck({ id: 'kid-deck', title: "Ada's deck" })],
-      customLists: [{ id: 'kid-list', title: "Ada's words", subject: 'spelling', grade: 4, words: [] }],
+      customLists: [
+        { id: 'kid-list', title: "Ada's words", subject: 'spelling', grade: 4, words: [], updatedAt: 0 },
+      ],
     }
   })
 
@@ -200,7 +202,9 @@ describe('copying a learner’s material in', () => {
     render(<LibraryScreen navigate={navigate} />)
     fireEvent.click(await screen.findByText(/Ada's deck/))
     await waitFor(() => expect(lib.saveLibraryDecks).toHaveBeenCalled())
-    const saved = lib.saveLibraryDecks.mock.calls[0]![0] as Array<{ id: string; title: string }>
+    const saved = (lib.saveLibraryDecks.mock.calls as unknown as Array<
+      [Array<{ id: string; title: string }>]
+    >)[0]![0]
     expect(saved[0]!.title).toBe("Ada's deck")
     expect(saved[0]!.id).not.toBe('kid-deck')
   })
@@ -209,7 +213,7 @@ describe('copying a learner’s material in', () => {
     render(<LibraryScreen navigate={navigate} />)
     fireEvent.click(await screen.findByText(/Ada's words/))
     await waitFor(() => expect(lib.saveLibraryLists).toHaveBeenCalled())
-    const saved = lib.saveLibraryLists.mock.calls[0]![0] as Array<{ id: string }>
+    const saved = (lib.saveLibraryLists.mock.calls as unknown as Array<[Array<{ id: string }>]>)[0]![0]
     expect(saved[0]!.id).not.toBe('kid-list')
   })
 

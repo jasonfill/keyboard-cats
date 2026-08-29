@@ -106,7 +106,7 @@ describe('first run', () => {
     render(<FamilyScreen navigate={navigate} />)
     fireEvent.click(screen.getByText('I am the one learning'))
     await waitFor(() => expect(create).toHaveBeenCalled())
-    expect(create.mock.calls[0]![0]).toMatchObject({ displayName: 'Grown-up' })
+    expect((create.mock.calls as unknown as Array<[Record<string, unknown>]>)[0]![0]).toMatchObject({ displayName: 'Grown-up' })
   })
 
   it('shows what a new learner’s error was rather than failing silently', async () => {
@@ -146,7 +146,7 @@ describe('first run, for somebody who said they are the learner', () => {
     render(<FamilyScreen navigate={navigate} />)
     fireEvent.click(screen.getByText('Start learning'))
     await waitFor(() => expect(create).toHaveBeenCalled())
-    expect(create.mock.calls[0]![0]).toMatchObject({ birthYear: 2009 })
+    expect((create.mock.calls as unknown as Array<[Record<string, unknown>]>)[0]![0]).toMatchObject({ birthYear: 2009 })
   })
 })
 
@@ -462,7 +462,7 @@ describe('adding a learner from the list', () => {
     fireEvent.click(screen.getByText('🐯'))
     fireEvent.click(screen.getByText('Add them'))
     await waitFor(() => expect(create).toHaveBeenCalled())
-    expect(create.mock.calls[0]![0]).toMatchObject({
+    expect((create.mock.calls as unknown as Array<[Record<string, unknown>]>)[0]![0]).toMatchObject({
       displayName: 'Ben',
       avatarEmoji: '🐯',
       birthYear: 2015,
@@ -477,7 +477,7 @@ describe('adding a learner from the list', () => {
     fireEvent.change(screen.getByLabelText(/Birth year/), { target: { value: '1066' } })
     fireEvent.click(screen.getByText('Add them'))
     await waitFor(() => expect(create).toHaveBeenCalled())
-    expect(create.mock.calls[0]![0]).toMatchObject({ birthYear: null })
+    expect((create.mock.calls as unknown as Array<[Record<string, unknown>]>)[0]![0]).toMatchObject({ birthYear: null })
   })
 
   it('can be closed again', async () => {
