@@ -81,7 +81,7 @@ export default function TrophyRoom({ game, navigate }: Props) {
             unlocked={(id) => state.achievements.includes(id)}
           />
           <BadgeGrid
-            title="Spelling 🐈‍⬛"
+            title="Spelling 🔤"
             badges={SPELLING_ACHIEVEMENTS}
             unlocked={(id) => unlockedIds.has(id)}
           />

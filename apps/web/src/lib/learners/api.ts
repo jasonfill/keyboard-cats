@@ -45,10 +45,20 @@ export async function createLearner(learner: NewLearner) {
 /**
  * Cosmetics only. Ownership, sign-in mode and birth year are owner-only and are
  * rejected by the database for anyone else, so they are not exposed here.
+ *
+ * `theme` belongs in this set precisely because it is cosmetic: the RLS on
+ * learners already admits the owner, the learner themselves, and a guardian
+ * with can_manage_content, which is exactly "the student picks their world or
+ * a grown-up sets it".
  */
 export async function updateLearner(
   id: string,
-  patch: { displayName?: string; avatarEmoji?: string; gradeHint?: number | null },
+  patch: {
+    displayName?: string
+    avatarEmoji?: string
+    gradeHint?: number | null
+    theme?: string | null
+  },
 ) {
   const { learner } = await api.patch<LearnerResponse>(`/learners/${id}`, patch)
   return learner

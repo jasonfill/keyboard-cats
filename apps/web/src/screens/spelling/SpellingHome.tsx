@@ -21,7 +21,7 @@ export default function SpellingHome({ navigate }: { navigate: Navigate }) {
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
       <ScreenHeader
-        title="Spelling Cats 🐈‍⬛"
+        title="Spelling"
         subtitle="Words picked for you, based on how you actually did."
         onBack={() => navigate({ name: 'home' })}
         backLabel="← Academy"

@@ -282,7 +282,7 @@ export default function AssignForm({
 }
 
 const SUBJECT_LABEL: Record<string, string> = {
-  quiz: 'Quiz Cats',
+  quiz: 'Quiz',
   spelling: 'Spelling',
   typing: 'Typing',
 }

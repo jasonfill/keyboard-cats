@@ -86,7 +86,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
             <Mascot mood="cheer" size={108} />
           </div>
           <div className="mt-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
-            New {theme.unitOne}
+            New {theme.unit}
           </div>
           <div className="font-display text-2xl font-extrabold text-ink">{rewardName}</div>
           <p className="mx-auto mt-2 max-w-md text-[15px] text-body">{theme.because}</p>

@@ -1,8 +1,10 @@
 import Mascot from '../../components/Mascot'
 import { Button } from '../../components/ui'
 import ScreenHeader from '../../components/suite/ScreenHeader'
+import { useAuth } from '../../auth/AuthProvider'
+import { useLearners } from '../../lib/learners/LearnerProvider'
 import { useTheme } from '../../lib/theme/ThemeProvider'
-import type { Theme } from '../../lib/themes'
+import { themesForGrade, type Theme } from '../../lib/themes'
 import type { Navigate } from '../../routes'
 
 /**
@@ -13,7 +15,13 @@ import type { Navigate } from '../../routes'
  * student who wants Dinosaurs gets Dinosaurs.
  */
 export default function ThemePicker({ navigate }: { navigate: Navigate }) {
-  const { theme, themes, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
+  const { active } = useLearners()
+  const { profile } = useAuth()
+
+  // Nearest-fit first for this learner's grade. Ordering only — every card
+  // below is selectable, whatever it says.
+  const ordered = themesForGrade(active?.gradeHint ?? profile?.gradeHint ?? null)
 
   return (
     <div className="mx-auto w-full max-w-5xl py-4">
@@ -24,7 +32,7 @@ export default function ThemePicker({ navigate }: { navigate: Navigate }) {
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {themes.map((t) => (
+        {ordered.map((t) => (
           <ThemeCard
             key={t.id}
             theme={t}
@@ -76,6 +84,9 @@ function ThemeCard({
         {theme.name}
       </div>
       <div className="text-[13px] font-bold text-muted">Collect {theme.unit}</div>
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+        Often picked in {theme.bands}
+      </div>
       <div className="mt-3 text-[13px] font-extrabold" style={{ color: theme.deep }}>
         {active ? 'Your world ✓' : `${theme.verb} →`}
       </div>

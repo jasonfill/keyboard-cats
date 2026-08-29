@@ -56,6 +56,13 @@ export interface Learner {
   authKind: AuthKind
   authUserId: string | null
   createdAt: number
+  /**
+   * The learner's chosen world. Display state only — it never touches the
+   * curriculum, the difficulty, or what earns a reward. Null means the client
+   * default. Kept here rather than in browser storage because a grown-up can
+   * set it, and that has to reach the child's device.
+   */
+  theme: string | null
 }
 
 export interface Guardian {
@@ -73,6 +80,7 @@ export interface NewLearner {
   avatarEmoji?: string
   gradeHint?: number | null
   birthYear?: number | null
+  theme?: string | null
 }
 
 /** Age in whole years, or null when no birth year has been recorded. */

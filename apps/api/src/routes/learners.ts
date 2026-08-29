@@ -64,6 +64,10 @@ const patchLearnerSchema = z
     displayName: z.string().trim().min(1).max(40).optional(),
     avatarEmoji: z.string().trim().min(1).max(8).optional(),
     gradeHint: z.number().int().min(0).max(12).nullable().optional(),
+    // Not an enum: the set of worlds is a client concept and will grow, and an
+    // unknown id already falls back to the default rather than breaking a
+    // screen. The column's length check is the backstop.
+    theme: z.string().trim().min(1).max(32).nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change' })
 
@@ -353,6 +357,7 @@ export async function learnerRoutes(app: FastifyInstance): Promise<void> {
       if (body.displayName !== undefined) set('display_name', body.displayName)
       if (body.avatarEmoji !== undefined) set('avatar_emoji', body.avatarEmoji)
       if (body.gradeHint !== undefined) set('grade_hint', body.gradeHint)
+      if (body.theme !== undefined) set('theme', body.theme)
 
       values.push(id)
       const { rows } = await db.query(

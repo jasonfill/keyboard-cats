@@ -22,7 +22,7 @@ export default function TypingHome({ game, navigate }: Props) {
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 py-4">
       <div className="w-full">
         <ScreenHeader
-          title="Keyboard Cats ⌨️"
+          title="Typing ⌨️"
           subtitle="Learn to type &amp; collect cats!"
           onBack={() => navigate({ name: 'home' })}
           backLabel="← Academy"

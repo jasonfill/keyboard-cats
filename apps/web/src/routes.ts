@@ -24,7 +24,7 @@ export type Route =
   | { name: 'theme' }
   /** The collectibles earned so far, in whichever shape the theme uses. */
   | { name: 'world' }
-  // Typing (Keyboard Cats)
+  // Typing
   | { name: 'typing' }
   | { name: 'map' }
   | { name: 'lesson'; id: string }
@@ -32,7 +32,7 @@ export type Route =
   | { name: 'rain' }
   | { name: 'trophies' }
   | { name: 'settings' }
-  // Spelling (Spelling Cats)
+  // Spelling
   | { name: 'spelling' }
   | { name: 'spell-lists' }
   | {
@@ -43,7 +43,7 @@ export type Route =
       customListId?: string
       size?: number
     }
-  // Quiz (Quiz Cats)
+  // Quiz
   | { name: 'quiz' }
   | { name: 'quiz-deck'; deckId: string }
   /** No deckId means "start a new deck". */

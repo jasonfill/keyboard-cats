@@ -46,7 +46,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
       <ScreenHeader
-        title="Quiz Cats 🃏"
+        title="Quiz 🃏"
         subtitle="Flashcards for anything you need to learn by heart."
         onBack={() => navigate({ name: 'home' })}
         backLabel="← Academy"

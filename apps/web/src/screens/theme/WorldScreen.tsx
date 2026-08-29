@@ -3,7 +3,13 @@ import ScreenHeader from '../../components/suite/ScreenHeader'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { useTheme } from '../../lib/theme/ThemeProvider'
 import { earnedFor, type Earned } from '../../lib/theme/rewards'
-import { slotLabels, type Theme } from '../../lib/themes'
+import {
+  assemblyLine,
+  journeyLines,
+  SHAPE_LABEL,
+  slotLabels,
+  type Theme,
+} from '../../lib/themes'
 import type { Navigate } from '../../routes'
 
 /**
@@ -26,6 +32,9 @@ export default function WorldScreen({ navigate }: { navigate: Navigate }) {
 
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
+      <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+        {SHAPE_LABEL[theme.shape]}
+      </div>
       <ScreenHeader
         title={theme.worldNoun}
         subtitle={`${earned.owned} of ${earned.total} ${theme.unit}`}
@@ -88,6 +97,7 @@ function Journey({ theme, earned }: { theme: Theme; earned: Earned }) {
   const stops = slotLabels(theme)
   // `owned` stops are behind you; the one you are standing on is the next.
   const current = Math.min(earned.owned, stops.length - 1)
+  const lines = journeyLines(theme, earned.owned)
 
   return (
     <div>
@@ -136,15 +146,8 @@ function Journey({ theme, earned }: { theme: Theme; earned: Earned }) {
       >
         <Mascot mood="idle" size={62} />
         <div>
-          <div className="font-display text-lg font-extrabold text-ink">
-            {stops[current]}
-            {earned.owned > 0 && ` · ${earned.owned} of ${earned.total} ${theme.unit}`}
-          </div>
-          <div className="text-[15px] text-body">
-            {current < stops.length - 1
-              ? `Next: ${stops[current + 1]}. Clear a graded round above its predicted score to get there.`
-              : 'You have reached the end of this one. Every stop earned on graded work.'}
-          </div>
+          <div className="font-display text-lg font-extrabold text-ink">{lines.now}</div>
+          <div className="text-[15px] text-body">{lines.next}</div>
         </div>
       </div>
     </div>
@@ -167,6 +170,9 @@ function Assembly({ theme, earned }: { theme: Theme; earned: Earned }) {
         <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
           {earned.owned} of {earned.total} parts
         </div>
+        <p className="mt-2 max-w-xs text-center text-[14px] text-body">
+          {assemblyLine(theme, earned.owned)}
+        </p>
       </div>
 
       <ul className="space-y-2">

@@ -1,11 +1,17 @@
-// Holds the active learner's theme and publishes it two ways: as `--wz-accent`
-// on the document element, which is what the Tailwind `accent` token reads, and
+// Holds the active learner's theme and publishes it two ways: as CSS variables
+// on the document element, which is what the Tailwind accent tokens read, and
 // as the theme object itself for the copy strings and tints that cannot be
 // expressed as a class.
 //
 // Mounted above the progress provider and below the learner provider, because
 // the theme is chosen per learner — siblings differ, and a parent switching
 // from one child to another should see the app change with them.
+//
+// Two people can set it, which is the whole reason it is not a local
+// preference: a student picks their own world, and a grown-up can set one for
+// a child too young to go looking for the picker. The learners RLS already
+// admits exactly those writers — the owner, the learner themselves, and a
+// guardian holding can_manage_content — so both paths are the same one PATCH.
 
 import {
   createContext,
@@ -16,7 +22,9 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useAuth } from '../../auth/AuthProvider'
 import { useLearners } from '../learners/LearnerProvider'
+import { updateLearner } from '../learners/api'
 import {
   DEFAULT_THEME_ID,
   hexToRgbTriple,
@@ -27,58 +35,64 @@ import {
   type ThemeId,
 } from '../themes'
 
-// Deliberately small. Grown-up surfaces stay theme-free by never calling
-// `useTheme` at all, so there is nothing here for them to opt out of.
+// Deliberately small. Grown-up surfaces stay theme-free by never reading
+// `theme` for colour; the parent screen reads it only to name the child's world
+// and to set it, which is why `setTheme` lives here rather than on the picker.
 interface ThemeContextValue {
   theme: Theme
   themes: Theme[]
   setTheme: (id: ThemeId) => void
+  /** Where the current value came from, so a screen can say so honestly. */
+  source: 'learner' | 'guest'
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 /**
- * Per learner, not per account.
+ * Guest storage only.
  *
- * Guests get the anonymous slot; a signed-in learner gets one keyed by id.
- * Both live in localStorage, which means a theme does not yet follow a learner
- * to a new device. Doing that needs a column on the learner profile, which is
- * a schema and API change — deliberately out of scope for a presentation-layer
- * re-skin. Everything below the two functions here is storage-agnostic, so
- * that column is a one-function swap when it lands.
+ * A signed-in learner's theme lives on their row, so it follows them to any
+ * device and a parent can set it from theirs. This slot is for play before an
+ * account exists.
  */
-const THEME_KEY = 'whizzo:theme'
+const GUEST_KEY = 'whizzo:theme:guest'
 
-function storageSlot(learnerId: string | null): string {
-  return learnerId ? `${THEME_KEY}:${learnerId}` : `${THEME_KEY}:guest`
-}
-
-function readTheme(learnerId: string | null): ThemeId {
+function readGuestTheme(): ThemeId {
   try {
-    const stored = localStorage.getItem(storageSlot(learnerId))
+    const stored = localStorage.getItem(GUEST_KEY)
     return isThemeId(stored) ? stored : DEFAULT_THEME_ID
   } catch {
     return DEFAULT_THEME_ID
   }
 }
 
-function writeTheme(learnerId: string | null, id: ThemeId): void {
+function writeGuestTheme(id: ThemeId): void {
   try {
-    localStorage.setItem(storageSlot(learnerId), id)
+    localStorage.setItem(GUEST_KEY, id)
   } catch {
     /* a private window is not a reason to fail a lesson */
   }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const { active } = useLearners()
-  const learnerId = active?.id ?? null
-  const [themeId, setThemeId] = useState<ThemeId>(() => readTheme(learnerId))
+  const { status } = useAuth()
+  const { active, refresh } = useLearners()
+  const signedIn = status === 'signed-in' && !!active
 
-  // Follow the active learner. Switching children swaps the paint with them.
+  // The guest's choice, held locally. For a signed-in learner the row is the
+  // truth, and `pending` is only the optimistic overlay between the click and
+  // the round trip.
+  const [guestTheme, setGuestTheme] = useState<ThemeId>(readGuestTheme)
+  const [pending, setPending] = useState<{ learnerId: string; id: ThemeId } | null>(null)
+
+  const stored = signedIn && isThemeId(active.theme) ? active.theme : null
+  const optimistic = pending && pending.learnerId === active?.id ? pending.id : null
+  const themeId: ThemeId = signedIn ? (optimistic ?? stored ?? DEFAULT_THEME_ID) : guestTheme
+
+  // Once the row comes back agreeing with us, the overlay has done its job.
   useEffect(() => {
-    setThemeId(readTheme(learnerId))
-  }, [learnerId])
+    if (pending && stored === pending.id) setPending(null)
+  }, [pending, stored])
 
   // The one global side effect. Everything styled with the accent tokens reads
   // these variables, so writing them here re-paints every play surface at once
@@ -99,10 +113,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = useCallback(
     (id: ThemeId) => {
-      setThemeId(id)
-      writeTheme(learnerId, id)
+      if (!signedIn || !active) {
+        setGuestTheme(id)
+        writeGuestTheme(id)
+        return
+      }
+      // Optimistic: the world changes on the click, the write follows. A failed
+      // write is warned about rather than thrown — losing a colour is not worth
+      // interrupting a child mid-round — and since the next load reads the row,
+      // the app does not go on claiming something was saved when it was not.
+      setPending({ learnerId: active.id, id })
+      void updateLearner(active.id, { theme: id })
+        .then(() => refresh())
+        .catch((err) => {
+          console.warn('[whizzo] could not save theme', err)
+          setPending(null)
+        })
     },
-    [learnerId],
+    [signedIn, active, refresh],
   )
 
   const value = useMemo<ThemeContextValue>(
@@ -110,8 +138,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       theme: themeById(themeId),
       themes: THEMES,
       setTheme,
+      source: signedIn ? 'learner' : 'guest',
     }),
-    [themeId, setTheme],
+    [themeId, setTheme, signedIn],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

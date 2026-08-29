@@ -13,6 +13,7 @@ import { useProgress } from '../../lib/progress/ProgressProvider'
 import { bestStreak, unaidedAccuracy } from '../../lib/progress/summary'
 import { useTheme } from '../../lib/theme/ThemeProvider'
 import { earnedFor } from '../../lib/theme/rewards'
+import { progressLine, progressTitle } from '../../lib/themes'
 import { dueWords, levelSnapshot, totalCurriculumWords } from '../../lib/spelling/stats'
 import { breakdown } from '../../lib/spelling/stats'
 import { ALL_WORDS } from '../../data/spelling'
@@ -178,8 +179,8 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <SubjectCard
-          emoji="🐈‍⬛"
-          title="Spelling Cats"
+          emoji="🔤"
+          title="Spelling"
           tagline="Adaptive spelling, second grade and up."
           stats={[
             { label: 'Level', value: `Grade ${level.grade}` },
@@ -191,7 +192,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         />
         <SubjectCard
           emoji="⌨️"
-          title="Keyboard Cats"
+          title="Typing"
           tagline="Touch typing, one world at a time."
           stats={[
             { label: 'Lessons done', value: `${typingLessons}/${TOTAL_LESSONS}` },
@@ -203,7 +204,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         />
         <SubjectCard
           emoji="🃏"
-          title="Quiz Cats"
+          title="Quiz"
           tagline="Flashcards for anything at all."
           stats={[
             { label: 'My decks', value: String(snapshot.decks.length) },
@@ -220,7 +221,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-[22px] border border-hair bg-chalk p-5">
           <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
-            Your {theme.unit}
+            {progressTitle(theme)}
           </div>
           <div className="mt-2 h-[14px] w-full overflow-hidden rounded-full bg-tray">
             <div
@@ -231,9 +232,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
           <div className="mt-2 text-[15px] font-extrabold text-ink">
             {earned.owned} of {earned.total} {theme.unit}
           </div>
-          <p className="mt-1 text-[13px] text-muted">
-            Earned on graded rounds only — the rate is the same in every world.
-          </p>
+          <p className="mt-1 text-[13px] text-muted">{progressLine(theme)}</p>
         </div>
 
         <button

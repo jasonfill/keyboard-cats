@@ -17,6 +17,7 @@ import { addDays, todayString } from '../../lib/progress/types'
 import { breakdown, gradeBreakdown, troubleWords, turnaroundWords } from '../../lib/spelling/stats'
 import { errorPattern } from '../../lib/spelling/activities'
 import { unaidedAccuracy } from '../../lib/progress/summary'
+import { useTheme } from '../../lib/theme/ThemeProvider'
 import { useAssignments } from '../../hooks/useAssignments'
 import { useLearners } from '../../lib/learners/LearnerProvider'
 import type { Navigate } from '../../routes'
@@ -67,6 +68,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const bestWpm = Math.max(0, ...Object.values(game.state.lessons).map((l) => l.bestWpm))
 
   const { active } = useLearners()
+  const { theme, themes, setTheme, source } = useTheme()
   const { open: openTasks, done: doneTasks } = useAssignments()
   const unaided = unaidedAccuracy(snapshot)
   const last21 = useMemo(() => buildActivityChart(snapshot.daily), [snapshot.daily])
@@ -141,7 +143,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
       {/* Spelling */}
       <Card className="mb-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-extrabold text-ink">Spelling 🐈‍⬛</h2>
+          <h2 className="text-xl font-extrabold text-ink">Spelling 🔤</h2>
           <div className="flex flex-wrap gap-2">
             <Pill className="bg-wash text-ink">
               Grade {GRADES[spelling.levelIndex]?.grade ?? 2}
@@ -308,7 +310,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           </div>
         </div>
         <Button variant="ghost" onClick={() => navigate({ name: 'typing' })}>
-          Open Keyboard Cats →
+          Open typing →
         </Button>
       </Card>
 
@@ -327,7 +329,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           </div>
         </div>
         <Button variant="ghost" onClick={() => navigate({ name: 'quiz' })}>
-          Open Quiz Cats →
+          Open quiz →
         </Button>
       </Card>
 
@@ -425,16 +427,56 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
       </div>
 
       {/* Stated plainly, because a parent seeing a theme in a report should be
-          told immediately that it changes nothing in the report. */}
+          told immediately that it changes nothing in the report — and then
+          given the control, because a six-year-old will not go looking for the
+          picker themselves. Rendered with no accent at all: this is a grown-up
+          surface, and it stays one even while setting a child's colour. */}
       <div className="mt-4 rounded-[20px] border border-hair bg-chalk p-6">
         <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
           Their world
         </div>
+        <h2 className="mt-1 font-display text-lg font-extrabold text-ink">{theme.name}</h2>
         <p className="mt-1 text-[15px] leading-relaxed text-body">
-          {active?.displayName ?? 'They'} can pick from ten of these. It swaps the mascot and the
-          name of what gets collected, and nothing else: not the words, not the difficulty, not
-          what earns a reward. Nothing on this page changes with it.
+          {active?.displayName ?? 'They'} can change this themselves at any time, and so can you.
+          It swaps the mascot and the name of what gets collected, and nothing else: not the
+          words, not the difficulty, not what earns a reward. Nothing on this page changes with
+          it.
         </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {themes.map((t) => {
+            const on = t.id === theme.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                aria-pressed={on}
+                className={`rounded-full px-3.5 py-1.5 text-[14px] font-extrabold transition-colors ${
+                  on
+                    ? 'bg-ink text-white'
+                    : 'border border-edge bg-chalk text-muted hover:bg-wash'
+                }`}
+              >
+                {t.name}
+                {/* Advisory, never a gate: the band is shown so a parent has
+                    somewhere to start, and every one of the ten stays
+                    clickable whatever grade the child is in. */}
+                <span
+                  className={`ml-1.5 font-mono text-[10px] font-bold tracking-[0.08em] ${
+                    on ? 'text-onink' : 'text-faint'
+                  }`}
+                >
+                  {t.bands}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        {source === 'guest' && (
+          <p className="mt-3 text-[13px] font-bold text-muted">
+            Saved on this device only until they have an account.
+          </p>
+        )}
       </div>
     </div>
   )
@@ -442,7 +484,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
 
 /** Session rows store the raw activity id; show the name a person would use. */
 const SUBJECT_EMOJI: Record<string, string> = {
-  spelling: '🐈‍⬛',
+  spelling: '🔤',
   typing: '⌨️',
   quiz: '🃏',
 }

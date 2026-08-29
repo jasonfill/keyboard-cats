@@ -467,3 +467,88 @@ export function slotLabels(theme: Theme): string[] {
 export function placeholderStripe(theme: Theme): string {
   return `repeating-linear-gradient(135deg, ${theme.tintB} 0 9px, ${theme.tintA} 9px 18px)`
 }
+
+/**
+ * The lowest and highest grade a band names. 'K–5' is 0..5, '3–12' is 3..12.
+ *
+ * Used only to order the picker. Every theme is always selectable — a grade 11
+ * student who wants Dinosaurs gets Dinosaurs — so this can never return
+ * anything a caller might mistake for permission.
+ */
+function bandRange(bands: string): [number, number] {
+  const [lo, hi] = bands.split('–')
+  return [lo.trim() === 'K' ? 0 : Number(lo), Number(hi)]
+}
+
+/**
+ * The ten themes, nearest-fit first for this learner's grade.
+ *
+ * Advisory ordering and nothing else. A theme whose band does not cover the
+ * grade sorts later; it is never hidden, disabled, or marked as unavailable.
+ * With no grade to go on the declared order is kept.
+ */
+export function themesForGrade(grade: number | null | undefined): Theme[] {
+  if (grade == null) return THEMES
+  return [...THEMES]
+    .map((theme, i) => {
+      const [lo, hi] = bandRange(theme.bands)
+      // Distance outside the band, zero when the grade falls inside it.
+      const distance = grade < lo ? lo - grade : grade > hi ? grade - hi : 0
+      return { theme, distance, i }
+    })
+    .sort((a, b) => a.distance - b.distance || a.i - b.i)
+    .map((x) => x.theme)
+}
+
+/** What a theme calls the way it hands out rewards. */
+export const SHAPE_LABEL: Record<RewardShape, string> = {
+  collection: 'Collection',
+  journey: 'Journey',
+  assembly: 'Assembly',
+}
+
+/**
+ * The heading over the progress card, which reads differently depending on
+ * what the theme's collectibles actually are: a journey has no "next one",
+ * it has a distance already covered.
+ */
+export function progressTitle(theme: Theme): string {
+  return theme.shape === 'journey' ? 'How far you have come' : `Next ${theme.unitOne}`
+}
+
+/**
+ * The line under the progress bar. Names the theme's own noun, and says the
+ * same true thing in all ten: practice keeps a streak alive but does not earn
+ * a collectible.
+ */
+export function progressLine(theme: Theme): string {
+  return `Clear a graded round above its predicted score and the next ${theme.unitOne} is yours. Practice rounds keep your streak but do not earn one.`
+}
+
+/** The sub-line under an assembly stage: what is still missing, in its nouns. */
+export function assemblyLine(theme: Theme, owned: number): string {
+  const left = Math.max(0, theme.total - owned)
+  if (left === 0) return `Every part fitted. ${theme.assemblyOf ?? theme.name} is complete.`
+  return `${left} more ${left === 1 ? theme.unitOne : theme.unit} and ${
+    theme.assemblyOf ?? theme.name
+  } is finished.`
+}
+
+/** Where a journey theme has got to, and what the next stop costs. */
+export function journeyLines(
+  theme: Theme,
+  owned: number,
+): { now: string; next: string } {
+  const stops = slotLabels(theme)
+  const at = Math.min(owned, stops.length - 1)
+  if (at >= stops.length - 1) {
+    return {
+      now: `${stops[at]} — the end of the line.`,
+      next: `Every stop on this one was earned on graded work.`,
+    }
+  }
+  return {
+    now: `${stops[at]}, ${owned} of ${theme.total} ${theme.unit}.`,
+    next: `Next up is ${stops[at + 1]}. Clear a graded round above its predicted score to get there.`,
+  }
+}
