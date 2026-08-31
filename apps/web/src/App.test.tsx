@@ -332,6 +332,47 @@ describe('the address bar', () => {
     })
   }
 
+  // The marketing site is signed-out only, so it needs its own pass: a page
+  // whose path the tree does not match would be silently redirected to the
+  // front page, which looks identical to "the visitor changed their mind".
+  const everyMarketingPage: Route[] = [
+    { name: 'features' },
+    { name: 'how' },
+    { name: 'pricing' },
+    { name: 'privacy' },
+    { name: 'faq' },
+    { name: 'audience', who: 'parents' },
+    { name: 'audience', who: 'teachers' },
+    { name: 'audience', who: 'tutors' },
+    { name: 'audience', who: 'homeschool' },
+  ]
+
+  for (const route of everyMarketingPage) {
+    const path = routeToPath(route)
+    it(`serves ${path} to a visitor`, async () => {
+      signedOut()
+      startAt(path)
+      render(<App />)
+      await waitFor(() => expect(document.body.textContent!.length).toBeGreaterThan(0))
+      expect(window.location.pathname).toBe(path)
+    })
+  }
+
+  it('has no page for an audience nobody wrote one for', async () => {
+    signedOut()
+    startAt('/for/pirates')
+    render(<App />)
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+  })
+
+  it('keeps the sales pitch out of a signed-in grown-up’s way', async () => {
+    // They have `/upgrade`, which can answer "what does this cost?" about
+    // their own children rather than in general.
+    startAt('/pricing')
+    render(<App />)
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+  })
+
   it('gives the way in its own address', async () => {
     signedOut()
     render(<App />)

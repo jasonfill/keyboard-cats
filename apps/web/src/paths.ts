@@ -9,13 +9,14 @@
 // query parameters carry what only tunes it (round size, direction), so a
 // shared link without them still lands somewhere sensible.
 
-import type { Route } from './routes'
+import type { AudienceId, Route } from './routes'
 import { MODES, type DirectionSetting, type StudyMode } from './lib/quiz/session'
 import { ACTIVITIES, type ActivityId } from './lib/spelling/activities'
 import type { SessionMode } from './lib/spelling/session'
 
 const SPELL_MODES: SessionMode[] = ['adaptive', 'list', 'custom', 'placement']
 const DIRECTIONS: DirectionSetting[] = ['term-first', 'definition-first', 'mixed']
+const AUDIENCES: AudienceId[] = ['parents', 'teachers', 'tutors', 'homeschool']
 
 /** Where a route lives. The inverse of the `<Route path>` list in App. */
 export function routeToPath(route: Route): string {
@@ -26,6 +27,23 @@ export function routeToPath(route: Route): string {
     case 'marketing':
     case 'home':
       return '/'
+
+    // The rest of the marketing site. These are the only screens in the app
+    // whose addresses are also *published* ones — linked from an email, shared
+    // between two parents, indexed — so they read as words rather than as ids.
+    case 'features':
+      return '/features'
+    case 'how':
+      return '/how-it-works'
+    case 'pricing':
+      return '/pricing'
+    case 'audience':
+      return `/for/${route.who}`
+    case 'privacy':
+      return '/privacy'
+    case 'faq':
+      return '/faq'
+
     case 'auth':
       return '/signin'
     case 'account':
@@ -106,6 +124,10 @@ function withQuery(path: string, params: Record<string, string | number | undefi
 // out of the address bar is checked against the real list before a screen sees
 // it. Null means "no such screen" and the caller redirects rather than
 // rendering a round with a mode nobody defined.
+
+export function parseAudience(value: string | undefined): AudienceId | null {
+  return AUDIENCES.find((a) => a === value) ?? null
+}
 
 export function parseActivity(value: string | undefined): ActivityId | null {
   return ACTIVITIES.find((a) => a.id === value)?.id ?? null

@@ -32,7 +32,7 @@ vi.mock('../lib/learners/api', async (orig) => ({
 }))
 
 import { aGame, spies } from '../test/mockProviders'
-import { goPro, signIn, testState } from '../test/state'
+import { aLearner, goPro, signIn, testState } from '../test/state'
 import { emptySnapshot } from '../lib/progress/types'
 import AccountScreen from './suite/AccountScreen'
 import SettingsScreen from './SettingsScreen'
@@ -236,9 +236,9 @@ describe('the account screen', () => {
     expect(navigate).toHaveBeenCalledWith({ name: 'library' })
   })
 
-  it('points a free account at what Pro adds', () => {
+  it('points an account covering nobody at what covering a child adds', () => {
     render(<AccountScreen navigate={navigate} />)
-    fireEvent.click(screen.getByText('✨ See what Family Pro adds'))
+    fireEvent.click(screen.getByText(/See what covering a child adds/))
     expect(navigate).toHaveBeenCalledWith({ name: 'upgrade' })
   })
 
@@ -246,7 +246,33 @@ describe('the account screen', () => {
     goPro()
     render(<AccountScreen navigate={navigate} />)
     expect(screen.getByText(/Thank you for supporting the project/)).toBeTruthy()
-    expect(screen.queryByText('✨ See what Family Pro adds')).toBeNull()
+    expect(screen.queryByText(/See what covering a child adds/)).toBeNull()
+  })
+
+  it('says who is covered and what that costs, not which tier they are on', () => {
+    // The old card read `profiles.plan` and said "Family Pro". That flag says
+    // "Pro" for a comped teacher who never paid, and "Free" for a parent whose
+    // child somebody else covers — so it was wrong in both directions.
+    goPro()
+    render(<AccountScreen navigate={navigate} />)
+    expect(screen.getByText('What you cover')).toBeTruthy()
+    expect(screen.getByText('1 child')).toBeTruthy()
+    expect(screen.getByText(/Ada — \$4 a month/)).toBeTruthy()
+  })
+
+  it('says nobody rather than a plan name when no child is covered', () => {
+    render(<AccountScreen navigate={navigate} />)
+    expect(screen.getByText('Nobody yet')).toBeTruthy()
+  })
+
+  it('does not bill a tutor for a child somebody else covers', () => {
+    // Covered, visible to this session, and owned by another parent. Without
+    // the ownership test this card reads "1 child · $4 a month" and thanks a
+    // tutor for paying something they have never paid.
+    signIn(aLearner({ id: 'theirs', ownerId: 'another-parent', covered: true }))
+    render(<AccountScreen navigate={navigate} />)
+    expect(screen.getByText('Nobody yet')).toBeTruthy()
+    expect(screen.queryByText(/Thank you for supporting/)).toBeNull()
   })
 
   it('marks the CSV export as a paid feature rather than hiding it', () => {

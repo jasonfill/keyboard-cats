@@ -1,4 +1,5 @@
 import { useCoverage } from '../../lib/billing/coverage'
+import { useLearners } from '../../lib/learners'
 import { useEffect, useState } from 'react'
 import type { LibraryResponse } from '@whizzo/shared'
 import { useAuth } from '../../auth/AuthProvider'
@@ -6,7 +7,8 @@ import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { loadLibrary } from '../../lib/assignments/library'
 import { Button, Card, Pill } from '../../components/ui'
-import { PLANS } from '../../lib/plans'
+import { money, priceBreakdown, priceLine } from '../../lib/plans'
+import { PRICE_FIRST_LEARNER_CENTS } from '@whizzo/shared'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import type { Navigate } from '../../routes'
 import { exportProgressCsv } from '../../lib/progress/export'
@@ -34,10 +36,16 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
     return () => controller.abort()
   }, [status])
 
-  const plan = profile?.plan ?? 'free'
-
+  const { learners } = useLearners()
   const coverage = useCoverage()
-  const planDef = PLANS[plan]
+  // What this person actually pays for: the children *of theirs* that are
+  // covered. Not `profiles.plan` — a flag that says "Pro" for a teacher who has
+  // never paid and "Free" for a parent whose child is covered by somebody else.
+  //
+  // The ownership test is not decoration. `learners` is everyone the session
+  // can see, guarded children included, so without it a tutor with two covered
+  // students would be shown a bill for $6 a month and thanked for paying it.
+  const covering = learners.filter((l) => l.covered && l.ownerId === user?.id)
 
   if (status !== 'signed-in') {
     return (
@@ -107,21 +115,44 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
 
       <Card className="mb-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-extrabold text-ink">Plan</h2>
-          <Pill className={plan === 'pro' ? 'bg-sun text-white' : 'bg-wash text-muted'}>
-            {planDef.name}
+          <h2 className="text-xl font-extrabold text-ink">What you cover</h2>
+          <Pill className={covering.length > 0 ? 'bg-sun text-white' : 'bg-wash text-muted'}>
+            {covering.length > 0
+              ? `${covering.length} ${covering.length === 1 ? 'child' : 'children'}`
+              : 'Nobody yet'}
           </Pill>
         </div>
-        <p className="mb-3 font-bold text-muted">{planDef.tagline}</p>
-        {plan === 'free' ? (
-          <Button className="w-full" onClick={() => navigate({ name: 'upgrade' })}>
-            ✨ See what Family Pro adds
-          </Button>
+        {covering.length > 0 ? (
+          <>
+            <p className="mb-1 font-bold text-body">
+              {covering.map((l) => l.displayName).join(', ')} —{' '}
+              {priceLine(covering.length).toLowerCase()}.
+            </p>
+            {priceBreakdown(covering.length) && (
+              <p className="mb-3 text-sm font-bold text-stone">
+                {priceBreakdown(covering.length)}
+              </p>
+            )}
+            {/* No renewal date until there is a subscription to read one from.
+                `profiles.plan_renews_at` belongs to the legacy flag, and
+                printing it under a coverage total would be the same
+                substitution this screen just stopped making. */}
+            <p className="mb-3 font-bold text-muted">Thank you for supporting the project.</p>
+            <Button variant="ghost" className="w-full" onClick={() => navigate({ name: 'upgrade' })}>
+              Cover somebody else
+            </Button>
+          </>
         ) : (
-          <p className="font-bold text-muted">
-            Thank you for supporting the project.{' '}
-            {profile?.planRenewsAt && `Renews ${new Date(profile.planRenewsAt).toLocaleDateString()}.`}
-          </p>
+          <>
+            <p className="mb-3 font-bold text-muted">
+              Everything a learner needs is free, so there is nothing you are missing out on. What
+              covering a child adds is the reporting: their full history, every word they missed,
+              what is about to slip, and rewards you can check off as paid.
+            </p>
+            <Button className="w-full" onClick={() => navigate({ name: 'upgrade' })}>
+              ✨ See what covering a child adds — from {money(PRICE_FIRST_LEARNER_CENTS)} a month
+            </Button>
+          </>
         )}
       </Card>
 

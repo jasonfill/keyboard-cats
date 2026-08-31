@@ -3,6 +3,18 @@ import type { ActivityId } from './lib/spelling/activities'
 import type { SessionMode } from './lib/spelling/session'
 
 /**
+ * Who a marketing page is addressed to.
+ *
+ * Four audiences rather than one, because the same product is bought for
+ * different reasons: a parent wants to know where their child actually is, a
+ * teacher wants twenty-five children set the same work, a tutor wants to show
+ * the parent paying them what happened. The *capability* is identical — there
+ * is deliberately no tutor mode — so what differs between these pages is the
+ * question they answer first, not the feature list underneath.
+ */
+export type AudienceId = 'parents' | 'teachers' | 'tutors' | 'homeschool'
+
+/**
  * Every screen in the suite.
  *
  * Screens name where they are going rather than writing a URL: this union is
@@ -11,9 +23,20 @@ import type { SessionMode } from './lib/spelling/session'
  * misspell a path, and a path can be renamed without touching a screen.
  */
 export type Route =
-  // Signed out: the only two screens a visitor can reach.
-  /** The marketing site — what this is, how it works, what it costs. */
+  // Signed out: the marketing site, and the door.
+  /** The front page — what this is, who it is for, what it costs. */
   | { name: 'marketing' }
+  /** Everything in the product, in one place. */
+  | { name: 'features' }
+  /** The engine, spelled out: ability, evidence, spacing, the ladder. */
+  | { name: 'how' }
+  /** What coverage costs and what it buys. */
+  | { name: 'pricing' }
+  /** The same product, addressed to one kind of grown-up. */
+  | { name: 'audience'; who: AudienceId }
+  /** What is stored, what is not, and how a child signs in. */
+  | { name: 'privacy' }
+  | { name: 'faq' }
   | { name: 'auth' }
   // Suite
   | { name: 'home' }

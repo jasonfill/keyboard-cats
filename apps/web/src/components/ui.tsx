@@ -28,12 +28,22 @@ interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
 }
 
+/**
+ * The press, as a class string.
+ *
+ * Exported because the marketing site needs anchors that look like buttons:
+ * a link to another page has to be a real `<a href>` so it can be opened in a
+ * tab, hovered for its URL and followed by a crawler, and none of that is true
+ * of a `<button>` that calls `navigate`. Sharing the string rather than
+ * duplicating it is what stops the two drifting apart.
+ */
+export function buttonClass(variant: Variant = 'primary', className = ''): string {
+  return `rounded-xl px-6 py-3 font-sans text-lg font-extrabold transition-all disabled:opacity-40 disabled:shadow-none disabled:active:translate-y-0 ${variants[variant]} ${className}`
+}
+
 export function Button({ variant = 'primary', className = '', children, ...rest }: BtnProps) {
   return (
-    <button
-      {...rest}
-      className={`rounded-xl px-6 py-3 font-sans text-lg font-extrabold transition-all disabled:opacity-40 disabled:shadow-none disabled:active:translate-y-0 ${variants[variant]} ${className}`}
-    >
+    <button {...rest} className={buttonClass(variant, className)}>
       {children}
     </button>
   )

@@ -11,14 +11,26 @@ import type { Session, User } from '@supabase/supabase-js'
 import type { ChildSessionResponse } from '@whizzo/shared'
 import { apiRequest } from '../lib/api/client'
 import { authRedirectUrl, isSupabaseConfigured, supabase } from '../lib/supabase'
-import type { PlanId } from '../lib/plans'
+
+/**
+ * The legacy account flag, kept because the database still reads it.
+ *
+ * `is_learner_covered` has a second arm matching `profiles.plan = 'pro'`, which
+ * is how every comped and hand-set account is covered today — no payment
+ * provider is wired, so `learner_coverage` is empty and dropping this would
+ * silently strip those accounts. It goes when real subscription rows exist.
+ *
+ * Nothing in the UI asks this any more. Coverage is a property of a learner:
+ * ask `useCoverage`, or read `learner.covered`.
+ */
+export type LegacyPlan = 'free' | 'pro'
 
 export interface Profile {
   id: string
   displayName: string
   avatarEmoji: string
   gradeHint: number | null
-  plan: PlanId
+  plan: LegacyPlan
   planRenewsAt: string | null
 }
 
@@ -52,7 +64,7 @@ function toProfile(row: any): Profile {
     displayName: row.display_name ?? 'Friend',
     avatarEmoji: row.avatar_emoji ?? '🙂',
     gradeHint: row.grade_hint ?? null,
-    plan: (row.plan as PlanId) ?? 'free',
+    plan: (row.plan as LegacyPlan) ?? 'free',
     planRenewsAt: row.plan_renews_at ?? null,
   }
 }

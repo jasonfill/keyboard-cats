@@ -112,10 +112,10 @@ beforeEach(() => {
 })
 
 describe('UpgradeScreen', () => {
-  it('shows both plans and what each one is for', () => {
+  it('shows what is free and what coverage adds', () => {
     render(<UpgradeScreen navigate={navigate} />)
     expect(screen.getByText('Free')).toBeInTheDocument()
-    expect(screen.getByText(/Family Pro/)).toBeInTheDocument()
+    expect(screen.getByText('With coverage')).toBeInTheDocument()
   })
 
   it('says the whole curriculum is free', () => {

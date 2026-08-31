@@ -79,7 +79,16 @@ function runUntil(check: () => boolean, maxFrames = 400) {
   return check()
 }
 
-describe('the falling words', () => {
+/**
+ * Longer than the default, because these tests are honestly slow: each one
+ * drives up to 400 animation frames through a real render, and how long that
+ * takes depends on what else vitest happens to be running in parallel. The
+ * five-second default made them fail whenever the rest of the suite grew,
+ * which is a fact about the machine rather than about the game.
+ */
+const SLOW = 30_000
+
+describe('the falling words', { timeout: SLOW }, () => {
   function start(game = aGame()) {
     render(<CatRainScreen game={game} navigate={navigate} />)
     fireEvent.click(screen.getByText('▶ Start'))

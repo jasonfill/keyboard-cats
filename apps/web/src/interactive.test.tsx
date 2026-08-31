@@ -284,6 +284,20 @@ describe('the small grown-up components', () => {
     expect(screen.getByRole('button')).toBeInTheDocument()
   })
 
+  it('AccountChip counts the children this person covers', () => {
+    signIn(aLearner({ id: 'mine', ownerId: 'u1', covered: true }))
+    render(<AccountChip onOpen={() => {}} />)
+    expect(screen.getByTitle('Covering 1 child')).toBeInTheDocument()
+  })
+
+  it('AccountChip does not credit a tutor with somebody else’s coverage', () => {
+    // `learners` is everyone the session can see, guarded children included.
+    // A tutor with two covered students has bought nothing.
+    signIn(aLearner({ id: 'theirs', ownerId: 'another-parent', covered: true }))
+    render(<AccountChip onOpen={() => {}} />)
+    expect(screen.queryByTitle(/Covering/)).toBeNull()
+  })
+
   it('VoicePicker offers the device’s voices', () => {
     render(<VoicePicker />)
     expect(screen.getByRole('combobox')).toBeInTheDocument()

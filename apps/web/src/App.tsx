@@ -20,6 +20,7 @@ import { ThemeProvider } from './lib/theme/ThemeProvider'
 import { setSoundEnabled } from './lib/sound'
 import {
   parseActivity,
+  parseAudience,
   parseDirection,
   parseSize,
   parseSpellMode,
@@ -29,7 +30,13 @@ import {
 import type { Navigate } from './routes'
 import CatRainScreen from './screens/CatRainScreen'
 import LessonScreen from './screens/LessonScreen'
+import AudienceScreen from './screens/marketing/AudienceScreen'
+import FaqScreen from './screens/marketing/FaqScreen'
+import FeaturesScreen from './screens/marketing/FeaturesScreen'
+import HowItWorksScreen from './screens/marketing/HowItWorksScreen'
 import MarketingScreen from './screens/marketing/MarketingScreen'
+import PricingScreen from './screens/marketing/PricingScreen'
+import PrivacyScreen from './screens/marketing/PrivacyScreen'
 import PracticeScreen from './screens/PracticeScreen'
 import DeckEditor from './screens/quiz/DeckEditor'
 import DeckScreen from './screens/quiz/DeckScreen'
@@ -154,6 +161,18 @@ function Router() {
           }
         />
         <Route path="/" element={<MarketingScreen navigate={navigate} />} />
+
+        {/* The rest of the marketing site. Signed out is the only state these
+            are reachable in: a signed-in grown-up wanting to know what coverage
+            costs has `/upgrade`, which can answer it about *their* children
+            rather than in general. */}
+        <Route path="/features" element={<FeaturesScreen navigate={navigate} />} />
+        <Route path="/how-it-works" element={<HowItWorksScreen navigate={navigate} />} />
+        <Route path="/pricing" element={<PricingScreen navigate={navigate} />} />
+        <Route path="/for/:who" element={<Audience navigate={navigate} />} />
+        <Route path="/privacy" element={<PrivacyScreen navigate={navigate} />} />
+        <Route path="/faq" element={<FaqScreen navigate={navigate} />} />
+
         {/* A signed-out visitor holding a deep link cannot be shown that screen,
             so the address bar is corrected rather than left describing a page
             they are not looking at. */}
@@ -220,6 +239,14 @@ function Router() {
 // take. A parameter that names nothing real sends the visitor to that
 // subject's home rather than rendering a round with no rules; an id that is
 // merely stale is passed through, because those screens say so themselves.
+
+/** `/for/pirates` is not an audience, so it lands on the page that lists them. */
+function Audience({ navigate }: { navigate: Navigate }) {
+  const { who } = useParams()
+  const audience = parseAudience(who)
+  if (!audience) return <Redirect to="/" replace />
+  return <AudienceScreen who={audience} navigate={navigate} />
+}
 
 function Lesson({ game, navigate }: { game: GameApi; navigate: Navigate }) {
   const { id } = useParams()
