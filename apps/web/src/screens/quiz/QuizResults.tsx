@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props) {
-  const { band, celebrates } = useBand()
+  const { celebrates } = useBand()
   const def = modeDef(summary.mode)
   // Not "everything you ever got wrong" — the cards still unresolved when the
   // round ended. One missed and then fixed is a success story, not a to-do.
@@ -83,7 +83,7 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
         <p className="mt-4 font-bold text-muted">
           {beatPrediction
             ? `We expected about ${summary.predictedAccuracy}% on these cards — you beat it.${
-                band === 'upper' ? '' : ' 🎉'
+                celebrates ? ' 🎉' : ''
               }`
             : `We expected about ${summary.predictedAccuracy}% on these. These were hard cards; keep going.`}
         </p>

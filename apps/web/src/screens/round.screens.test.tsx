@@ -10,7 +10,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { aGame, spies } from '../test/mockProviders'
-import { signIn, skill, testState } from '../test/state'
+import { aLearner, signIn, skill, testState } from '../test/state'
 import { emptySnapshot } from '../lib/progress/types'
 
 vi.mock('../auth/AuthProvider', async () => (await import('../test/mockProviders')).authMock())
@@ -136,6 +136,18 @@ describe('SpellingPlay — a round in progress', () => {
     await waitFor(() => expect(screen.getByText(/Not quite/)).toBeInTheDocument())
     // The themed cheer must not be showing over a miss.
     expect(screen.queryByText(testState.theme.cheer)).not.toBeInTheDocument()
+  })
+
+  it('drops the themed cheer for an older learner', async () => {
+    // Same round, same words, same marking — the cat stops talking. A theme is
+    // still theirs to pick; it just stops narrating.
+    signIn(aLearner({ gradeHint: 11 }))
+    play()
+    const input = screen.getByLabelText(/your spelling/i)
+    await userEvent.type(input, 'zzz')
+    await userEvent.click(screen.getByRole('button', { name: /Check it/ }))
+    await waitFor(() => expect(screen.getByText('Not right.')).toBeInTheDocument())
+    expect(screen.queryByText(/goes back in the pile/)).not.toBeInTheDocument()
   })
 })
 

@@ -48,7 +48,7 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
   const session = useSpellingSession()
   const { snapshot } = useProgress()
   const { theme } = useTheme()
-  const { band, say, roundSize } = useBand()
+  const { celebrates, say, roundSize } = useBand()
   const def = activityDef(activity)
 
   const [phase, setPhase] = useState<Phase>('prompt')
@@ -318,16 +318,14 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
                     said at all. A sixteen-year-old gets "Correct · 1.4s", not
                     a cheer and a mascot line about last Tuesday. */}
                 <div className="font-display text-lg font-extrabold text-ink">
-                  {band === 'upper' ? say(true, last.responseMs) : theme.cheer}
+                  {celebrates ? theme.cheer : say(true, last.responseMs)}
                 </div>
-                {band !== 'upper' && (
-                  <div className="text-[15px] text-body">{theme.cheerSub}</div>
-                )}
+                {celebrates && <div className="text-[15px] text-body">{theme.cheerSub}</div>}
               </>
             ) : (
               <>
                 <div className="font-display text-lg font-extrabold text-ink">
-                  {band === 'upper' ? 'Not right.' : 'That one goes back in the pile.'}
+                  {celebrates ? 'That one goes back in the pile.' : say(false)}
                 </div>
                 <div className="text-[15px] text-body">
                   You will see it again before long — that is how it sticks.
