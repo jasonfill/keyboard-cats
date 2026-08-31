@@ -6,6 +6,7 @@ import ConnectTutor from '../../components/suite/ConnectTutor'
 import ThemeChoice from '../../components/suite/ThemeChoice'
 import { themeById } from '../../lib/themes'
 import MyTutorCode from '../../components/suite/MyTutorCode'
+import RewardLedger from '../../components/suite/RewardLedger'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill } from '../../components/ui'
 import { ApiError } from '../../lib/api/client'
@@ -223,6 +224,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
         {learners.map((learner) => (
           <LearnerRow
             key={learner.id}
+            userId={user?.id}
             learner={learner}
             overview={overview.get(learner.id)}
             isActive={learner.id === active?.id}
@@ -272,6 +274,7 @@ export default function FamilyScreen({ navigate }: { navigate: Navigate }) {
 }
 
 function LearnerRow({
+  userId,
   learner,
   overview,
   isActive,
@@ -283,6 +286,8 @@ function LearnerRow({
   onChanged,
   onOpen,
 }: {
+  /** Who is looking. Only the person who promised a reward may settle it. */
+  userId: string | undefined
   learner: Learner
   overview: LearnerOverview | undefined
   isActive: boolean
@@ -330,6 +335,18 @@ function LearnerRow({
       </div>
 
       {overview && <LearnerStatus overview={overview} onOpen={onOpen} />}
+
+      {/* Promises live here rather than on a screen of their own, for the same
+          reason the status line does: Family is the people you look after, and
+          a grown-up thinks about one child at a time. */}
+      {expanded && userId && (
+        <RewardLedger
+          learnerId={learner.id}
+          learnerName={learner.displayName}
+          userId={userId}
+          ownsLearner={isOwner}
+        />
+      )}
 
       {expanded && isOwner && (
         <ManagePanel learner={learner} onError={onError} onChanged={onChanged} />

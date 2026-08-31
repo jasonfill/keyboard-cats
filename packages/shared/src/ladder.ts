@@ -67,6 +67,9 @@ export const ACTIVITY_STAGE: Readonly<Record<string, SupportLevel>> = Object.fre
   flashcards: 0,
   match: 1,
   learn: 3,
+  // Unprompted free recall of a whole set: the least supported retrieval there
+  // is, and the strongest evidence a rung can carry.
+  recall: 3,
   review: 2,
 
   // Typing rounds are a motor skill rather than a retrieval, but a lesson is

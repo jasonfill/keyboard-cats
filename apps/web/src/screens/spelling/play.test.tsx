@@ -58,6 +58,11 @@ import { spies } from '../../test/mockProviders'
 import { signIn, skill, testState } from '../../test/state'
 import { emptySnapshot } from '../../lib/progress/types'
 import SpellingPlay from './SpellingPlay'
+import { THEMES } from '../../lib/themes'
+
+/** Whatever the active world calls praise. The default theme is the first. */
+const THEME_CHEER = THEMES[0]!.cheer
+const THEME_CHEER_SUB = THEMES[0]!.cheerSub
 
 const navigate = spies.navigate
 
@@ -120,6 +125,35 @@ describe('a device with no voice', () => {
     vi.advanceTimersByTime(3000)
     vi.useRealTimers()
     expect(document.body.textContent!.length).toBeGreaterThan(0)
+  })
+})
+
+// Praise belongs to an answer, and only to a right one.
+//
+// The mascot's cheer used to be the `else` of the miss branch, so it also
+// rendered while the learner was still reading the word: word one of a
+// placement check congratulated a brand-new learner before they had typed
+// anything, and told them "that is the word that got you last Tuesday" about a
+// word they had never seen. Every test in this file passed straight through it.
+describe('the mascot says nothing until there is something to say', () => {
+  it('does not congratulate a learner who has not answered yet', () => {
+    play('missing-letters')
+    // Whatever the theme's cheer is, it has no business on screen yet.
+    expect(screen.queryByText(THEME_CHEER)).toBeNull()
+  })
+
+  it('does not claim a history a brand-new learner does not have', () => {
+    play('missing-letters')
+    expect(screen.queryByText(THEME_CHEER_SUB)).toBeNull()
+  })
+
+  it('does not congratulate a miss', async () => {
+    play('missing-letters')
+    const input = screen.getByLabelText(/your spelling/i)
+    fireEvent.change(input, { target: { value: 'definitely-not-it' } })
+    fireEvent.click(screen.getByRole('button', { name: /Check it/ }))
+    await waitFor(() => expect(screen.queryByText(/goes back in the pile/)).not.toBeNull())
+    expect(screen.queryByText(THEME_CHEER)).toBeNull()
   })
 })
 

@@ -5,6 +5,7 @@
 // Random ids would hand everyone a blank slate on every page load.
 
 import { estimateDifficulty } from '../../lib/quiz/decks'
+import { generatedDecks } from '@whizzo/shared'
 import type { QuizCard, QuizDeck } from '../../lib/progress/types'
 
 interface StarterSpec {
@@ -160,3 +161,16 @@ export const STARTER_DECKS: QuizDeck[] = SPECS.map(toDeck)
 export function isStarterDeck(id: string): boolean {
   return STARTER_DECKS.some((d) => d.id === id)
 }
+
+/**
+ * Everything that ships with the app.
+ *
+ * The generated banks are folded in here rather than seeded, for the same
+ * reason the hand-written starters are: they are constants, so they stay
+ * updatable without a migration, and their card ids are derived rather than
+ * random so a learner's mastery survives every reload.
+ *
+ * These are the content nobody should ever have to type. Four hundred
+ * multiplication facts is not a thing to ask a parent for.
+ */
+export const SHIPPED_DECKS: QuizDeck[] = [...generatedDecks(), ...STARTER_DECKS]

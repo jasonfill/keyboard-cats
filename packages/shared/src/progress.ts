@@ -274,6 +274,18 @@ export interface QuizDeck {
    * it later would mean revisiting every set anyone ever made.
    */
   objectives?: string[]
+  /**
+   * The document this set was made from, when it was made from one.
+   *
+   * A twenty-page chapter comes back as six sets. Without this they are six
+   * loose decks in a list of thirty, and the parent who uploaded the chapter
+   * has to remember which six and in what order — so the one thing the upload
+   * actually established, that these belong together, is thrown away at the
+   * moment it would be useful.
+   */
+  sourceId?: string | null
+  /** What that document was called, for the heading above its sets. */
+  sourceTitle?: string | null
   title: string
   description: string
   tags: string[]

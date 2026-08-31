@@ -10,7 +10,7 @@ import rateLimit from '@fastify/rate-limit'
 import Fastify from 'fastify'
 import { closePool, pool } from './db.js'
 import { env, isProduction, webOrigins } from './env.js'
-import { fromDatabaseError, HttpError } from './errors.js'
+import { fromDatabaseError, HttpError, fromValidationError } from './errors.js'
 import { pendingMigrations, runMigrations } from './migrate.js'
 import { childLoginAdminRoutes, childLoginPublicRoutes } from './routes/childLogin.js'
 import { devLoginRoutes } from './routes/devLogin.js'
@@ -18,6 +18,7 @@ import { inviteRoutes, learnerRoutes } from './routes/learners.js'
 import { callerOf } from './auth.js'
 import { contentRoutes } from './routes/content.js'
 import { progressRoutes } from './routes/progress.js'
+import { rewardRoutes } from './routes/rewards.js'
 
 export async function buildServer() {
   const app = Fastify({
@@ -78,6 +79,12 @@ export async function buildServer() {
       return
     }
 
+    const invalid = fromValidationError(error)
+    if (invalid) {
+      reply.code(invalid.status).send({ error: { code: invalid.code, message: invalid.message } })
+      return
+    }
+
     const mapped = fromDatabaseError(error)
     if (mapped) {
       request.log.info({ err: error }, 'database refused the request')
@@ -132,6 +139,7 @@ export async function buildServer() {
   await app.register(learnerRoutes, { prefix: '/api' })
   await app.register(progressRoutes, { prefix: '/api' })
   await app.register(childLoginAdminRoutes, { prefix: '/api' })
+  await app.register(rewardRoutes, { prefix: '/api' })
 
   // Ingestion gets its own rate-limit scope. The global 300/min is irrelevant
   // here — a handful of jobs an hour is the shape, because each one costs real

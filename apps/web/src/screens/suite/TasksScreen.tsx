@@ -216,6 +216,10 @@ function OpenTask({
 }) {
   const def = assignableFor(assignment.subject, assignment.activity)
   const startable = routeForAssignment(assignment) !== null
+  // A goal has no activity to name, on purpose: the learner presses Continue
+  // and the app works out what that means today. Showing "Learn" here would be
+  // telling them something they are not choosing and that changes every round.
+  const isGoal = assignment.activity === 'mastery-path'
   const overdue = assignment.dueOn !== null && assignment.dueOn < todayString()
 
   return (
@@ -242,10 +246,12 @@ function OpenTask({
             needs {assignment.minAccuracy}%
           </Pill>
         )}
+        {isGoal && <Pill className="bg-quiet text-xs text-body">master it</Pill>}
       </div>
 
       <p className="mt-1 font-bold text-muted">
-        {def?.name ?? assignment.activity} · {targetName(assignment, deckTitles)}
+        {isGoal ? 'Keep going until you know it' : (def?.name ?? assignment.activity)} ·{' '}
+        {targetName(assignment, deckTitles)}
       </p>
       {assignment.note && (
         <p className="mt-1 rounded-xl bg-quiet px-3 py-2 font-bold text-body">
@@ -254,8 +260,10 @@ function OpenTask({
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
+        {/* "Continue" rather than "Start" for a goal: it is one thing worked at
+            over days, and "Start" would suggest beginning it again. */}
         {startable ? (
-          <Button onClick={onStart}>▶️ Start</Button>
+          <Button onClick={onStart}>{isGoal ? '▶️ Continue' : '▶️ Start'}</Button>
         ) : (
           <p className="font-bold text-rose-500">
             This one cannot be started — whatever it pointed at is gone.

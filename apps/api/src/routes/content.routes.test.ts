@@ -51,11 +51,16 @@ async function auth() {
 async function buildApp() {
   const Fastify = (await import('fastify')).default
   const { contentRoutes } = await import('./content.js')
-  const { HttpError, fromDatabaseError } = await import('../errors.js')
+  const { HttpError, fromDatabaseError, fromValidationError } = await import('../errors.js')
   const app = Fastify()
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof HttpError) {
       reply.code(error.status).send({ error: { code: error.code, message: error.message } })
+      return
+    }
+    const invalid = fromValidationError(error)
+    if (invalid) {
+      reply.code(invalid.status).send({ error: { code: invalid.code, message: invalid.message } })
       return
     }
     const mapped = fromDatabaseError(error)

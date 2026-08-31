@@ -6,7 +6,7 @@
 // client that can react and one that just retries.
 
 import { describe, expect, it } from 'vitest'
-import { badRequest, forbidden, fromDatabaseError, HttpError, notFound, unauthorized } from './errors.js'
+import { badRequest, forbidden, fromDatabaseError, HttpError, notFound, unauthorized, fromValidationError } from './errors.js'
 
 describe('HttpError constructors', () => {
   it('carries a status and a machine-readable code', () => {
@@ -76,5 +76,43 @@ describe('fromDatabaseError', () => {
 
   it('has a message even when the database supplied none', () => {
     expect(fromDatabaseError({ code: '42501' })!.message).toBeTruthy()
+  })
+})
+
+// A schema refusal is the caller's problem, not ours.
+//
+// `ZodError` carries no `statusCode`, so before this it fell all the way to the
+// 500 arm: every malformed id and missing field in the API was reported as
+// "something went wrong on our side" and logged as an unhandled error. The
+// second half of that is worse than the first — it buries real faults in noise.
+describe('validation errors', () => {
+  function zodError(issues: Array<{ path: unknown[]; message: string }>) {
+    return { name: 'ZodError', issues }
+  }
+
+  it('is the caller\'s fault, not a server fault', () => {
+    const mapped = fromValidationError(zodError([{ path: ['title'], message: 'Required' }]))
+    expect(mapped?.status).toBe(400)
+    expect(mapped?.code).toBe('bad_request')
+  })
+
+  it('names the field that failed, because "invalid request" helps nobody', () => {
+    const mapped = fromValidationError(zodError([{ path: ['criterion', 'type'], message: 'Invalid' }]))
+    expect(mapped?.message).toBe('criterion.type: Invalid')
+  })
+
+  it('copes with an issue that names no field', () => {
+    expect(fromValidationError(zodError([{ path: [], message: 'Nope' }]))?.message).toBe('Nope')
+  })
+
+  it('ignores array indices, which are not field names a caller can act on', () => {
+    const mapped = fromValidationError(zodError([{ path: ['cards', 0, 'term'], message: 'Required' }]))
+    expect(mapped?.message).toBe('cards.term: Required')
+  })
+
+  it('leaves anything that is not a validation error alone', () => {
+    expect(fromValidationError(new Error('boom'))).toBeNull()
+    expect(fromValidationError({ name: 'ZodError' })).toBeNull()
+    expect(fromValidationError(null)).toBeNull()
   })
 })

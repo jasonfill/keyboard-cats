@@ -11,6 +11,9 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../auth/AuthProvider', async () => (await import('../../test/mockProviders')).authMock())
+vi.mock('../../lib/progress/ProgressProvider', async () =>
+  (await import('../../test/mockProviders')).progressMock(),
+)
 vi.mock('../../lib/learners/LearnerProvider', async () =>
   (await import('../../test/mockProviders')).learnersMock(),
 )

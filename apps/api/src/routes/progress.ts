@@ -394,6 +394,9 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
         // asks "do they know it" — and one good afternoon must not answer the
         // second one.
         await db.query('select public.close_met_goals($1, $2)', [id, session.id])
+        // And any promise this round came good on. There is no endpoint for
+        // this: earning is derived from evidence, never asserted by anybody.
+        await db.query('select public.award_matching_rewards($1, $2)', [id, session.id])
       }
 
       if (change.achievements?.length) {
@@ -777,7 +780,12 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
     const library = await withUser(caller.id, async (db) => {
       const [decks, lists] = await Promise.all([
         db.query(
-          'select * from public.decks where owner_user_id = $1 order by updated_at desc',
+          `select d.*,
+                  coalesce(nullif(s.source_map ->> 'title', ''), s.origin) as source_title
+             from public.decks d
+             left join public.content_sources s on s.id = d.source_id
+            where d.owner_user_id = $1
+            order by d.updated_at desc`,
           [caller.id],
         ),
         db.query(

@@ -88,6 +88,14 @@ export function targetName(assignment: Assignment, deckTitles: Map<string, strin
 export function routeForAssignment(assignment: Assignment): Route | null {
   const { subject, activity, targetId, size } = assignment
 
+  // A goal is walked by the path, not by one round of one thing. It routes to
+  // Learn on the set, which is where the planner lives — the learner presses
+  // Continue and the app decides what that means today.
+  if (activity === 'mastery-path') {
+    if (!targetId) return null
+    return { name: 'quiz-play', mode: 'learn', deckId: targetId, size: size ?? undefined }
+  }
+
   if (subject === 'quiz') {
     const mode = MODES.find((m) => m.id === activity)
     if (!mode) return null

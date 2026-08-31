@@ -179,3 +179,22 @@ describe('what can be assigned', () => {
     }
   })
 })
+
+describe('a goal, rather than an activity', () => {
+  it('routes to the set, where the planner decides what today is', () => {
+    // The learner presses Continue; the app works out what that means.
+    const route = routeForAssignment({
+      subject: 'quiz',
+      activity: 'mastery-path',
+      targetId: 'deck-1',
+    } as never)
+    expect(route).toMatchObject({ name: 'quiz-play', deckId: 'deck-1' })
+  })
+
+  it('cannot be started when the set it named is gone', () => {
+    // Null so the caller says so plainly rather than opening an empty round.
+    expect(
+      routeForAssignment({ subject: 'quiz', activity: 'mastery-path', targetId: null } as never),
+    ).toBeNull()
+  })
+})

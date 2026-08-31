@@ -64,7 +64,12 @@ export interface QuizItemResult {
   /** 'close' is a near miss — credited, but counted separately in the summary. */
   grade: Grade
   correct: boolean
-  responseMs: number
+  /**
+   * How long the answer took. Null where there is no per-card time to record —
+   * free recall is one box for the whole set, and inventing a number would put
+   * noise into the fluency reading.
+   */
+  responseMs: number | null
   hintsUsed: number
   /** False when the learner graded themselves, which is flashcards and only flashcards. */
   verified: boolean
@@ -123,11 +128,21 @@ function starsFor(accuracy: number, predicted: number): number {
   return 1
 }
 
-/** Harder cards and unaided recall are worth more, and streaks compound. */
-function scoreFor(results: QuizItemResult[]): number {
+/**
+ * Harder cards and unaided recall are worth more, and streaks compound.
+ *
+ * **A self-graded answer scores nothing.** Flashcards are the one mode where
+ * the learner grades themselves, and a score is a payout surface: it feeds
+ * high scores, stars and — once rewards ship — things a parent actually hands
+ * over. A learner tapping "Got it" through a deck they do not know must not be
+ * able to score their way to a prize. Flashcards still award the thing they are
+ * for, which is having practised.
+ */
+export function scoreFor(results: QuizItemResult[]): number {
   let score = 0
   let streak = 0
   for (const r of results) {
+    if (!r.verified) continue
     if (!r.correct) {
       streak = 0
       continue
@@ -276,6 +291,45 @@ export function useQuizSession() {
       return result
     },
     [options, plan, publish, questions],
+  )
+
+  /**
+   * Record a whole free-recall round at once.
+   *
+   * Recall does not walk a queue — the learner writes what they can and every
+   * card in the set is judged against it — so this turns that one answer into
+   * one result per card. The misses matter most: a card nobody could bring to
+   * mind is exactly the signal the review schedule exists to catch, and
+   * dropping them would make the format feel gentler and teach less.
+   */
+  const submitRecall = useCallback(
+    (recall: { matched: Array<{ card: { id: string }; exact: boolean }>; missed: Array<{ id: string }> }) => {
+      const got = new Map(recall.matched.map((m) => [m.card.id, m]))
+      const rows: QuizItemResult[] = []
+
+      plan.forEach((planned, i) => {
+        const question = questions[i]
+        if (!question) return
+        const hit = got.get(planned.card.id)
+        rows.push({
+          planned,
+          question,
+          given: hit ? planned.card.definition : '',
+          grade: hit ? (hit.exact ? 'correct' : 'close') : 'wrong',
+          correct: Boolean(hit),
+          responseMs: null,
+          hintsUsed: 0,
+          verified: true,
+          pass: 1,
+          requeued: false,
+        })
+      })
+
+      setResults(rows)
+      publish()
+      return rows
+    },
+    [plan, publish, questions],
   )
 
   /** Move to the next card. Returns false when that was the last one. */
@@ -642,6 +696,7 @@ export function useQuizSession() {
       start,
       beginItem,
       submit,
+      submitRecall,
       advance,
       finish,
       reset,
@@ -663,6 +718,7 @@ export function useQuizSession() {
       start,
       beginItem,
       submit,
+      submitRecall,
       advance,
       finish,
       reset,

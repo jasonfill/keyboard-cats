@@ -69,3 +69,25 @@ export function fromDatabaseError(err: unknown): HttpError | null {
       return null
   }
 }
+
+/**
+ * A schema refusal is the caller's problem, not ours.
+ *
+ * Every route validates with `schema.parse()`, and a `ZodError` carries no
+ * `statusCode` — so without this it falls all the way through to the 500 arm:
+ * a malformed id or a missing field is reported to the caller as "something
+ * went wrong on our side", and logged as an unhandled error. Both are wrong,
+ * and the second one buries real faults in noise.
+ *
+ * The message names the first field that failed, because "invalid request" is
+ * true of everything and useful for nothing.
+ */
+export function fromValidationError(err: unknown): HttpError | null {
+  const zod = err as { name?: string; issues?: Array<{ path?: unknown[]; message?: string }> }
+  if (zod?.name !== 'ZodError' || !Array.isArray(zod.issues)) return null
+
+  const first = zod.issues[0]
+  const field = first?.path?.filter((p) => typeof p === 'string').join('.')
+  const detail = first?.message ?? 'That request was not valid'
+  return new HttpError(400, field ? `${field}: ${detail}` : detail, 'bad_request')
+}

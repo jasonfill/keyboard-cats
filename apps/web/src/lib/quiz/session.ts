@@ -21,7 +21,7 @@ import {
 } from '../progress/types'
 import type { Direction, QuestionKind } from './questions'
 
-export type StudyMode = 'flashcards' | 'learn' | 'test' | 'match' | 'review'
+export type StudyMode = 'flashcards' | 'learn' | 'test' | 'match' | 'review' | 'recall'
 
 /** 'mixed' alternates, which stops a learner memorising position rather than meaning. */
 export type DirectionSetting = Direction | 'mixed'
@@ -88,6 +88,16 @@ export const MODES: Array<{
     name: 'Test',
     emoji: '📝',
     blurb: 'A mixed paper with no hints. This is the one that counts.',
+    isTest: true,
+  },
+  {
+    id: 'recall',
+    name: 'Everything You Know',
+    emoji: '🧾',
+    blurb: 'One box. Write down as much of the set as you can remember.',
+    // Unprompted free recall of a closed set is fully checkable, because we
+    // hold the answer key — which is why this counts and most apps cannot
+    // offer it at all.
     isTest: true,
   },
 ]
@@ -276,6 +286,13 @@ export function planStudy(snapshot: ProgressSnapshot, opts: PlanOptions): Planne
     const ordered = learnOrder(candidates, today)
     const size = opts.size ?? ordered.length
     return build(ordered.slice(0, size), () => 'written')
+  }
+
+  // Free recall asks for the whole set at once, so there is nothing to plan
+  // beyond handing over every card. Ordering is irrelevant — the learner is
+  // not being shown them.
+  if (opts.mode === 'recall') {
+    return build(candidates, () => 'written')
   }
 
   if (opts.mode === 'match') {

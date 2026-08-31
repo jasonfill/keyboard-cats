@@ -111,9 +111,15 @@ describe('SpellingPlay — a round in progress', () => {
     ).toBeInTheDocument()
   })
 
-  it('praises with the theme’s own words while the round is going', () => {
+  it('holds the theme’s praise back until there is something to praise', () => {
+    // This test used to assert the opposite — that the cheer was on screen
+    // "while the round is going" — which is how the bug survived: word one of a
+    // placement check congratulated a brand-new learner before they had typed
+    // anything, and told them the word "got you last Tuesday". The theme still
+    // owns the words; it does not own when they are said.
     play()
-    expect(screen.getByText(testState.theme.cheer)).toBeInTheDocument()
+    expect(screen.queryByText(testState.theme.cheer)).not.toBeInTheDocument()
+    expect(screen.queryByText(testState.theme.cheerSub)).not.toBeInTheDocument()
   })
 
   it('leaves the round when asked', async () => {

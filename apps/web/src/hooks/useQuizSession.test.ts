@@ -12,7 +12,7 @@
 
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useQuizSession } from './useQuizSession'
+import { scoreFor, useQuizSession, type QuizItemResult } from './useQuizSession'
 import { defaultSkillState, emptySnapshot } from '../lib/progress/types'
 import type { ProgressChange } from '../lib/progress/repo'
 import type { QuizDeck } from '../lib/progress/types'
@@ -312,5 +312,47 @@ describe('reset', () => {
     expect(result.current.results).toEqual([])
     expect(result.current.summary).toBeNull()
     expect(result.current.current).toBeNull()
+  })
+})
+
+// A score is a payout surface: it feeds high scores, stars, and — once rewards
+// ship — things a parent actually hands over. Flashcards are the one mode where
+// the learner grades themselves, so this is the hole that had to close before
+// anything with a payout attached could be built on top of it.
+//
+// Tested against the rule directly rather than through a round: what is being
+// pinned is which answers are worth points, and driving a whole session to
+// assert it would be testing the harness.
+describe('a self-graded answer is worth no points', () => {
+  const answered = (over: Partial<QuizItemResult> = {}) =>
+    ({
+      planned: { card: { id: 'c1', difficulty: 3 } },
+      question: { kind: 'written' },
+      correct: true,
+      verified: true,
+      hintsUsed: 0,
+      ...over,
+    }) as unknown as QuizItemResult
+
+  it('scores nothing for a round the learner graded themselves', () => {
+    // Tapping "Got it" through a deck nobody checked.
+    const selfGraded = Array.from({ length: 6 }, () => answered({ verified: false }))
+    expect(scoreFor(selfGraded)).toBe(0)
+  })
+
+  it('scores a round the app checked', () => {
+    expect(scoreFor([answered(), answered()])).toBeGreaterThan(0)
+  })
+
+  it('adding self-graded answers to a round changes its score by nothing', () => {
+    // The exact property: a learner cannot raise their score by tapping through
+    // cards nobody checked, however many of them they tap through.
+    const checked = [answered(), answered()]
+    const padded = [answered(), ...Array.from({ length: 20 }, () => answered({ verified: false })), answered()]
+    expect(scoreFor(padded)).toBe(scoreFor(checked))
+  })
+
+  it('still scores nothing for a checked answer that was wrong', () => {
+    expect(scoreFor([answered({ correct: false })])).toBe(0)
   })
 })

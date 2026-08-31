@@ -169,6 +169,21 @@ export const ACTIVITY_CATALOG: ActivityDef[] = [
     fallback: null,
   }),
 
+  def({
+    id: 'recall',
+    name: 'Everything You Know',
+    emoji: '🧾',
+    blurb: 'One box. Write down as much of the set as you can remember.',
+    subjects: ['quiz'],
+    stage: 3,
+    isTest: true,
+    verified: true,
+    // Needs a set worth emptying your memory of; four cards is a list, not a
+    // recall task.
+    requires: ['pool'],
+    fallback: 'test',
+  }),
+
   // --- New: the free rungs ------------------------------------------------
   def({
     id: 'first-letter',

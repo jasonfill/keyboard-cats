@@ -9,8 +9,11 @@
 | 1 Tracks | **done** | registry, `track` end to end, migration 0014, deck picker, per-track reporting |
 | 2 The ladder | **done** | `ladder.ts`, catalog, capability matrix, puzzles, `simulate:ladder`, the two scaffolded question kinds, `ASSIGNABLE` generated |
 | 3 Ingestion | **done** | migration 0017, validator, credit gate, model layer, SSRF fence, pipeline, job runner, routes, screen |
-| 4 Mastery Path | **planner + goals done** | `path.ts`, batching, readiness gate, migration 0015, goals closed by state. UI remains |
-| 5+ | not started | |
+| 4 Mastery Path | **done** | `path.ts`, batching, readiness gate, migration 0015, goals closed by state, goal option in the assign form, Continue on the task list |
+| 5 Rewards | **done** | migration 0016, shared model, routes, flashcard points hole closed, parent's ledger on Family |
+| 6 Fluency & engagement | **done** | maturity band + band-aware praise, `brain-dump` grading, `speed-recall` fluency from `responseMs` |
+| 7 Generators | **done** | math fact banks — six out of the box, stable ids, difficulty as children meet it |
+| 8 Publishing | **partial** | units, prerequisites and `validateCatalog`. Groups, slots and the supplied catalog deliberately deferred |
 
 Three proposals exist, they overlap, and each one has its own "Phase 1". This
 document is the single authority on **what gets built when**, and on the
@@ -222,6 +225,26 @@ into a publisher — a different business with different costs, gated on the
 billing model that is still open.
 
 ---
+
+## 3b. Deliberately not built
+
+Stage 8's second half — **groups, slots, offer-into-a-slot, pinning, and the
+supplied Financial Literacy catalogue** — is not built, and that is the plan
+rather than a shortfall.
+
+It needs a real class asking for it. Every design decision in the publishing
+section (who curates, what a slot is, whether a parent may offer into another
+family's week) is a guess until somebody is actually trying to do it, and the
+schema for guessing wrong is expensive to unpick. It also turns the product
+into a publisher — content that has to be made, reviewed and kept correct — and
+that is a different business, gated on the billing model that is only half
+wired.
+
+What *is* built is the part that has to exist first and is expensive to add
+later: units carry prerequisites, the graph is validated, and `objectives` is
+written on every piece of content while nothing reads it. Backfilling an
+objective onto every set anyone ever made is the one thing here that gets
+harder with every passing day.
 
 ## 4. What can run in parallel
 
