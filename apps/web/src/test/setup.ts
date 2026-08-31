@@ -72,6 +72,10 @@ window.matchMedia =
 afterEach(async () => {
   cleanup()
   localStorage.clear()
+  // The app navigates by pushing real history entries, and one jsdom window is
+  // shared by every test in a file — so without this a test would start on
+  // whatever screen the previous one walked to.
+  window.history.replaceState(null, '', '/')
   vi.restoreAllMocks()
   const { resetTestState } = await import('./state')
   const { resetSpies } = await import('./mockProviders')

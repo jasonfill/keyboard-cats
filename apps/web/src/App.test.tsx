@@ -57,6 +57,8 @@ vi.mock('./lib/spelling/speech', () => ({
 }))
 
 import App from './App'
+import { routeToPath } from './paths'
+import type { Route } from './routes'
 import { signIn, testState } from './test/state'
 
 beforeEach(() => {
@@ -137,6 +139,9 @@ describe('every route reachable from the home screen', () => {
       fireEvent.click(view.getAllByText(label)[0]!.closest('button')!)
       await waitFor(() => expect(document.body.textContent).toMatch(expected))
       view.unmount()
+      // Navigation is a real history push now, so the next mount would open on
+      // the subject this one walked to rather than back at home.
+      window.history.replaceState(null, '', '/')
     }
   })
 
@@ -215,5 +220,122 @@ describe('the door', () => {
     testState.configured = false
     render(<App />)
     expect(await screen.findByText('🎨 Cats')).toBeTruthy()
+  })
+})
+
+describe('the address bar', () => {
+  /** Put the browser on a URL before the app mounts, the way a deep link does. */
+  function startAt(path: string): void {
+    window.history.replaceState(null, '', path)
+  }
+
+  it('names the screen you are looking at', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByText('✅ Tasks'))
+    await waitFor(() => expect(window.location.pathname).toBe('/tasks'))
+  })
+
+  it('opens a deep link straight onto that screen', async () => {
+    startAt('/quiz')
+    render(<App />)
+    // The quiz home, not the child's home.
+    await waitFor(() => expect(screen.queryByText('🎨 Cats')).toBeNull())
+    expect(window.location.pathname).toBe('/quiz')
+  })
+
+  it('identifies what a screen is about in the path', async () => {
+    startAt('/quiz/deck/starter-capitals')
+    render(<App />)
+    expect(await screen.findByText('US State Capitals')).toBeTruthy()
+  })
+
+  it('carries a round’s settings in the query string', async () => {
+    startAt('/quiz/play/flashcards?deck=starter-capitals&direction=mixed&size=5')
+    render(<App />)
+    // Five of the fifty, because the URL said five.
+    await waitFor(() => expect(document.body.textContent).toMatch(/of 5\b/))
+  })
+
+  it('goes back to where you came from', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByText('⚙️ Settings'))
+    await waitFor(() => expect(window.location.pathname).toBe('/settings'))
+
+    window.history.back()
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+    expect(await screen.findByText('🎨 Cats')).toBeTruthy()
+  })
+
+  it('sends a path that names no screen home rather than showing nothing', async () => {
+    startAt('/not-a-screen')
+    render(<App />)
+    expect(await screen.findByText('🎨 Cats')).toBeTruthy()
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+  })
+
+  it('refuses a round whose rules the URL invented', async () => {
+    // A hand-edited link must not start a session under a mode nobody defined.
+    startAt('/spelling/play/karaoke/adaptive')
+    render(<App />)
+    await waitFor(() => expect(window.location.pathname).toBe('/spelling'))
+  })
+
+  it('leaves a signed-out visitor on the marketing site, not on a URL they cannot see', async () => {
+    signedOut()
+    startAt('/library')
+    render(<App />)
+    expect(
+      await screen.findByText('Practice that knows what your child can actually do.'),
+    ).toBeTruthy()
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+  })
+
+  // Every screen, once: a route whose path the tree does not match would be
+  // silently redirected home, which is the failure this catches.
+  const everyScreen: Route[] = [
+    { name: 'marketing' },
+    { name: 'auth' },
+    { name: 'home' },
+    { name: 'account' },
+    { name: 'family' },
+    { name: 'upgrade' },
+    { name: 'progress' },
+    { name: 'custom-lists' },
+    { name: 'tasks' },
+    { name: 'library' },
+    { name: 'theme' },
+    { name: 'world' },
+    { name: 'settings' },
+    { name: 'typing' },
+    { name: 'map' },
+    { name: 'lesson', id: 'home-row-1' },
+    { name: 'practice' },
+    { name: 'rain' },
+    { name: 'trophies' },
+    { name: 'spelling' },
+    { name: 'spell-lists' },
+    { name: 'spell-play', activity: 'study', mode: 'adaptive' },
+    { name: 'quiz' },
+    { name: 'quiz-deck', deckId: 'starter-capitals' },
+    { name: 'quiz-edit' },
+    { name: 'quiz-edit', deckId: 'starter-capitals' },
+    { name: 'quiz-play', mode: 'flashcards', deckId: 'starter-capitals' },
+  ]
+
+  for (const route of everyScreen) {
+    const path = routeToPath(route)
+    it(`stays put on ${path}`, async () => {
+      startAt(path)
+      render(<App />)
+      await waitFor(() => expect(document.body.textContent!.length).toBeGreaterThan(0))
+      expect(window.location.pathname + window.location.search).toBe(path)
+    })
+  }
+
+  it('gives the way in its own address', async () => {
+    signedOut()
+    render(<App />)
+    fireEvent.click((await screen.findAllByText('Create a free account'))[0]!)
+    await waitFor(() => expect(window.location.pathname).toBe('/signin'))
   })
 })

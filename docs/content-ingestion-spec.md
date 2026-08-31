@@ -8,7 +8,8 @@ The sentence this works toward:
 > guide in Google Docs, a photo of a worksheet — and gets back content the
 > learner can practise, with nothing else to fill in.**
 
-[docs/learning-activities-spec.md](learning-activities-spec.md) §14 says a
+[docs/learning-activities-spec.md](learning-activities-spec.md) — *What a
+grown-up actually does* — says a
 grown-up does three things: *load it, say what it's for, nothing*. That spec
 assumes step 1 is solved. It isn't. Today "load it" means typing forty rows or
 pasting a tab-separated table, and the material a parent actually holds is a
@@ -29,7 +30,7 @@ The app runs on three content shapes and one generator idea:
 | --- | --- | --- |
 | Study set | `QuizDeck` / `QuizCard` | `decks.cards`, `jsonb` |
 | Word list | `CustomWordList` | `word_lists.words`, `jsonb` |
-| Generated bank | parameters, not rows | Tier 0 in the activities spec §6 |
+| Generated bank | parameters, not rows | Tier 0 in the activities spec, *Enrichment* |
 
 Card text is not plain text any more. Since
 [docs/card-formatting.md](card-formatting.md), four things inside a card string
@@ -43,7 +44,7 @@ better user of it than a human is.
 
 So the output contract is: **valid `QuizCard`s and `CustomWordList`s, whose
 text validates against the card-formatting grammar, with the optional
-enrichment fields from activities spec §5 already filled in.** Nothing new
+enrichment fields from the activities spec's *item model* already filled in.** Nothing new
 downstream. If a generated set does not make the capability matrix light up
 with `ready` activities, the generation failed, however good the prose was.
 
@@ -207,7 +208,7 @@ doesn't.
 
 **`proposedShape: 'generator'` is the best possible outcome.** A times-table
 worksheet does not need forty generated cards; it needs the Tier 0 math-facts
-generator with `op: '×', range: [2, 12]`, which the activities spec §6 already
+generator with `op: '×', range: [2, 12]`, which the activities spec's *Tier 0* already
 specifies. Recognising a worksheet as *a rule, not a list* produces better
 content than any amount of extraction, costs nothing to store, and never
 drifts. The read stage should reach for it whenever the document is drill.
@@ -230,7 +231,7 @@ here than the schema guarantee.
 
 The adult sees the topic list with counts and page chips, everything checked.
 Three controls and no more: **uncheck a topic**, **pick who it's for**, **Build
-it**. The setup-cost target in the activities spec §17 is three actions total,
+it**. The setup-cost target in the activities spec's *How we know it worked* is three actions total,
 and this screen is allowed exactly one of them.
 
 For a single-topic document — the common case, a chapter vocabulary list — skip
@@ -275,11 +276,25 @@ const GeneratedCard = z.object({
   answerKind: z.enum(['text', 'numeric', 'set']),
   tolerance: z.number().nullable(),
   altAnswers: z.array(z.string().max(200)).max(6),
+  // Why the answer is the answer. Shown after a miss, never after every one.
+  // Asked for here rather than added later because the document is already in
+  // a cached context block, and backfilling it means reading every source again.
+  explanation: z.string().max(600).nullable(),
   sourcePages: z.array(z.number().int()).max(8),
+})
+
+// Per bundle, not per card — the model has read the document and knows what
+// the material is. See docs/content-structure-spec.md.
+const GeneratedSet = z.object({
+  title: z.string().max(80),
+  track: z.string().max(60).nullable(),        // 'science.biology'
+  objectives: z.array(z.string().max(80)).max(3),
+  cards: z.array(GeneratedCard),
 })
 ```
 
-Requesting `category` and `example` **in the same call that writes the card**
+Requesting `category`, `example`, `explanation`, `track` and `objectives`
+**in the same call that writes the card**
 is the point of doing this here rather than through the activities spec's
 `POST /content/enrich`. Enrichment as a second pass exists because old decks
 need it. New decks should never need it: a card generated without a category
@@ -391,7 +406,7 @@ for themselves lands on the learner.
 
 ## 8. Provenance and review — the rule that must not bend
 
-The activities spec §3 non-negotiable 4 says generated content is labelled and
+The activities spec's non-negotiable 4 says generated content is labelled and
 reviewable, and §6 draws a hard line: enrichment never writes `term`,
 `definition`, `altAnswers` or `tolerance`, because a generated *answer* is not
 an authority.
@@ -420,7 +435,7 @@ That gives three properties worth having:
 Provenance is carried on the data, not on a screen:
 
 - `generated: ['term', 'definition', 'example', 'category']` per card, the
-  field the activities spec §5 already defines.
+  field the activities spec's item model already defines.
 - `source_id` on the deck, pointing at the source record (§10), so the deck
   can always answer *where did this come from* — filename, page numbers,
   when, which model.
@@ -432,35 +447,43 @@ content is allowed to do, not where it came from.
 
 ---
 
-## 9. Plans, quota and abuse
+## 9. Quota and abuse
 
-This is the first thing in the app that costs real money per use, and pricing
-it is a product decision the billing model doesn't settle yet
-(see the open question in the activities spec §16.4).
+Pricing is settled — see [billing-spec.md](billing-spec.md). **Parents pay,
+coverage follows the learner, and teachers never pay.** Ingestion is the only
+feature in the app with a real marginal cost, so it is the only thing metered.
 
-What is clear:
+| Who | Documents | Pages | Size |
+| --- | --- | --- | --- |
+| Any account, no covered learner | **2, ever** — not per month | 20 | 10 MB |
+| Per covered learner | **+10 / month**, pooled on the payer | 100 | 25 MB |
+| Teacher or tutor account | **3 / month**, free | 100 | 25 MB |
 
-- **Ingestion is Pro.** Not because free users don't deserve it, but because
-  it is the first feature whose marginal cost is not zero, and Pro currently
-  has to justify itself on reports alone. "Upload the chapter, get the deck" is
-  a far better reason to pay $4 than a printable progress sheet.
-- **Free gets one, once.** A single document, ever, so the value is felt rather
-  than described. It is also the honest demo: whatever comes back is what
-  the product does.
-- **Pro gets a monthly document quota, not unlimited.** A number in
-  `PlanLimits` (`documentsPerMonth`), counted server-side against source
-  records, shown as *"8 of 20 documents this month"*. Unlimited invites the
-  one user who uploads a library.
-- **Page and size caps** on top: 100 pages and 25 MB per document on Pro.
-  Beyond that, split it — which is also better content.
-- **Deck limits still apply.** A free user's fourth deck is refused today
-  (`limits.decks = 3`) and a bundle that would breach the cap says so *before*
-  the generation runs, not after we have spent the money.
+The free two are once rather than monthly, so the value is felt rather than
+described — and whatever comes back is honestly what the product does.
+Teachers get a standing allowance they never pay for, because they are the
+people most likely to be holding a chapter PDF and the reason families arrive
+at all.
+
+**Every refusal happens before the money is spent.** A job that would breach
+the quota, the page cap, or the deck limit is refused *before the first model
+call*, never after. A bundle that would breach `limits.decks` says so up front.
+
+Quota is counted server-side against `content_sources` and shown as
+*"8 of 30 documents this month"*. It is derived from coverage, not from a
+constant in `plans.ts` — a parent covering three learners has thirty against
+one bill.
 
 Rate limits: the API's global 300/min is irrelevant here. Ingestion gets its
 own scoped `@fastify/rate-limit` registration — a handful of jobs per hour per
-user — the same pattern `inviteRoutes` and `childLoginPublicRoutes` already
-use in `server.ts`.
+user — the same pattern `inviteRoutes` and `childLoginPublicRoutes` already use
+in `server.ts`.
+
+**Every call is logged to `llm_usage`** — tokens in, tokens out, cache reads,
+estimated cost, duration, stop reason, success or failure — per the billing
+spec. The numbers in the table above are estimates to size a quota against and
+to be replaced with measurements; they cannot be replaced by anything if the
+logging is not written on day one.
 
 ### What a document costs, roughly
 
@@ -518,9 +541,9 @@ That is a real privacy position and it should be stated as one, not buried.
 
 ## 11. Data model
 
-One migration. **Number:** the activities spec claims 0013 (`assignments.goal`)
-and 0014 (rewards); whichever ships first takes 0013 — this document assumes
-**0015** and the number is the only thing that changes if the order flips.
+One migration, **0016**, from the registry in
+[build-sequence.md](build-sequence.md). Numbers are claimed there and nowhere
+else.
 
 ```sql
 create table public.content_sources (
@@ -616,7 +639,7 @@ still the fastest path for six words for tomorrow.
 Then the existing `DeckScreen` gains the draft banner: *"Made from
 Chapter-7.pdf, not yet checked"* with **Looks right** and **Open the editor**,
 and `DeckEditor` gains the per-card source chip and the generated-field
-marking that activities spec §6 already calls for.
+marking that the activities spec's *Enrichment* section already calls for.
 
 The learner side gains nothing. A learner sees a set; that it came out of a PDF
 is not a fact they need.
@@ -629,7 +652,8 @@ is not a fact they need.
 - `src/rich/**` — moved from `apps/web/src/lib/rich/` (§1), re-exported from
   the old path so no web import changes.
 - `src/content.ts` — `SourceMap`, `ContentSource`, `ContentJob`, `JobStatus`.
-- `QuizCard` gains the activities-spec §5 optional fields plus `sourcePages`.
+- `QuizCard` gains the activities-spec item-model fields plus `sourcePages`. One
+  definition, here, per the build sequence's shared-shape rule.
 
 **`apps/api`**
 - `src/content/acquire.ts` — streaming upload, the fenced fetcher (§2), DOCX
@@ -658,28 +682,18 @@ is not a fact they need.
 
 ## 15. Build order
 
-**Phase 1 — the upload path, end to end, PDF only.** Acquire → read → build →
-validate → draft deck, with polling and the working screen. One format, one
-happy path, real cards on the other side. Everything after this is widening.
+**Superseded.** Order lives in [build-sequence.md](build-sequence.md). This
+document is **stage 3**, which merges what were phases 1 and 2 here — because
+this spec is right that the upload path without review and acceptance is a demo
+rather than a shippable feature.
 
-**Phase 2 — review and acceptance.** The source map's topic list, the review
-screen, `accepted_at`, the draft banner, and the gates in §8. Phase 1 is a
-demo; this is what makes it shippable.
+Stage 3 depends on two things landing first: the `rich` module moving to
+`packages/shared` (stage 0), without which the server cannot tell a valid
+figure from a hallucinated one; and the capability matrix (stage 2), which is
+this spec's own acceptance test — *a generated set should make every activity
+read `ready`* is not checkable until the matrix exists.
 
-**Phase 3 — the other formats.** Photos, DOCX, PPTX, CSV, plain text, and the
-"print to PDF" guidance. Mostly extraction code and messaging, no new pipeline.
-
-**Phase 4 — links.** The Google export path, the fenced fetcher, the private
-document remedy. Ships behind the same job machinery.
-
-**Phase 5 — quota, cost telemetry and the plan gate.** Should not be last, and
-will be, because phases 1–4 are the ones anyone can see. The counter and the
-`usage` logging should be written in phase 1 even if the gate lands here.
-
-**Phase 6 — generators from documents.** Recognising drill and emitting Tier 0
-generator parameters instead of cards. Depends on the activities spec's phase 4
-existing at all, and is the highest-quality output in this document when it
-does.
+The other formats, links, and generators-from-documents follow at stage 8.
 
 ---
 

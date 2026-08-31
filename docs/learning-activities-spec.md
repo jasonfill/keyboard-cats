@@ -444,7 +444,13 @@ export interface QuizCard {
   example?: string | null
   /** Position in an ordered set. Unlocks Sequence. */
   order?: number | null
-  /** Unlocks Label the Diagram, Listen & Write on recorded audio. */
+  /**
+   * Photographs and recorded audio only. Anything drawable — charts, shapes,
+   * number lines, geometry — is a `[[figure {…}]]` inside the text instead,
+   * per docs/card-formatting.md. Two ways to carry a diagram would be one too
+   * many, and the figure is the better one: it is data, it is describable, and
+   * it is generable.
+   */
   media?: { kind: 'image' | 'audio'; url: string; alt: string } | null
   /** How the answer is graded. Default 'text'. */
   answerKind?: 'text' | 'numeric' | 'set'
@@ -475,6 +481,31 @@ export function availableActivities(
 `partial` means the activity can run on some items but not all — a set where
 nineteen of forty items have a category can still play Sort, on nineteen. This
 is what lets enrichment be incremental instead of a gate.
+
+### Capability is a function of the text, not only of the fields
+
+Card text is not plain text. Since `docs/card-formatting.md`, `$…$`,
+`$$…$$`, `<math>…</math>` and `[[figure {…}]]` all mean something — so
+`availableActivities()` reads `parseRich()` from `packages/shared/src/rich/`
+as well as the optional fields above.
+
+**The rule that has to be right first time**, because getting it wrong shows a
+broken question to a child:
+
+> An activity that manipulates the *characters* of the answer is **locked**
+> when the answer side contains maths or a figure.
+
+That is `scramble`, `first-letter`, `missing-letters` and letter tiles.
+`$\frac{3}{4}$` scrambled is not a puzzle, it is nonsense, and `M______` on a
+figure answer means nothing. Those activities degrade to `choose` or `write`,
+which are both fine on a maths card.
+
+The converse unlocks something: a card carrying a `[[figure]]` can play
+`label`, which is the only activity that *requires* one.
+
+Capabilities are computed on save and stored with the set, never recomputed on
+render. Plain text costs `parseRich()` one regex test, but forty cards × every
+screen is still work nobody needs to do twice.
 
 The matrix is shown in exactly two places: on the set's page as *what this set
 can do* (learner-facing, as unlockable activities), and in the assign flow as
@@ -622,12 +653,16 @@ operations, and those are a large share of what school actually assesses in
 science and history.
 
 **`label` — Label It**
-An image with hotspots; drop the right name on each.
-*Needs:* `media.image` plus hotspot coordinates. *Graded:* no. *Checked:* yes.
+A figure with its labels stripped off; drop them back on.
+*Needs:* a `[[figure {…}]]` on the card. *Graded:* no. *Checked:* yes.
 *Falls back to:* `match`.
-*Why:* anatomy, maps, diagrams, parts of a plant. Phase 3 — it is the only
-activity here that genuinely requires new authoring, so it should wait until
-everything free has shipped.
+*Why:* this was specced as an image with hand-placed hotspots — the one
+activity that genuinely required new authoring. The figure work removed that:
+`triangle`, `polygon`, `circle`, `angle` and `numberline` already carry their
+labelled vertices, sides, angles and points, and the renderer already knows
+where each one lands. Hiding them and asking for them back is nearly free, and
+it works on any card with a figure, including every generated one. Geometry,
+number lines, and charts with labelled axes all come along at once.
 
 ### Stage 3 — Free recall
 
@@ -685,9 +720,18 @@ a science set.
 A numeric or procedural answer, graded with tolerance; optionally show steps.
 *Needs:* `answerKind: 'numeric'`, `tolerance`.
 *Graded:* yes. *Checked:* yes.
-*Why:* required for the math generators in §8, and the grading rule is genuinely
-different — `gradeWritten`'s edit distance is nonsense on numbers, where a
-transposition is a wrong answer rather than a typo.
+
+*Half of this already exists.* `gradeWritten` projects `$\frac{3}{4}$` to what
+a learner would actually type, and `acceptableAnswers` already refuses to split
+`3/4` on the slash it splits `couch / sofa` on. What is left is genuinely
+numeric and genuinely missing:
+
+- **edit distance must not apply.** A transposition in a number is a wrong
+  answer, not a typo — `gradeWritten`'s tolerance has to switch off entirely
+  when `answerKind` is `numeric`.
+- **decimal tolerance**: is `0.333` right for one third? Per-card, defaulted.
+- **equivalent forms**: `0.75`, `3/4` and `75%` are one answer. Compare
+  numerically after projection rather than as strings.
 
 **`use-it` — Use It In A Sentence**
 The learner writes an original sentence using the term.
@@ -1425,11 +1469,11 @@ The ask is K–12; spelling covers 2–8. What is actually missing:
 - `POST /content/enrich` (Tier 2), Pro-gated, provenance-marking.
 - goal assignments: evaluate-and-close in the write transaction.
 
-**Migration 0013**
+**Migration 0014** (number from the registry in [build-sequence.md](build-sequence.md))
 - `assignments.goal jsonb` and the goal-completion predicate.
 - nothing else. The content changes are all in `jsonb` already.
 
-**Migration 0014**
+**Migration 0015**
 - `rewards`, `reward_points`, and `award_matching_rewards()`, called in the same
   transaction as `complete_matching_assignments()`. Deliberately **no** reopen
   trigger on sessions — see §11.
@@ -1457,33 +1501,17 @@ collects.
 
 ## 17. Build order
 
-Sequenced by value per unit of work, not by tidiness. Each phase ships on its
-own.
+**Superseded.** Order now lives in [build-sequence.md](build-sequence.md),
+which sequences this spec against the content-structure and ingestion
+proposals and resolves the conflicts between them. This document describes
+*scope*; that one describes *when*.
 
-**Phase 1 — the ladder and the free rungs.** `catalog.ts`, `ladder.ts`,
-`first-letter`, `word-bank`, `cloze`, `mastery-check`, plus `cardIds` on
-`PlanOptions` and the choose-within-a-rung menu (§6) — the part of this spec a
-learner notices first. No new content fields, no migration, no API work. Every existing
-deck immediately has a real ladder under it and a graded top rung. *This phase
-alone closes items 2, 4 and 5 of the existing quiz mastery loop plan.*
-
-**Phase 2 — the Mastery Path.** `path.ts`, batching, placement, the readiness
-gate, goal assignments and migration 0013. This is the phase that removes the
-setup burden and is the one worth marketing.
-
-**Phase 3 — free recall and fluency.** `brain-dump`, `speed-recall`, and using
-`responseMs` in the ability model. High value, all from data we already have.
-
-**Phase 4 — Tier 0 generators.** Math facts and sight words. Largest coverage
-gain for zero authoring; also the strongest reason for a K–2 family to open the
-app at all.
-
-**Phase 5 — enrichment and the richer activities.** `POST /content/enrich`,
-then `sort`, `odd-one-out`, `sequence`, `apply`, `use-it`, `find-the-error`.
-Pro-gated, which gives the subscription something concrete to be.
-
-**Phase 6 — the early-learner layer.** `tap` and `tiles` input modes, audio-first
-prompts, reading-level handling. Then `label` and `speak`.
+Roughly, for orientation: the ladder and the free rungs are **stage 2**; the
+Mastery Path is **stage 4**; rewards and the strict mastery split are
+**stage 5**; free recall, fluency and the cheap engagement wins are **stage
+6**; generated banks are **stage 7**; the early-learner layer and richer
+activities are **stage 8**. Do not plan from this paragraph — plan from the
+sequence.
 
 ---
 

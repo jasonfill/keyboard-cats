@@ -3,9 +3,12 @@ import type { ActivityId } from './lib/spelling/activities'
 import type { SessionMode } from './lib/spelling/session'
 
 /**
- * Every screen in the suite. The app is a single page with hand-rolled routing;
- * there is no URL router because the whole thing is one continuous session and
- * deep links to a half-finished spelling test would not be useful.
+ * Every screen in the suite.
+ *
+ * Screens name where they are going rather than writing a URL: this union is
+ * what `navigate` takes, and `paths.ts` turns each one into the address React
+ * Router puts in the bar. Keeping the two apart means a call site cannot
+ * misspell a path, and a path can be renamed without touching a screen.
  */
 export type Route =
   // Signed out: the only two screens a visitor can reach.
