@@ -13,6 +13,7 @@ import { env, isProduction, webOrigins } from './env.js'
 import { fromDatabaseError, HttpError } from './errors.js'
 import { pendingMigrations, runMigrations } from './migrate.js'
 import { childLoginAdminRoutes, childLoginPublicRoutes } from './routes/childLogin.js'
+import { devLoginRoutes } from './routes/devLogin.js'
 import { inviteRoutes, learnerRoutes } from './routes/learners.js'
 import { progressRoutes } from './routes/progress.js'
 
@@ -114,6 +115,18 @@ export async function buildServer() {
     }
   })
 
+  // Only ever registered on a developer's machine, and only when they have
+  // deliberately set a secret. The four guards are in devLogin.ts; the fatal
+  // check for the production case is at the top of main().
+  if (env.DEV_LOGIN_SECRET) {
+    await app.register(devLoginRoutes, { prefix: '/api' })
+    app.log.warn(
+      { allowed: env.DEV_LOGIN_ACCOUNTS },
+      'DEV LOGIN IS ENABLED: POST /api/dev/login mints sessions for the listed accounts ' +
+        'without a password. Never set DEV_LOGIN_SECRET in a deployed environment.',
+    )
+  }
+
   await app.register(learnerRoutes, { prefix: '/api' })
   await app.register(progressRoutes, { prefix: '/api' })
   await app.register(childLoginAdminRoutes, { prefix: '/api' })
@@ -147,6 +160,18 @@ export async function buildServer() {
 }
 
 async function main(): Promise<void> {
+  // Before anything else, and fatal. A password-free way into a nominated
+  // account is survivable on a laptop and unforgivable in production; refusing
+  // to start is the only response that cannot be ignored or missed in a log.
+  if (env.DEV_LOGIN_SECRET && env.NODE_ENV === 'production') {
+    console.error(
+      '\nFATAL: DEV_LOGIN_SECRET is set and NODE_ENV=production.\n' +
+        '/api/dev/login mints sessions without a password. Unset DEV_LOGIN_SECRET\n' +
+        'in this environment before starting the server.\n',
+    )
+    process.exit(1)
+  }
+
   const app = await buildServer()
 
   // Before the listener, not after: an instance that cannot bring the schema up

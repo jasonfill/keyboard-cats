@@ -113,6 +113,36 @@ const schema = z.object({
   CHILD_EMAIL_DOMAIN: z.string().default('no-reply.whizzo.app'),
 
   /**
+   * Enables POST /api/dev/login, which mints a session for a nominated test
+   * account without a password. Absent by default, and absent is the only safe
+   * value anywhere but a developer's own machine — the route is not registered
+   * at all unless this is set.
+   *
+   * It exists because verifying signed-in screens otherwise needs a human to
+   * type a password into a browser. That convenience is also exactly why it
+   * would be a catastrophic thing to ship: see the guards in devLogin.ts, and
+   * the hard stop in server.ts that refuses to boot with this set in
+   * production.
+   */
+  DEV_LOGIN_SECRET: z.string().min(16).optional(),
+
+  /**
+   * Comma-separated accounts /api/dev/login will mint sessions for — email
+   * addresses, user ids, or a mix. There is no wildcard on purpose: the blast
+   * radius of a leaked dev secret should be the accounts you nominated for
+   * testing, never a real customer's.
+   */
+  DEV_LOGIN_ACCOUNTS: z
+    .string()
+    .default('')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+
+  /**
    * Apply pending migrations before serving traffic. On by default: a deploy
    * that ships a migration and a route that needs it should not have a window
    * where only one of them is live.

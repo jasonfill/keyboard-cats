@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { LibraryResponse } from '@whizzo/shared'
 import { useAuth } from '../../auth/AuthProvider'
+import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
+import { loadLibrary } from '../../lib/assignments/library'
 import { Button, Card, Pill } from '../../components/ui'
 import { PLANS, allows } from '../../lib/plans'
 import { useProgress } from '../../lib/progress/ProgressProvider'
@@ -14,6 +17,21 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
   const { snapshot, mode, sync, reset } = useProgress()
   const [name, setName] = useState(profile?.displayName ?? '')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [library, setLibrary] = useState<LibraryResponse | null>(null)
+
+  // Just the counts, so the card can say something true before you open it.
+  // A library that will not load shows a dash rather than a zero: "none" and
+  // "could not ask" are different answers.
+  useEffect(() => {
+    if (status !== 'signed-in') return
+    const controller = new AbortController()
+    loadLibrary(controller.signal)
+      .then((lib) => {
+        if (!controller.signal.aborted) setLibrary(lib)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [status])
 
   const plan = profile?.plan ?? 'free'
   const planDef = PLANS[plan]
@@ -23,7 +41,7 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
       <div className="mx-auto w-full max-w-2xl py-4">
         <ScreenHeader title="Your account" onBack={() => navigate({ name: 'home' })} />
         <Card>
-          <p className="mb-4 font-bold text-slate-500">
+          <p className="mb-4 font-bold text-muted">
             You are playing as a guest. Progress is saved in this browser only.
           </p>
           {configured ? (
@@ -31,7 +49,7 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
               Create a free account
             </Button>
           ) : (
-            <p className="font-bold text-slate-400">
+            <p className="font-bold text-stone">
               This build has no database connected — see <code>supabase/README.md</code>.
             </p>
           )}
@@ -49,15 +67,15 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
       />
 
       <Card className="mb-4">
-        <h2 className="mb-3 text-xl font-extrabold text-grape">Profile</h2>
+        <h2 className="mb-3 text-xl font-extrabold text-ink">Profile</h2>
 
-        <label className="mb-1 block text-sm font-bold text-slate-500">Display name</label>
+        <label className="mb-1 block text-sm font-bold text-muted">Display name</label>
         <div className="mb-4 flex gap-2">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={24}
-            className="flex-1 rounded-xl border-2 border-purple-200 px-4 py-3 font-bold text-grape focus:border-grape focus:outline-none"
+            className="flex-1 rounded-xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
           />
           <Button
             variant="secondary"
@@ -68,14 +86,14 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
           </Button>
         </div>
 
-        <label className="mb-2 block text-sm font-bold text-slate-500">Your cat</label>
+        <label className="mb-2 block text-sm font-bold text-muted">Your avatar</label>
         <div className="flex flex-wrap gap-2">
           {AVATARS.map((emoji) => (
             <button
               key={emoji}
               onClick={() => updateProfile({ avatarEmoji: emoji })}
               className={`rounded-xl px-3 py-2 text-2xl transition-transform hover:scale-110 ${
-                profile?.avatarEmoji === emoji ? 'bg-purple-100 ring-2 ring-grape' : 'bg-slate-50'
+                profile?.avatarEmoji === emoji ? 'bg-wash ring-2 ring-ink' : 'bg-quiet'
               }`}
             >
               {emoji}
@@ -86,27 +104,53 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
 
       <Card className="mb-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-extrabold text-grape">Plan</h2>
-          <Pill className={plan === 'pro' ? 'bg-sun text-white' : 'bg-slate-100 text-slate-500'}>
+          <h2 className="text-xl font-extrabold text-ink">Plan</h2>
+          <Pill className={plan === 'pro' ? 'bg-sun text-white' : 'bg-wash text-muted'}>
             {planDef.name}
           </Pill>
         </div>
-        <p className="mb-3 font-bold text-slate-500">{planDef.tagline}</p>
+        <p className="mb-3 font-bold text-muted">{planDef.tagline}</p>
         {plan === 'free' ? (
           <Button className="w-full" onClick={() => navigate({ name: 'upgrade' })}>
             ✨ See what Family Pro adds
           </Button>
         ) : (
-          <p className="font-bold text-slate-500">
+          <p className="font-bold text-muted">
             Thank you for supporting the project.{' '}
             {profile?.planRenewsAt && `Renews ${new Date(profile.planRenewsAt).toLocaleDateString()}.`}
           </p>
         )}
       </Card>
 
+      {/* Your things, as opposed to the people you look after — those live in
+          Family. A tutor's decks are not any one student's, so this is where
+          they belong. */}
       <Card className="mb-4">
-        <h2 className="mb-2 text-xl font-extrabold text-grape">Your data</h2>
-        <p className="mb-3 font-bold text-slate-500">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-extrabold text-ink">Your library 📚</h2>
+          <Button variant="secondary" onClick={() => navigate({ name: 'library' })}>
+            Open library
+          </Button>
+        </div>
+        <p className="mb-3 font-bold text-muted">
+          Decks and word lists that belong to you rather than to one learner — build once, set
+          them for any learner you look after.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Pill className="bg-wash text-ink">
+            🃏 {library ? library.decks.length : '—'} decks
+          </Pill>
+          <Pill className="bg-wash text-ink">
+            ✏️ {library ? library.customLists.length : '—'} word lists
+          </Pill>
+        </div>
+      </Card>
+
+      <MyTutorCode />
+
+      <Card className="mb-4 mt-4">
+        <h2 className="mb-2 text-xl font-extrabold text-ink">Your data</h2>
+        <p className="mb-3 font-bold text-muted">
           Progress is stored {mode === 'cloud' ? 'in your account' : 'in this browser'}
           {sync === 'error' && ' (the last sync failed — check your connection)'}.
         </p>
@@ -135,7 +179,7 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
         {confirmReset && (
           <button
             onClick={() => setConfirmReset(false)}
-            className="mt-2 text-sm font-bold text-slate-400 underline"
+            className="mt-2 text-sm font-bold text-stone underline"
           >
             Never mind
           </button>

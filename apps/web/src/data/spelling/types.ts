@@ -18,10 +18,10 @@ export interface SpellingList {
 export interface GradeLevel {
   /** School grade this band targets. The curriculum starts at 2. */
   grade: number
-  name: string
-  emoji: string
-  /** Tailwind gradient stops, matching the world cards in the typing game. */
-  color: string
+  /**
+   * What this band teaches. Curriculum, so it is the same in every world —
+   * what the band is *called* comes from the theme instead.
+   */
   blurb: string
   lists: SpellingList[]
 }

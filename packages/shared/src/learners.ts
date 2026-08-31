@@ -8,8 +8,43 @@
 export const SELF_SIGNIN_MIN_AGE = 13
 
 export type AuthKind = 'none' | 'provisioned' | 'self'
-export type GuardianRole = 'parent' | 'teacher'
+/**
+ * What a grown-up is to a learner.
+ *
+ * Deliberately a property of the link rather than of the account: the same
+ * person is a parent to their own children and a tutor to somebody else's, and
+ * an account-wide type could not say that.
+ */
+export type GuardianRole = 'parent' | 'teacher' | 'tutor'
 export type InvitePurpose = 'guardian' | 'self_login'
+
+/**
+ * A standing invitation from one grown-up, usually a tutor.
+ *
+ * It stands for the person, not for a learner: they hand it to families, and
+ * each family redeems it against a child they own. Minting one grants nothing.
+ */
+export interface ConnectionCode {
+  code: string
+  /** What a family sees before accepting — "Mrs Patel, Tuesday maths". */
+  label: string | null
+  role: GuardianRole
+  canManageContent: boolean
+  expiresAt: number | null
+  maxUses: number | null
+  uses: number
+  createdAt: number
+}
+
+/** What a family is told about a code before they accept it. */
+export interface ConnectionCodePreview {
+  valid: boolean
+  reason: string | null
+  ownerName: string | null
+  label: string | null
+  role: GuardianRole | null
+  canManageContent: boolean | null
+}
 
 export interface Learner {
   id: string
@@ -21,6 +56,13 @@ export interface Learner {
   authKind: AuthKind
   authUserId: string | null
   createdAt: number
+  /**
+   * The learner's chosen world. Display state only — it never touches the
+   * curriculum, the difficulty, or what earns a reward. Null means the client
+   * default. Kept here rather than in browser storage because a grown-up can
+   * set it, and that has to reach the child's device.
+   */
+  theme: string | null
 }
 
 export interface Guardian {
@@ -38,6 +80,7 @@ export interface NewLearner {
   avatarEmoji?: string
   gradeHint?: number | null
   birthYear?: number | null
+  theme?: string | null
 }
 
 /** Age in whole years, or null when no birth year has been recorded. */

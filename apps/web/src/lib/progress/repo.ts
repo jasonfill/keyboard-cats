@@ -4,7 +4,9 @@
 
 import type { ProgressChange } from './types'
 import {
+  deriveSessionCounts,
   emptySnapshot,
+  withVerifiedFlag,
   listKey,
   masteryKey,
   todayString,
@@ -26,10 +28,39 @@ export interface ProgressRepo {
   load(): Promise<ProgressSnapshot>
   persist(change: ProgressChange): Promise<void>
   reset(): Promise<void>
+  /** Every answer given in one round, oldest first — the history drill-down. */
+  attemptsForSession(sessionId: string): Promise<Attempt[]>
 }
 
 /** How many recent sessions and attempts we keep in memory / in localStorage. */
 export const SESSION_HISTORY_LIMIT = 200
+
+/**
+ * Make a round's summary agree with the answers it was made of.
+ *
+ * The attempts are the record; the session and the daily rollup are summaries
+ * of them. This is applied once, on the way in, so the number on screen is the
+ * same number that gets stored — and it is deliberately the same rule the API
+ * applies server-side, where it is a check rather than a courtesy.
+ */
+export function withDerivedEvidence(change: ProgressChange): ProgressChange {
+  if (!change.session && !change.attempts?.length) return change
+
+  const attempts = (change.attempts ?? []).map(withVerifiedFlag)
+  const derived = deriveSessionCounts(attempts)
+
+  return {
+    ...change,
+    attempts: change.attempts ? attempts : undefined,
+    session: change.session
+      ? { ...change.session, ...(derived ?? { evidence: 'client' as const }) }
+      : undefined,
+    daily:
+      change.daily && derived
+        ? { ...change.daily, items: derived.itemsTotal, correct: derived.itemsCorrect }
+        : change.daily,
+  }
+}
 
 /**
  * Fold a change into a snapshot. Pure, and used by both repos so the in-memory

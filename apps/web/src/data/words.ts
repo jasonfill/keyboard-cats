@@ -8,10 +8,10 @@ export const WORD_BANK: string[] = [
   'the', 'and', 'you', 'for', 'are', 'was', 'his', 'her', 'she', 'him',
   'they', 'them', 'then', 'this', 'that', 'with', 'have', 'from', 'were',
   'what', 'when', 'your', 'said', 'will', 'each', 'their', 'there', 'been',
-  // fun / animal / cat themed
-  'cat', 'cats', 'kitten', 'paw', 'paws', 'purr', 'meow', 'whisker', 'tail',
-  'fur', 'fluffy', 'pounce', 'nap', 'yarn', 'mouse', 'milk', 'treat', 'cozy',
-  'tiger', 'lion', 'leopard', 'panther', 'claw', 'kitty', 'nibble', 'scratch',
+  // fun words, spread across every world and belonging to none of them
+  'paw', 'tail', 'fur', 'nap', 'mouse', 'milk', 'treat', 'cozy', 'tiger',
+  'lion', 'wheel', 'engine', 'helmet', 'fossil', 'comet', 'orbit', 'reef',
+  'wave', 'shell', 'saddle', 'ribbon', 'drum', 'guitar', 'circuit', 'sensor',
   // general vocabulary a 6th grader knows
   'dog', 'fish', 'bird', 'tree', 'leaf', 'rain', 'snow', 'wind', 'star',
   'moon', 'sun', 'sky', 'cloud', 'river', 'ocean', 'beach', 'sand', 'rock',
@@ -28,20 +28,26 @@ export const WORD_BANK: string[] = [
 ]
 
 // Short, uplifting sentences for advanced lessons (accuracy under real text).
+//
+// Deliberately not themed. These are what a learner actually types, and the
+// letters in them are the point — a sentence is picked for its key coverage,
+// not its subject. Ten themed sets would mean the practice text differed in
+// difficulty depending on which world a child picked, which is exactly what a
+// theme is not allowed to do.
 export const SENTENCES: string[] = [
-  'the cat sat on a soft warm mat.',
-  'my fluffy kitten loves to chase yarn.',
   'a quick brown fox jumps over the lazy dog.',
-  'every cat dreams of a big bowl of milk.',
   'keep your fingers on the home row keys.',
   'practice a little every day and you will grow.',
-  'a happy cat purrs when it feels safe and loved.',
   'you can type faster if you do not look down.',
-  'nine sleepy cats took a long cozy nap.',
   'reach for each key and return to home.',
-  'the tiger and the kitten are both cats.',
   'good typists care about accuracy before speed.',
   'take a deep breath and try your very best.',
-  'a curious cat explores every quiet corner.',
   'stars shine bright over the sleeping town.',
+  'the river runs quietly past the old stone bridge.',
+  'every expert was once a complete beginner.',
+  'six brave zebras jogged past my quiet farm.',
+  'the museum opens early on a foggy autumn morning.',
+  'pack my box with five dozen liquid jugs.',
+  'she built a small robot out of wheels and wire.',
+  'we watched the waves until the sky turned gold.',
 ]

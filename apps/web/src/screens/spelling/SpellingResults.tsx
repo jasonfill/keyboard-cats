@@ -1,10 +1,14 @@
 import { useEffect } from 'react'
-import CatMascot from '../../components/CatMascot'
+import Mascot from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
-import { Button, Card, Pill, StarRow } from '../../components/ui'
+import { Button, Card, StarRow } from '../../components/ui'
 import type { SessionSummary } from '../../hooks/useSpellingSession'
 import { sfx } from '../../lib/sound'
 import { activity as activityDef } from '../../lib/spelling/activities'
+import { useProgress } from '../../lib/progress/ProgressProvider'
+import { useTheme } from '../../lib/theme/ThemeProvider'
+import { earnedFor } from '../../lib/theme/rewards'
+import { slotLabels } from '../../lib/themes'
 import { speak } from '../../lib/spelling/speech'
 import type { Navigate } from '../../routes'
 
@@ -21,7 +25,7 @@ function encouragement(accuracy: number, predicted: number): string {
   if (accuracy >= predicted) return 'You beat what we predicted for these words. Nicely done! ✨'
   if (accuracy >= 60) return 'Solid round. The tricky ones will come back for another go. 💪'
   if (accuracy >= 40) return 'Good effort! These words are now on your review list. 🎯'
-  return 'These were hard ones. We will bring them back easier next time. 🐾'
+  return 'These were hard ones. We will bring them back easier next time.'
 }
 
 export default function SpellingResults({ summary, navigate, onAgain }: Props) {
@@ -29,6 +33,15 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
   const missed = summary.results.filter((r) => !r.correct)
   const abilityDelta = summary.abilityAfter - summary.abilityBefore
   const levelledUp = summary.level.direction === 'promote'
+
+  const { theme } = useTheme()
+  const { snapshot } = useProgress()
+  const beatBy = summary.accuracy - summary.predictedAccuracy
+  // The same fixed rule every theme runs on: a graded round that clears its
+  // prediction, or a promotion. Nothing here varies by theme except the noun.
+  const earnedReward = def.isTest && (beatBy >= 0 || levelledUp)
+  const earned = earnedFor(snapshot, theme)
+  const rewardName = slotLabels(theme)[Math.max(0, earned.owned - 1)] ?? theme.unitOne
 
   useEffect(() => {
     if (levelledUp || summary.accuracy === 100) sfx.win()
@@ -39,43 +52,55 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
     <div className="mx-auto w-full max-w-2xl py-4">
       {(levelledUp || summary.accuracy >= 90) && <Confetti count={40} />}
 
-      <Card className="mb-4 text-center">
-        <CatMascot
-          mood={summary.accuracy >= 80 ? 'wow' : summary.accuracy >= 50 ? 'happy' : 'sad'}
-          size={120}
-          className="mx-auto"
-        />
-        <h1 className="mt-2 text-3xl font-extrabold text-grape">
-          {summary.itemsCorrect} of {summary.itemsTotal} correct
-        </h1>
-        <p className="font-bold text-slate-500">
-          {encouragement(summary.accuracy, summary.predictedAccuracy)}
-        </p>
-
-        <div className="my-4 flex justify-center">
+      <div className="mb-4 rounded-[26px] p-7 text-center" style={{ background: theme.tintA }}>
+        <div className="flex justify-center">
           <StarRow stars={summary.stars} size={34} />
         </div>
+        <h1 className="mt-3 font-display text-3xl font-extrabold tracking-[-0.02em] text-ink">
+          {earnedReward ? theme.rewardTitle : `${summary.itemsCorrect} of ${summary.itemsTotal} correct`}
+        </h1>
 
-        <div className="flex flex-wrap justify-center gap-2">
-          <Pill className="bg-purple-100 text-grape">{def.emoji} {def.name}</Pill>
-          <Pill className="bg-slate-100 text-slate-500">🎯 {summary.accuracy}% accuracy</Pill>
-          <Pill
-            className="bg-slate-100 text-slate-500"
-            title="What the app predicted you would score on this exact set of words"
-          >
-            🔮 {summary.predictedAccuracy}% predicted
-          </Pill>
-          <Pill className="bg-amber-100 text-amber-700">⭐ {summary.score} points</Pill>
-          <Pill className="bg-slate-100 text-slate-500">
-            ⏱️ {Math.round(summary.durationMs / 1000)}s
-          </Pill>
+        {/* The curve-graded star rule, said out loud. A learner who beats a
+            hard prediction and one who aces an easy set both get told which
+            of those happened. */}
+        <p className="mx-auto mt-2 max-w-lg text-[15px] leading-relaxed text-body">
+          {summary.itemsCorrect} of {summary.itemsTotal} unaided, and you{' '}
+          {beatBy >= 0
+            ? `beat what we predicted for this set by ${beatBy} points`
+            : `came in ${Math.abs(beatBy)} points under what we predicted for this set`}
+          . {summary.stars >= 3 ? 'The third star is for that.' : encouragement(summary.accuracy, summary.predictedAccuracy)}
+        </p>
+
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <RewardStat label="Unaided" value={`${summary.itemsCorrect}/${summary.itemsTotal}`} />
+          <RewardStat label="Predicted" value={`${summary.predictedAccuracy}%`} />
+          <RewardStat label="Points" value={String(summary.score)} />
         </div>
-      </Card>
+      </div>
+
+      {/* The collectible. Only a graded round that cleared its prediction
+          reaches this branch — which is what the footnote below promises. */}
+      {earnedReward && (
+        <div className="mb-4 rounded-[26px] border border-hair bg-chalk p-6 text-center">
+          <div className="mx-auto flex justify-center">
+            <Mascot mood="cheer" size={108} />
+          </div>
+          <div className="mt-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+            New {theme.unit}
+          </div>
+          <div className="font-display text-2xl font-extrabold text-ink">{rewardName}</div>
+          <p className="mx-auto mt-2 max-w-md text-[15px] text-body">{theme.because}</p>
+        </div>
+      )}
+
+      <p className="mb-4 rounded-[20px] border border-hair bg-quiet p-4 text-center text-[13px] text-body">
+        Rewards are earned on graded work only. A hinted word can’t buy a {theme.unitOne}.
+      </p>
 
       {/* What the round did to the learner's level */}
       {def.isTest && (
         <Card className="mb-4">
-          <h2 className="mb-2 text-xl font-extrabold text-grape">Your level 📈</h2>
+          <h2 className="mb-2 text-xl font-extrabold text-ink">Your level 📈</h2>
           {levelledUp ? (
             <div className="rounded-2xl bg-emerald-50 p-4">
               <p className="text-lg font-extrabold text-emerald-700">
@@ -91,8 +116,8 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
               <p className="font-bold text-amber-600">{summary.level.reason}</p>
             </div>
           ) : (
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="font-bold text-slate-600">
+            <div className="rounded-2xl bg-quiet p-4">
+              <p className="font-bold text-body">
                 Still working through grade {summary.gradeAfter}.{' '}
                 {abilityDelta >= 0.01
                   ? `Your spelling level went up ${abilityDelta.toFixed(2)} this round.`
@@ -102,7 +127,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
               </p>
             </div>
           )}
-          <p className="mt-2 text-xs font-bold text-slate-400">
+          <p className="mt-2 text-xs font-bold text-stone">
             Only words you spelled from scratch, with no hints, change your level.
           </p>
         </Card>
@@ -110,26 +135,26 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
 
       {/* Word-by-word */}
       <Card className="mb-4">
-        <h2 className="mb-3 text-xl font-extrabold text-grape">Word by word</h2>
-        <ul className="divide-y divide-slate-100">
+        <h2 className="mb-3 text-xl font-extrabold text-ink">Word by word</h2>
+        <ul className="divide-y divide-hair">
           {summary.results.map((r, i) => (
             <li key={`${r.word.w}-${i}`} className="flex items-center gap-3 py-2">
               <span className="text-lg">{r.correct ? '✅' : '❌'}</span>
               <div className="min-w-0 flex-1">
-                <span className="font-mono text-base font-bold text-grape">{r.word.w}</span>
+                <span className="font-mono text-base font-bold text-ink">{r.word.w}</span>
                 {!r.correct && r.given && (
                   <span className="ml-2 font-mono text-sm font-bold text-rose-400 line-through">
                     {r.given}
                   </span>
                 )}
-                <span className="ml-2 text-xs font-bold text-slate-400">
+                <span className="ml-2 text-xs font-bold text-stone">
                   grade {r.word.grade}
                   {r.hintsUsed > 0 && ' · used a hint'}
                 </span>
               </div>
               <button
                 onClick={() => speak(r.word.w)}
-                className="shrink-0 rounded-full bg-purple-50 px-2 py-1 text-xs font-extrabold text-grape"
+                className="shrink-0 rounded-full bg-quiet px-2 py-1 text-xs font-extrabold text-ink"
                 aria-label={`Hear ${r.word.w}`}
               >
                 🔊
@@ -148,7 +173,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
 
       {summary.newAchievements.length > 0 && (
         <Card className="mb-4">
-          <h2 className="mb-3 text-xl font-extrabold text-grape">New badges! 🏅</h2>
+          <h2 className="mb-3 text-xl font-extrabold text-ink">New badges! 🏅</h2>
           <div className="flex flex-wrap gap-3">
             {summary.newAchievements.map((a) => (
               <div key={a.id} className="rounded-2xl bg-amber-50 px-4 py-3 text-center">
@@ -167,6 +192,17 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
           🏠 Spelling home
         </Button>
       </div>
+    </div>
+  )
+}
+
+function RewardStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl p-3" style={{ background: '#FFFFFFB8' }}>
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
+        {label}
+      </div>
+      <div className="font-display text-xl font-extrabold text-ink">{value}</div>
     </div>
   )
 }

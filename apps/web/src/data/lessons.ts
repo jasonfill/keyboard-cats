@@ -6,14 +6,19 @@ export interface LessonDef {
   blurb: string
   newKeys: string[] // characters introduced in this lesson ('' means space)
   kind: LessonKind
-  catSeed: string // stable id used to fetch a matching cat photo
+  /** Stable id for the collectible this lesson awards. The theme decides
+   *  which of its items that id names. */
+  catSeed: string
 }
 
 export interface WorldDef {
   id: string
-  name: string
-  emoji: string
-  color: string // tailwind gradient-ish base
+  /**
+   * Which keys this world teaches. Curriculum, so it is the same in every
+   * theme — what the world is *called* comes from the theme, and the blurb is
+   * what guarantees a themed name never leaves a learner unsure which row
+   * they are on.
+   */
   blurb: string
   lessons: LessonDef[]
 }
@@ -24,10 +29,7 @@ export interface WorldDef {
 export const WORLDS: WorldDef[] = [
   {
     id: 'home',
-    name: 'Home Row Meadow',
-    emoji: '🌼',
-    color: 'from-lime-300 to-emerald-400',
-    blurb: 'Where every paw finds its resting spot.',
+    blurb: 'The home row — where every finger comes back to rest.',
     lessons: [
       { id: 'home-fj', title: 'F & J — the bumps', blurb: 'Your index fingers live here.', newKeys: ['f', 'j'], kind: 'keys', catSeed: 'homefj' },
       { id: 'home-dk', title: 'D & K', blurb: 'Middle fingers join the party.', newKeys: ['d', 'k'], kind: 'keys', catSeed: 'homedk' },
@@ -35,45 +37,36 @@ export const WORLDS: WorldDef[] = [
       { id: 'home-a-semi', title: 'A & ;', blurb: 'Pinkies to the edges.', newKeys: ['a', ';'], kind: 'keys', catSeed: 'homeasemi' },
       { id: 'home-gh', title: 'G & H', blurb: 'Index fingers reach inward.', newKeys: ['g', 'h'], kind: 'keys', catSeed: 'homegh' },
       { id: 'home-space', title: 'The Space Bar', blurb: 'Thumbs make the words breathe.', newKeys: [' '], kind: 'words', catSeed: 'homespace' },
-      { id: 'home-review', title: 'Meadow Review', blurb: 'Real home-row words!', newKeys: [], kind: 'words', catSeed: 'homereview' },
+      { id: 'home-review', title: 'Home Row Review', blurb: 'Real home-row words!', newKeys: [], kind: 'words', catSeed: 'homereview' },
     ],
   },
   {
     id: 'top',
-    name: 'Treetop Tower',
-    emoji: '🌳',
-    color: 'from-sky-300 to-cyan-400',
-    blurb: 'Climb up to the top row, one branch at a time.',
+    blurb: 'The top row, one reach at a time.',
     lessons: [
       { id: 'top-ei', title: 'E & I', blurb: 'Middle fingers reach up.', newKeys: ['e', 'i'], kind: 'words', catSeed: 'topei' },
       { id: 'top-ru', title: 'R & U', blurb: 'Index fingers reach up.', newKeys: ['r', 'u'], kind: 'words', catSeed: 'topru' },
       { id: 'top-ty', title: 'T & Y', blurb: 'The tricky inside reach.', newKeys: ['t', 'y'], kind: 'words', catSeed: 'topty' },
       { id: 'top-wo', title: 'W & O', blurb: 'Ring fingers up top.', newKeys: ['w', 'o'], kind: 'words', catSeed: 'topwo' },
       { id: 'top-qp', title: 'Q & P', blurb: 'Pinkies to the top corners.', newKeys: ['q', 'p'], kind: 'words', catSeed: 'topqp' },
-      { id: 'top-review', title: 'Treetop Review', blurb: 'Longer, faster words.', newKeys: [], kind: 'words', catSeed: 'topreview' },
+      { id: 'top-review', title: 'Top Row Review', blurb: 'Longer, faster words.', newKeys: [], kind: 'words', catSeed: 'topreview' },
     ],
   },
   {
     id: 'bottom',
-    name: 'Burrow Basement',
-    emoji: '🕳️',
-    color: 'from-amber-300 to-orange-400',
-    blurb: 'Dig down to the bottom row.',
+    blurb: 'The bottom row, down under your fingers.',
     lessons: [
       { id: 'bot-cm', title: 'C & Comma', blurb: 'Middle fingers dig down.', newKeys: ['c', ','], kind: 'words', catSeed: 'botcm' },
       { id: 'bot-vm', title: 'V & M', blurb: 'Index fingers down low.', newKeys: ['v', 'm'], kind: 'words', catSeed: 'botvm' },
       { id: 'bot-bn', title: 'B & N', blurb: 'The inside bottom reach.', newKeys: ['b', 'n'], kind: 'words', catSeed: 'botbn' },
       { id: 'bot-xperiod', title: 'X & Period', blurb: 'Ring fingers down.', newKeys: ['x', '.'], kind: 'words', catSeed: 'botxp' },
       { id: 'bot-zslash', title: 'Z & Slash', blurb: 'Pinkies down to the corners.', newKeys: ['z', '/'], kind: 'words', catSeed: 'botzs' },
-      { id: 'bot-review', title: 'Burrow Review', blurb: 'Every letter, real words!', newKeys: [], kind: 'words', catSeed: 'botreview' },
+      { id: 'bot-review', title: 'Bottom Row Review', blurb: 'Every letter, real words!', newKeys: [], kind: 'words', catSeed: 'botreview' },
     ],
   },
   {
     id: 'sentences',
-    name: 'Sentence Savannah',
-    emoji: '🦁',
-    color: 'from-yellow-300 to-amber-400',
-    blurb: 'Put it all together into real sentences.',
+    blurb: 'Every letter you know, put together into real sentences.',
     lessons: [
       { id: 'sen-1', title: 'First Sentences', blurb: 'Type whole thoughts.', newKeys: [], kind: 'sentence', catSeed: 'sen1' },
       { id: 'sen-2', title: 'Cat Tales', blurb: 'Stories about cats!', newKeys: [], kind: 'sentence', catSeed: 'sen2' },
@@ -82,10 +75,7 @@ export const WORLDS: WorldDef[] = [
   },
   {
     id: 'numbers',
-    name: 'Number Nook',
-    emoji: '🔢',
-    color: 'from-fuchsia-300 to-purple-400',
-    blurb: 'The top-top row: digits!',
+    blurb: 'The number row, right at the very top.',
     lessons: [
       { id: 'num-mid', title: '4 5 6 7', blurb: 'Index fingers stretch up.', newKeys: ['4', '5', '6', '7'], kind: 'keys', catSeed: 'nummid' },
       { id: 'num-out', title: '3 8 & 2 9', blurb: 'Middle and ring reach.', newKeys: ['3', '8', '2', '9'], kind: 'keys', catSeed: 'numout' },
@@ -97,9 +87,7 @@ export const WORLDS: WorldDef[] = [
 
 export interface CurriculumLesson extends LessonDef {
   worldId: string
-  worldName: string
-  worldEmoji: string
-  worldColor: string
+  worldIndex: number
   index: number // global order index
   allowedKeys: string[] // cumulative set available at this lesson
 }
@@ -115,9 +103,7 @@ export function buildCurriculum(): CurriculumLesson[] {
       out.push({
         ...lesson,
         worldId: world.id,
-        worldName: world.name,
-        worldEmoji: world.emoji,
-        worldColor: world.color,
+        worldIndex: WORLDS.indexOf(world),
         index,
         allowedKeys: [...allowed],
       })

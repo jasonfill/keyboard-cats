@@ -1,17 +1,26 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
+/**
+ * `primary` is brand chrome — spark, on every surface including grown-up ones.
+ * `play` is the themed CTA and belongs only on student play surfaces; it is a
+ * separate variant rather than a flag so a progress report cannot accidentally
+ * pick up a child's accent.
+ */
+type Variant = 'primary' | 'play' | 'secondary' | 'ghost' | 'danger' | 'success'
 
+// The solid press: the shadow does not move, the button lifts on hover, so it
+// reads as being pressed back down on click.
 const variants: Record<Variant, string> = {
   primary:
-    'bg-grape text-white hover:bg-purple-700 shadow-[0_5px_0_#4c1d95] active:translate-y-0.5 active:shadow-[0_2px_0_#4c1d95]',
+    'bg-spark text-white shadow-[0_4px_0_#E14E12] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_#E14E12]',
+  play: 'bg-accent text-white shadow-[0_4px_0_rgb(var(--wz-accent-deep))] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_rgb(var(--wz-accent-deep))]',
   secondary:
-    'bg-sun text-white hover:bg-amber-500 shadow-[0_5px_0_#b45309] active:translate-y-0.5 active:shadow-[0_2px_0_#b45309]',
-  ghost: 'bg-white/70 text-grape hover:bg-white border-2 border-purple-200',
+    'bg-ink text-white shadow-[0_4px_0_#000000] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_#000000]',
+  ghost: 'bg-chalk text-ink hover:bg-wash border-2 border-edge',
   danger:
-    'bg-red-500 text-white hover:bg-red-600 shadow-[0_5px_0_#991b1b] active:translate-y-0.5 active:shadow-[0_2px_0_#991b1b]',
+    'bg-red-600 text-white shadow-[0_4px_0_#7f1d1d] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_#7f1d1d]',
   success:
-    'bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_5px_0_#047857] active:translate-y-0.5 active:shadow-[0_2px_0_#047857]',
+    'bg-pine text-white shadow-[0_4px_0_#12564B] hover:-translate-y-px active:translate-y-0.5 active:shadow-[0_2px_0_#12564B]',
 }
 
 interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -23,7 +32,7 @@ export function Button({ variant = 'primary', className = '', children, ...rest 
   return (
     <button
       {...rest}
-      className={`rounded-2xl px-6 py-3 text-lg font-bold transition-all disabled:opacity-40 disabled:shadow-none disabled:active:translate-y-0 ${variants[variant]} ${className}`}
+      className={`rounded-xl px-6 py-3 font-sans text-lg font-extrabold transition-all disabled:opacity-40 disabled:shadow-none disabled:active:translate-y-0 ${variants[variant]} ${className}`}
     >
       {children}
     </button>
@@ -46,11 +55,11 @@ export function StarRow({ stars, size = 28 }: { stars: number; size?: number }) 
   )
 }
 
+// Cards are drawn with a 1px hair border rather than a shadow: the system has
+// only two shadows, and neither of them is this.
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-3xl bg-white/85 p-6 shadow-xl ring-1 ring-purple-100 backdrop-blur ${className}`}>
-      {children}
-    </div>
+    <div className={`rounded-3xl border border-hair bg-chalk p-6 ${className}`}>{children}</div>
   )
 }
 
@@ -66,9 +75,23 @@ export function Pill({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-extrabold ${className}`}
     >
       {children}
     </span>
+  )
+}
+
+/**
+ * Space Grotesk, uppercase, wide tracking — the eyebrow label that sits above a
+ * section or inside a stat card.
+ */
+export function Eyebrow({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={`font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint ${className}`}
+    >
+      {children}
+    </div>
   )
 }

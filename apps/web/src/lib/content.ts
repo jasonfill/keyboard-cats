@@ -114,7 +114,7 @@ export function generatePracticeText(
   return pool.join(' ')
 }
 
-// Words for the Cat Rain arcade mode, capped in length for readability.
+// Words for the Word Rain arcade mode, capped in length for readability.
 export function rainWords(allowedKeys: string[] | 'all', max = 6): string[] {
   let usable: string[]
   if (allowedKeys === 'all') {
@@ -124,6 +124,6 @@ export function rainWords(allowedKeys: string[] | 'all', max = 6): string[] {
     usable = WORD_BANK.filter((w) => onlyAllowed(w, allowed))
   }
   usable = usable.filter((w) => w.length <= max && w.length >= 2 && w !== 'a')
-  if (usable.length < 5) usable = ['cat', 'meow', 'purr', 'paw', 'nap', 'milk', 'yarn']
+  if (usable.length < 5) usable = ['ask', 'dad', 'fall', 'lad', 'glass', 'flask', 'salad']
   return usable
 }

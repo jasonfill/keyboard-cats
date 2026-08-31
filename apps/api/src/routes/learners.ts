@@ -11,9 +11,40 @@ import { z } from 'zod'
 import { callerOf, requireCaller } from '../auth.js'
 import { withUser } from '../db.js'
 import { badRequest, notFound } from '../errors.js'
+import type { GuardianRole } from '@whizzo/shared'
 import { toGuardian, toLearner } from '../mappers.js'
 
 const uuid = z.string().uuid('That is not a valid id')
+
+/** The invite alphabet: eight characters, no look-alikes. */
+const codeString = z
+  .string()
+  .trim()
+  .min(6)
+  .max(12)
+  .transform((c) => c.toUpperCase())
+
+const newConnectionCodeSchema = z.object({
+  label: z.string().trim().max(80).nullable().optional(),
+  role: z.enum(['parent', 'teacher', 'tutor']).default('tutor'),
+  canManageContent: z.boolean().default(true),
+  /** Absent means it does not expire — a code on a tutor's page should keep working. */
+  ttlHours: z.number().int().min(1).max(24 * 365).nullable().optional(),
+  maxUses: z.number().int().min(1).max(500).nullable().optional(),
+})
+
+function toConnectionCode(row: Record<string, unknown>) {
+  return {
+    code: row.code as string,
+    label: (row.label as string | null) ?? null,
+    role: row.role as GuardianRole,
+    canManageContent: row.can_manage_content as boolean,
+    expiresAt: row.expires_at ? new Date(row.expires_at as string).getTime() : null,
+    maxUses: (row.max_uses as number | null) ?? null,
+    uses: row.uses as number,
+    createdAt: new Date(row.created_at as string).getTime(),
+  }
+}
 
 const newLearnerSchema = z.object({
   displayName: z.string().trim().min(1, 'A name is required').max(40),
@@ -33,6 +64,10 @@ const patchLearnerSchema = z
     displayName: z.string().trim().min(1).max(40).optional(),
     avatarEmoji: z.string().trim().min(1).max(8).optional(),
     gradeHint: z.number().int().min(0).max(12).nullable().optional(),
+    // Not an enum: the set of worlds is a client concept and will grow, and an
+    // unknown id already falls back to the default rather than breaking a
+    // screen. The column's length check is the backstop.
+    theme: z.string().trim().min(1).max(32).nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change' })
 
@@ -69,6 +104,214 @@ export async function learnerRoutes(app: FastifyInstance): Promise<void> {
       return rows.map(toLearner)
     })
     return { learners }
+  })
+
+  /**
+   * One row per child, for the family dashboard.
+   *
+   * Aggregated here rather than in the browser because the alternative is
+   * loading every child's whole progress snapshot to count two things, and a
+   * grown-up with four children should not pay for that to see who still has
+   * homework.
+   *
+   * RLS scopes it: the query says "every learner", and the caller gets the ones
+   * they are linked to.
+   */
+  app.get('/learners/overview', async (request) => {
+    const caller = callerOf(request)
+
+    const learners = await withUser(caller.id, async (db) => {
+      const { rows } = await db.query(
+        `select
+           l.id                                        as learner_id,
+           l.display_name,
+           l.avatar_emoji,
+           coalesce(a.open_count, 0)                   as open_assignments,
+           coalesce(a.overdue_count, 0)                as overdue_assignments,
+           coalesce(a.done_week, 0)                    as done_this_week,
+           s.last_active_at,
+           coalesce(d.seconds, 0)                      as seconds_this_week,
+           coalesce(d.items, 0)                        as items_this_week,
+           v.verified_total,
+           v.verified_correct,
+           coalesce(k.streak_days, 0)                  as streak_days
+         from public.learners l
+
+         left join lateral (
+           select
+             count(*) filter (where status = 'open')                             as open_count,
+             count(*) filter (where status = 'open'
+                                and due_on is not null
+                                and due_on < current_date)                       as overdue_count,
+             count(*) filter (where status = 'done'
+                                and completed_at >= now() - interval '7 days')   as done_week
+           from public.assignments where learner_id = l.id
+         ) a on true
+
+         left join lateral (
+           select max(ended_at) as last_active_at
+           from public.sessions where learner_id = l.id
+         ) s on true
+
+         left join lateral (
+           select sum(seconds)::int as seconds, sum(items)::int as items
+           from public.daily_activity
+           where learner_id = l.id and day >= current_date - 6
+         ) d on true
+
+         -- Accuracy over checked answers only, so a week of self-graded
+         -- flashcards does not read as a week of demonstrated accuracy.
+         left join lateral (
+           select
+             sum(verified_items_total)::int   as verified_total,
+             sum(verified_items_correct)::int as verified_correct
+           from public.sessions
+           where learner_id = l.id and ended_at >= now() - interval '7 days'
+         ) v on true
+
+         left join lateral (
+           select max(streak_days)::int as streak_days
+           from public.skill_states where learner_id = l.id
+         ) k on true
+
+         order by l.created_at asc`,
+      )
+
+      return rows.map((row) => ({
+        learnerId: row.learner_id,
+        displayName: row.display_name,
+        avatarEmoji: row.avatar_emoji,
+        openAssignments: Number(row.open_assignments),
+        overdueAssignments: Number(row.overdue_assignments),
+        doneThisWeek: Number(row.done_this_week),
+        lastActiveAt: row.last_active_at ? new Date(row.last_active_at).getTime() : null,
+        minutesThisWeek: Math.round(Number(row.seconds_this_week) / 60),
+        itemsThisWeek: Number(row.items_this_week),
+        verifiedAccuracyThisWeek:
+          Number(row.verified_total) > 0
+            ? Math.round((Number(row.verified_correct) / Number(row.verified_total)) * 100)
+            : null,
+        currentStreakDays: Number(row.streak_days),
+      }))
+    })
+
+    return { learners }
+  })
+
+  // --- connection codes ----------------------------------------------------
+  //
+  // A tutor mints one code that stands for them and hands it to families; each
+  // family redeems it against a child they own. Minting grants nothing, which
+  // is why anyone with an account may do it — the consent is the redeeming.
+
+  app.get('/connection-codes', async (request) => {
+    const caller = callerOf(request)
+    const codes = await withUser(caller.id, async (db) => {
+      const { rows } = await db.query(
+        `select * from public.connection_codes
+          where owner_id = $1 and revoked_at is null
+          order by created_at desc`,
+        [caller.id],
+      )
+      return rows.map(toConnectionCode)
+    })
+    return { codes }
+  })
+
+  app.post('/connection-codes', async (request, reply) => {
+    const caller = callerOf(request)
+    const body = parse(newConnectionCodeSchema, request.body)
+
+    const code = await withUser(caller.id, async (db) => {
+      const { rows } = await db.query(
+        'select public.mint_connection_code($1, $2, $3, $4, $5) as code',
+        [
+          body.label ?? null,
+          body.role,
+          body.canManageContent,
+          body.ttlHours ? `${body.ttlHours} hours` : null,
+          body.maxUses ?? null,
+        ],
+      )
+      const { rows: full } = await db.query(
+        'select * from public.connection_codes where code = $1',
+        [rows[0].code],
+      )
+      return toConnectionCode(full[0])
+    })
+
+    reply.code(201)
+    return { code }
+  })
+
+  /** Withdraw a code. Families already connected stay connected. */
+  app.delete('/connection-codes/:code', async (request, reply) => {
+    const caller = callerOf(request)
+    const { code } = parse(z.object({ code: codeString }), request.params)
+
+    await withUser(caller.id, async (db) => {
+      await db.query(
+        `update public.connection_codes set revoked_at = now()
+          where code = $1 and owner_id = $2 and revoked_at is null`,
+        [code, caller.id],
+      )
+    })
+
+    reply.code(204)
+    return null
+  })
+
+  /**
+   * Who is behind a code, before anybody accepts it.
+   *
+   * A family typing eight characters and hoping is not consent, so this says
+   * whose code it is and what accepting would allow. It reveals nothing about
+   * the tutor's other students.
+   */
+  app.get('/connection-codes/:code/describe', async (request) => {
+    const caller = callerOf(request)
+    const { code } = parse(z.object({ code: codeString }), request.params)
+
+    const described = await withUser(caller.id, async (db) => {
+      const { rows } = await db.query(
+        'select * from public.describe_connection_code($1)',
+        [code],
+      )
+      const row = rows[0]
+      return {
+        valid: row?.valid ?? false,
+        reason: row?.reason ?? 'That code does not exist',
+        ownerName: row?.owner_name ?? null,
+        label: row?.label ?? null,
+        role: row?.role ?? null,
+        canManageContent: row?.can_manage_content ?? null,
+      }
+    })
+
+    return described
+  })
+
+  /**
+   * The consent step: grant a tutor access to one learner.
+   *
+   * Refused unless the caller owns that learner, which the database checks —
+   * a parent for their child, or a 13+ learner acting for themselves.
+   */
+  app.post('/connection-codes/:code/redeem', async (request) => {
+    const caller = callerOf(request)
+    const { code } = parse(z.object({ code: codeString }), request.params)
+    const { learnerIds } = parse(
+      z.object({ learnerIds: z.array(uuid).min(1).max(20) }),
+      request.body,
+    )
+
+    await withUser(caller.id, async (db) => {
+      for (const learnerId of learnerIds) {
+        await db.query('select public.redeem_connection_code($1, $2)', [code, learnerId])
+      }
+    })
+
+    return { connected: learnerIds.length }
   })
 
   app.post('/learners', async (request, reply) => {
@@ -114,6 +357,7 @@ export async function learnerRoutes(app: FastifyInstance): Promise<void> {
       if (body.displayName !== undefined) set('display_name', body.displayName)
       if (body.avatarEmoji !== undefined) set('avatar_emoji', body.avatarEmoji)
       if (body.gradeHint !== undefined) set('grade_hint', body.gradeHint)
+      if (body.theme !== undefined) set('theme', body.theme)
 
       values.push(id)
       const { rows } = await db.query(

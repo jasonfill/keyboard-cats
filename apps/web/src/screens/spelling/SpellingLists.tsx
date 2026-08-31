@@ -4,6 +4,8 @@ import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import { GRADES } from '../../data/spelling'
 import { masteryBand } from '../../lib/adaptive'
+import { useTheme } from '../../lib/theme/ThemeProvider'
+import { levelNameFor } from '../../lib/themes'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { ACTIVITIES } from '../../lib/spelling/activities'
 import { listBreakdown } from '../../lib/spelling/stats'
@@ -11,13 +13,14 @@ import { listKey, masteryKey } from '../../lib/progress/types'
 import type { Navigate } from '../../routes'
 
 const BAND_STYLE: Record<string, string> = {
-  mastered: 'bg-emerald-100 text-emerald-700',
-  practiced: 'bg-sky-100 text-sky-700',
-  learning: 'bg-amber-100 text-amber-700',
-  new: 'bg-slate-100 text-slate-400',
+  mastered: 'bg-pine/10 text-pine',
+  practiced: 'bg-pineSoft/30 text-pine',
+  learning: 'bg-sun/30 text-ink',
+  new: 'bg-wash text-stone',
 }
 
 export default function SpellingLists({ navigate }: { navigate: Navigate }) {
+  const { theme } = useTheme()
   const { snapshot, skill } = useProgress()
   const state = skill('spelling')
   const [openGrade, setOpenGrade] = useState<number>(GRADES[state.levelIndex]?.grade ?? 2)
@@ -40,23 +43,25 @@ export default function SpellingLists({ navigate }: { navigate: Navigate }) {
         {GRADES.map((g) => {
           const open = openGrade === g.grade
           return (
-            <div key={g.grade} className={`rounded-3xl bg-gradient-to-r ${g.color} p-1 shadow`}>
+            <div key={g.grade} className="rounded-3xl bg-tintB p-1">
               <div className="rounded-[22px] bg-white/92">
                 <button
                   onClick={() => setOpenGrade(open ? -1 : g.grade)}
                   className="flex w-full items-center gap-3 p-5 text-left"
                 >
-                  <span className="text-3xl">{g.emoji}</span>
+                  <span className="text-3xl">
+                    {levelNameFor(theme, GRADES.indexOf(g), g.grade).emoji}
+                  </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xl font-extrabold text-grape">
-                      Grade {g.grade} · {g.name}
+                    <span className="block text-xl font-extrabold text-ink">
+                      Grade {g.grade} · {levelNameFor(theme, GRADES.indexOf(g), g.grade).name}
                     </span>
-                    <span className="block truncate font-bold text-slate-500">{g.blurb}</span>
+                    <span className="block truncate font-bold text-muted">{g.blurb}</span>
                   </span>
                   {state.levelIndex === GRADES.indexOf(g) && (
-                    <Pill className="bg-purple-100 text-grape">You are here</Pill>
+                    <Pill className="bg-wash text-ink">You are here</Pill>
                   )}
-                  <span className="text-2xl text-slate-300">{open ? '▾' : '▸'}</span>
+                  <span className="text-2xl text-faint">{open ? '▾' : '▸'}</span>
                 </button>
 
                 {open && (
@@ -66,17 +71,17 @@ export default function SpellingLists({ navigate }: { navigate: Navigate }) {
                       const progress = snapshot.lists[listKey('spelling', list.id)]
                       const expanded = openList === list.id
                       return (
-                        <div key={list.id} className="rounded-2xl bg-white p-4 ring-1 ring-purple-100">
+                        <div key={list.id} className="rounded-2xl bg-white p-4 ring-1 ring-hair">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <h3 className="text-lg font-extrabold text-grape">{list.title}</h3>
-                              <p className="text-sm font-bold text-slate-500">{list.focus}</p>
+                              <h3 className="text-lg font-extrabold text-ink">{list.title}</h3>
+                              <p className="text-sm font-bold text-muted">{list.focus}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               {progress?.stars ? <StarRow stars={progress.stars} size={18} /> : null}
                               <button
                                 onClick={() => setOpenList(expanded ? null : list.id)}
-                                className="rounded-full bg-purple-50 px-3 py-1 text-xs font-extrabold text-grape"
+                                className="rounded-full bg-quiet px-3 py-1 text-xs font-extrabold text-ink"
                               >
                                 {expanded ? 'Hide words' : `${b.total} words`}
                               </button>
@@ -122,7 +127,7 @@ export default function SpellingLists({ navigate }: { navigate: Navigate }) {
                                     listId: list.id,
                                   })
                                 }
-                                className="rounded-xl bg-purple-50 px-3 py-2 text-sm font-extrabold text-grape transition-colors hover:bg-purple-100"
+                                className="rounded-xl bg-quiet px-3 py-2 text-sm font-extrabold text-ink transition-colors hover:bg-wash"
                               >
                                 {a.emoji} {a.name}
                               </button>
@@ -141,16 +146,16 @@ export default function SpellingLists({ navigate }: { navigate: Navigate }) {
 
       {snapshot.customLists.length > 0 && (
         <Card className="mt-5">
-          <h2 className="mb-3 text-xl font-extrabold text-grape">Your own lists ✏️</h2>
+          <h2 className="mb-3 text-xl font-extrabold text-ink">Your own lists ✏️</h2>
           <div className="space-y-2">
             {snapshot.customLists.map((l) => (
               <div
                 key={l.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-3 ring-1 ring-purple-100"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-3 ring-1 ring-hair"
               >
                 <div>
-                  <p className="font-extrabold text-grape">{l.title}</p>
-                  <p className="text-sm font-bold text-slate-400">{l.words.length} words</p>
+                  <p className="font-extrabold text-ink">{l.title}</p>
+                  <p className="text-sm font-bold text-stone">{l.words.length} words</p>
                 </div>
                 <Button
                   variant="secondary"

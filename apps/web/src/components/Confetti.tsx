@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 
-const EMOJIS = ['🐱', '⭐', '🎉', '🐾', '💛', '✨', '🐟', '🧶']
+const EMOJIS = ['⭐', '🎉', '✨', '💛', '🎊', '🌟']
 
-// Lightweight CSS confetti — a burst of cat-themed emojis falling once.
+// Lightweight CSS confetti — a burst of celebration emojis falling once.
+// Deliberately not themed: a celebration reads the same in all ten worlds, and
+// ten sets of falling emoji would be ten things to keep looking right.
 export default function Confetti({ count = 28 }: { count?: number }) {
   const pieces = useMemo(
     () =>

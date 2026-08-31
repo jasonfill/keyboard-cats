@@ -7,7 +7,8 @@ import TypingText from './TypingText'
 import Keyboard from './Keyboard'
 import Hands from './Hands'
 import Hud from './Hud'
-import CatMascot, { type Mood } from './CatMascot'
+import Mascot, { type Mood } from './Mascot'
+import { useTheme } from '../lib/theme/ThemeProvider'
 import { Button } from './ui'
 
 interface Props {
@@ -33,12 +34,13 @@ export default function GamePlay({
   onFinish,
   onQuit,
 }: Props) {
-  const [mood, setMood] = useState<Mood>('neutral')
+  const { theme } = useTheme()
+  const [mood, setMood] = useState<Mood>('idle')
   const moodTimer = useRef<number | null>(null)
   const [floaters, setFloaters] = useState<{ id: number; text: string }[]>([])
   const floatId = useRef(0)
 
-  const flashMood = useCallback((m: Mood, revert: Mood = 'neutral', ms = 500) => {
+  const flashMood = useCallback((m: Mood, revert: Mood = 'idle', ms = 500) => {
     setMood(m)
     if (moodTimer.current) window.clearTimeout(moodTimer.current)
     moodTimer.current = window.setTimeout(() => setMood(revert), ms)
@@ -55,23 +57,26 @@ export default function GamePlay({
   const { snapshot, handleChar } = useTypingEngine(text, {
     onCorrect: (_char, combo) => {
       if (sound) {
-        if (combo > 0 && combo % 10 === 0) sfx.meow()
+        if (combo > 0 && combo % 10 === 0) sfx.chime()
         else if (combo >= 3) sfx.combo(combo)
         else sfx.correct()
       }
+      // Four states rather than six, so a correct keystroke at a low combo no
+      // longer has its own expression — the floaters and the sound carry that
+      // beat, and the mascot only reacts once a combo is actually going.
       if (combo > 0 && combo % 10 === 0) {
-        flashMood('wow', 'excited', 700)
-        addFloater('MEOW! 🐱')
+        setMood('cheer')
+        addFloater(theme.cheer)
       } else if (combo >= 5) {
-        setMood('excited')
+        setMood('cheer')
         if (combo % 5 === 0) addFloater(`Combo x${combo}! 🔥`)
       } else {
-        flashMood('happy', 'neutral', 300)
+        setMood('idle')
       }
     },
     onWrong: () => {
       if (sound) sfx.wrong()
-      flashMood('sad', 'neutral', 400)
+      flashMood('thinking', 'idle', 400)
     },
     onFinish: (snap: EngineSnapshot) => {
       if (sound) sfx.win()
@@ -116,8 +121,8 @@ export default function GamePlay({
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-grape md:text-3xl">{title}</h2>
-          {subtitle && <p className="text-slate-500">{subtitle}</p>}
+          <h2 className="text-2xl font-extrabold text-ink md:text-3xl">{title}</h2>
+          {subtitle && <p className="text-muted">{subtitle}</p>}
         </div>
         <Button variant="ghost" onClick={onQuit} aria-label="Quit to menu">
           ✕ Menu
@@ -126,11 +131,11 @@ export default function GamePlay({
 
       <div className="flex items-center gap-4">
         <div className="relative shrink-0">
-          <CatMascot mood={mood} color={catColor} size={110} className="animate-floaty" />
+          <Mascot mood={mood} color={catColor} size={110} className="animate-floaty" />
           {floaters.map((f) => (
             <span
               key={f.id}
-              className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-extrabold text-bubble animate-floaty"
+              className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-extrabold text-accent animate-floaty"
             >
               {f.text}
             </span>
@@ -153,7 +158,7 @@ export default function GamePlay({
       )}
       {showHands && <Hands activeFinger={activeFinger} />}
 
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-stone">
         Type the highlighted letter. Keep your fingers on the home row! Press Esc to quit.
       </p>
     </div>

@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import CatMascot, { type Mood } from '../../components/CatMascot'
+import Mascot, { type Mood } from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
 import { Button, Card, Pill } from '../../components/ui'
 import type { CurriculumWord } from '../../data/spelling'
 import { wordDifficulty } from '../../data/spelling'
 import { useSpellingSession, type ItemResult } from '../../hooks/useSpellingSession'
 import { useProgress } from '../../lib/progress/ProgressProvider'
+import { useTheme } from '../../lib/theme/ThemeProvider'
 import { sfx, unlockAudio } from '../../lib/sound'
 import {
   activity as activityDef,
   buildMissingLetters,
   diffAnswer,
+  errorPattern,
   isCorrect,
   maskWordInSentence,
   proofreadChoices,
@@ -18,6 +20,7 @@ import {
   type ActivityId,
 } from '../../lib/spelling/activities'
 import { REASON_LABEL, type SessionMode } from '../../lib/spelling/session'
+import { wordHistory } from '../../lib/spelling/stats'
 import {
   dictate,
   isSpeechAvailable,
@@ -43,6 +46,7 @@ type Phase = 'prompt' | 'feedback' | 'grading' | 'done'
 export default function SpellingPlay({ activity, mode, listId, customListId, size, navigate }: Props) {
   const session = useSpellingSession()
   const { snapshot } = useProgress()
+  const { theme } = useTheme()
   const def = activityDef(activity)
 
   const [phase, setPhase] = useState<Phase>('prompt')
@@ -169,8 +173,8 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
   if (phase === 'grading' || (phase === 'done' && !session.summary)) {
     return (
       <div className="mx-auto w-full max-w-2xl py-16 text-center">
-        <CatMascot mood="happy" size={120} className="mx-auto animate-floaty" />
-        <p className="mt-4 text-lg font-bold text-slate-500">Adding up your round…</p>
+        <Mascot mood="idle" size={120} className="mx-auto animate-floaty" />
+        <p className="mt-4 text-lg font-bold text-muted">Adding up your round…</p>
       </div>
     )
   }
@@ -178,18 +182,22 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
   if (!current) {
     return (
       <div className="mx-auto w-full max-w-2xl py-16 text-center">
-        <CatMascot mood="sleepy" size={120} className="mx-auto animate-floaty" />
-        <p className="mt-4 text-lg font-bold text-slate-500">Rounding up some words…</p>
+        <Mascot mood="resting" size={120} className="mx-auto animate-floaty" />
+        <p className="mt-4 text-lg font-bold text-muted">Rounding up some words…</p>
       </div>
     )
   }
 
   const reason = REASON_LABEL[current.reason]
-  const mood: Mood = phase === 'feedback' ? (last?.correct ? 'excited' : 'sad') : 'neutral'
+  const mood: Mood = phase === 'feedback' ? (last?.correct ? 'cheer' : 'thinking') : 'idle'
+  const pattern = errorPattern(current.w)
+  const history = wordHistory(snapshot, current.w)
+  const seenBefore = history.attempts > 0
 
   return (
     <div className="mx-auto w-full max-w-2xl py-4">
-      {/* Progress rail */}
+      {/* One segment per word: filled behind you, tinted where you are, inert
+          ahead. A strip rather than a bar, because a round is countable. */}
       <div className="mb-4 flex items-center gap-3">
         <Button
           variant="ghost"
@@ -198,33 +206,58 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
             navigate({ name: 'spelling' })
           }}
         >
-          ← Quit
+          ← Leave
         </Button>
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/70 ring-1 ring-purple-100">
-          <div
-            className="h-full bg-grape transition-all duration-300"
-            style={{ width: `${(session.index / Math.max(1, total)) * 100}%` }}
-          />
+        <div className="flex flex-1 gap-1">
+          {Array.from({ length: total }, (_, i) => (
+            <span
+              key={i}
+              className={`h-2 flex-1 rounded-full ${
+                i < session.index ? 'bg-accent' : i === session.index ? 'bg-tintB' : 'bg-tray'
+              }`}
+            />
+          ))}
         </div>
-        <span className="text-sm font-extrabold text-slate-500">
-          {session.index + 1}/{total}
+        <span className="text-sm font-extrabold text-muted">
+          {session.index + 1} / {total}
         </span>
       </div>
 
       <Card>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Pill className="bg-purple-100 text-grape">
-            {def.emoji} {def.name}
-          </Pill>
-          {mode === 'adaptive' && (
-            <Pill className="bg-slate-100 text-slate-500">
-              {reason.emoji} {reason.label}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill className="bg-tintB font-mono text-[11px] uppercase tracking-[0.1em] text-ink">
+              {def.emoji} {def.name} ·{' '}
+              {def.isTest ? 'Counts' : 'Practice'}
             </Pill>
-          )}
-          {def.isTest && (
-            <Pill className="bg-emerald-100 text-emerald-700">Counts toward your level</Pill>
-          )}
+            {mode === 'adaptive' && (
+              <Pill className="bg-wash text-muted">
+                {reason.emoji} {reason.label}
+              </Pill>
+            )}
+          </div>
+          {/* Grade and the feature that catches this word out — the same source
+              the proofreading distractors are built from. */}
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-faint">
+            Grade {Math.round(current.difficulty)}
+            {pattern && ` · ${pattern}`}
+          </span>
         </div>
+
+        {/* Load-bearing: what this round does to the level, said plainly. */}
+        <p className="mb-4 text-[13px] font-bold">
+          {def.isTest ? (
+            <span className="text-pine">Counts toward your level</span>
+          ) : (
+            <span className="text-muted">Practice only · doesn’t affect level</span>
+          )}
+          {seenBefore && (
+            <span className="text-muted">
+              {' '}
+              · You’ve had this one right {history.correct} of {history.attempts} times.
+            </span>
+          )}
+        </p>
 
         {phase === 'prompt' || !last ? (
           <PromptArea
@@ -252,9 +285,36 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
         )}
       </Card>
 
-      <div className="mt-5 flex justify-center">
-        <CatMascot mood={mood} size={110} className={phase === 'prompt' ? 'animate-floaty' : ''} />
+      <div
+        className="mt-5 flex flex-wrap items-center justify-center gap-4 rounded-[22px] p-5 text-center sm:text-left"
+        style={{ background: theme.tintA }}
+      >
+        <Mascot mood={mood} size={62} className={phase === 'prompt' ? 'animate-floaty' : ''} />
+        <div>
+          {/* The theme's cheer is praise, so it only appears where praise is
+              true. A miss gets the same even tone the `thinking` mascot has:
+              not congratulation, and not disappointment either. */}
+          {phase === 'feedback' && last && !last.correct ? (
+            <>
+              <div className="font-display text-lg font-extrabold text-ink">
+                That one goes back in the pile.
+              </div>
+              <div className="text-[15px] text-body">
+                You will see it again before long — that is how it sticks.
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="font-display text-lg font-extrabold text-ink">{theme.cheer}</div>
+              <div className="text-[15px] text-body">{theme.cheerSub}</div>
+            </>
+          )}
+        </div>
       </div>
+      <p className="mt-3 text-center text-[13px] text-stone">
+        The mascot is the only part of this screen your world changes. The words, the grading
+        and the level are the same whichever one you pick.
+      </p>
       {phase === 'feedback' && last?.correct && <Confetti count={16} />}
     </div>
   )
@@ -293,14 +353,14 @@ function PromptArea(props: PromptProps) {
   if (activity === 'proofread') {
     return (
       <div>
-        <p className="mb-1 text-lg font-extrabold text-grape">Which one is spelled correctly?</p>
-        <p className="mb-4 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+        <p className="mb-1 text-lg font-extrabold text-ink">Which one is spelled correctly?</p>
+        <p className="mb-4 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {choices.map((choice) => (
             <button
               key={choice}
               onClick={() => props.onChoose(choice)}
-              className="rounded-2xl border-2 border-purple-200 bg-white px-4 py-4 font-mono text-xl font-bold text-grape transition-colors hover:border-grape hover:bg-purple-50"
+              className="rounded-2xl border-2 border-edge bg-white px-4 py-4 font-mono text-xl font-bold text-ink transition-colors hover:border-ink hover:bg-quiet"
             >
               {choice}
             </button>
@@ -316,38 +376,38 @@ function PromptArea(props: PromptProps) {
         <ListenPrompt {...props} />
       ) : activity === 'missing-letters' ? (
         <div className="mb-5 text-center">
-          <p className="mb-2 font-bold text-slate-500">Fill in the missing letters:</p>
-          <p className="font-mono text-4xl font-extrabold tracking-[0.2em] text-grape">
+          <p className="mb-2 font-bold text-muted">Fill in the missing letters:</p>
+          <p className="font-mono text-4xl font-extrabold tracking-[0.2em] text-ink">
             {puzzle.masked}
           </p>
-          <p className="mt-3 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+          <p className="mt-3 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
         </div>
       ) : activity === 'scramble' ? (
         <div className="mb-5 text-center">
-          <p className="mb-2 font-bold text-slate-500">Unscramble these letters:</p>
+          <p className="mb-2 font-bold text-muted">Unscramble these letters:</p>
           <div className="flex flex-wrap justify-center gap-2">
             {[...scrambled].map((c, i) => (
               <span
                 key={`${c}-${i}`}
-                className="rounded-xl bg-purple-100 px-3 py-2 font-mono text-2xl font-extrabold uppercase text-grape"
+                className="rounded-xl bg-wash px-3 py-2 font-mono text-2xl font-extrabold uppercase text-ink"
               >
                 {c}
               </span>
             ))}
           </div>
-          <p className="mt-3 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+          <p className="mt-3 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
         </div>
       ) : (
         // study
         <div className="mb-5 text-center">
-          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-stone">
             Look at it, say it, then type it
           </p>
-          <p className="font-mono text-5xl font-extrabold text-grape">{word}</p>
-          <p className="mt-3 font-bold text-slate-500">{sentence}</p>
+          <p className="font-mono text-5xl font-extrabold text-ink">{word}</p>
+          <p className="mt-3 font-bold text-muted">{sentence}</p>
           <button
             onClick={() => speak(word)}
-            className="mt-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-extrabold text-grape"
+            className="mt-2 rounded-full bg-wash px-4 py-1.5 text-sm font-extrabold text-ink"
           >
             🔊 Hear it again
           </button>
@@ -375,10 +435,10 @@ function ListenPrompt({
         <p className="mb-3 text-6xl">🎧</p>
       ) : (
         <div className="mb-3">
-          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-stone">
             {flashWord ? 'Look at it, then spell it from memory' : 'Now spell it'}
           </p>
-          <p className="font-mono text-4xl font-extrabold text-grape">
+          <p className="font-mono text-4xl font-extrabold text-ink">
             {flashWord ? word : '• • •'}
           </p>
         </div>
@@ -389,13 +449,13 @@ function ListenPrompt({
           <>
             <button
               onClick={() => dictate(word, sentence)}
-              className="rounded-full bg-grape px-5 py-2 text-sm font-extrabold text-white shadow"
+              className="rounded-full bg-accent px-5 py-2 text-sm font-extrabold text-white shadow"
             >
               🔊 Say it again
             </button>
             <button
               onClick={() => speak(sentence)}
-              className="rounded-full bg-purple-100 px-5 py-2 text-sm font-extrabold text-grape"
+              className="rounded-full bg-wash px-5 py-2 text-sm font-extrabold text-ink"
             >
               📖 In a sentence
             </button>
@@ -404,7 +464,7 @@ function ListenPrompt({
           activity !== 'test' && (
             <button
               onClick={onReveal}
-              className="rounded-full bg-grape px-5 py-2 text-sm font-extrabold text-white shadow"
+              className="rounded-full bg-accent px-5 py-2 text-sm font-extrabold text-white shadow"
             >
               👀 Show it again
             </button>
@@ -413,31 +473,31 @@ function ListenPrompt({
         {activity !== 'test' && (
           <button
             onClick={onHint}
-            className="rounded-full bg-amber-100 px-5 py-2 text-sm font-extrabold text-amber-700"
+            className="rounded-full bg-sun/30 px-5 py-2 text-sm font-extrabold text-ink"
           >
-            💡 Hint
+            💡 Hint — this word stops counting
           </button>
         )}
       </div>
 
       {!speechReady && (
-        <p className="mt-3 text-xs font-bold text-slate-400">
+        <p className="mt-3 text-xs font-bold text-stone">
           This device has no speech voice installed, so we show the word instead of reading it.
         </p>
       )}
 
       {!speechReady && (
-        <p className="mt-3 font-bold text-slate-500">{maskWordInSentence(sentence, word)}</p>
+        <p className="mt-3 font-bold text-muted">{maskWordInSentence(sentence, word)}</p>
       )}
 
       {hints > 0 && activity !== 'test' && (
-        <div className="mt-3 rounded-2xl bg-amber-50 p-3">
-          <p className="text-sm font-bold text-amber-700">
+        <div className="mt-3 rounded-2xl bg-sun/15 p-3">
+          <p className="text-sm font-bold text-ink">
             {hints === 1
               ? `${word.length} letters, starts with "${word[0]}"`
               : `${word.slice(0, Math.ceil(word.length / 2))}${'_'.repeat(Math.floor(word.length / 2))}`}
           </p>
-          <p className="mt-1 text-xs font-bold text-amber-600">
+          <p className="mt-1 text-xs font-bold text-muted">
             Hints are fine — this one just will not count toward your level.
           </p>
         </div>
@@ -460,9 +520,9 @@ function TypedAnswer({ answer, setAnswer, inputRef, onSubmit }: PromptProps) {
         autoCapitalize="off"
         spellCheck={false}
         aria-label="Your spelling"
-        className="w-full rounded-2xl border-2 border-purple-200 px-4 py-4 text-center font-mono text-2xl font-bold text-grape focus:border-grape focus:outline-none"
+        className="w-full rounded-[14px] border-2 border-edge px-4 py-4 text-center font-mono text-2xl font-bold text-ink caret-accent focus:border-accent focus:outline-none"
       />
-      <Button className="mt-3 w-full" onClick={onSubmit} disabled={!answer.trim()}>
+      <Button variant="play" className="mt-3 w-full" onClick={onSubmit} disabled={!answer.trim()}>
         Check it ✓
       </Button>
     </div>
@@ -496,19 +556,19 @@ function Feedback({
   return (
     <div className="text-center">
       <p className={`mb-2 text-2xl font-extrabold ${result.correct ? 'text-emerald-600' : 'text-rose-500'}`}>
-        {result.correct ? 'Purr-fect! 🎉' : 'Not quite 🐾'}
+        {result.correct ? 'That’s it! 🎉' : 'Not quite'}
       </p>
 
       {!result.correct && (
         <>
-          <p className="mb-1 text-sm font-bold text-slate-400">You wrote</p>
+          <p className="mb-1 text-sm font-bold text-stone">You wrote</p>
           <p className="mb-3 font-mono text-2xl font-bold">
             {diff.map((d, i) => (
               <span
                 key={i}
                 className={
                   d.status === 'correct'
-                    ? 'text-slate-400'
+                    ? 'text-stone'
                     : d.status === 'missing'
                       ? 'text-emerald-600 underline decoration-dotted'
                       : 'text-rose-500 line-through'
@@ -521,15 +581,15 @@ function Feedback({
         </>
       )}
 
-      <p className="mb-1 text-sm font-bold text-slate-400">
+      <p className="mb-1 text-sm font-bold text-stone">
         {result.correct ? 'That is the one' : 'The correct spelling is'}
       </p>
-      <p className="font-mono text-4xl font-extrabold text-grape">{result.word.w}</p>
-      <p className="mx-auto mt-3 max-w-md font-bold text-slate-500">{result.word.s}</p>
+      <p className="font-mono text-4xl font-extrabold text-ink">{result.word.w}</p>
+      <p className="mx-auto mt-3 max-w-md font-bold text-muted">{result.word.s}</p>
 
       <button
         onClick={() => speak(result.word.w)}
-        className="mt-3 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-extrabold text-grape"
+        className="mt-3 rounded-full bg-wash px-4 py-1.5 text-sm font-extrabold text-ink"
       >
         🔊 Hear it
       </button>
@@ -537,7 +597,7 @@ function Feedback({
       <Button className="mt-5 w-full" onClick={onNext}>
         {isLast ? 'See my results →' : 'Next word →'}
       </Button>
-      <p className="mt-2 text-xs font-bold text-slate-400">or press Enter</p>
+      <p className="mt-2 text-xs font-bold text-stone">or press Enter</p>
     </div>
   )
 }

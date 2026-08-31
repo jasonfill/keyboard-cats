@@ -61,9 +61,18 @@ export class LocalProgressRepo implements ProgressRepo {
     })
 
     if (change.attempts?.length) {
-      const all = [...loadLocalAttempts(), ...change.attempts].slice(-ATTEMPT_LIMIT)
+      // Stamped with the round they belong to, so the history screen can show
+      // a guest the same breakdown it shows a signed-in learner. The API does
+      // the same thing with its session_id column.
+      const sessionId = change.session?.id ?? null
+      const stamped = change.attempts.map((a) => ({ ...a, sessionId }))
+      const all = [...loadLocalAttempts(), ...stamped].slice(-ATTEMPT_LIMIT)
       write(ATTEMPTS_KEY, all)
     }
+  }
+
+  async attemptsForSession(sessionId: string): Promise<Attempt[]> {
+    return loadLocalAttempts().filter((a) => a.sessionId === sessionId)
   }
 
   async reset(): Promise<void> {

@@ -3,7 +3,7 @@ import type { GameApi } from '../hooks/useGameState'
 import { rainWords } from '../lib/content'
 import { sfx, unlockAudio } from '../lib/sound'
 import { Button, Card } from '../components/ui'
-import CatMascot from '../components/CatMascot'
+import Mascot from '../components/Mascot'
 import ResultsCard from '../components/ResultsCard'
 import type { Route } from '../App'
 
@@ -102,6 +102,8 @@ export default function CatRainScreen({ game, navigate }: Props) {
         score: g.score,
         wpm: 0,
         accuracy,
+        // Stored on the high-score row. Left as-is on purpose: changing it
+        // would relabel every score already set.
         mode: 'Cat Rain',
         date: Date.now(),
       })
@@ -199,7 +201,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
           g.pop.push({ id: target.id, x: target.x, y: target.y })
           g.words = g.words.filter((w) => w.id !== target!.id)
           g.lockedId = null
-          if (soundOn) sfx.meow()
+          if (soundOn) sfx.chime()
         }
       } else {
         g.wrong += 1
@@ -219,11 +221,11 @@ export default function CatRainScreen({ game, navigate }: Props) {
       <div className="mx-auto max-w-lg py-8">
         <Card className="text-center">
           <div className="mb-2 flex justify-center">
-            <CatMascot mood="excited" color="#f472b6" size={120} className="animate-floaty" />
+            <Mascot mood="cheer" color="#f472b6" size={120} className="animate-floaty" />
           </div>
-          <h1 className="text-3xl font-extrabold text-grape">Cat Rain 🌧️🐱</h1>
-          <p className="mx-auto mt-2 max-w-sm text-slate-500">
-            Cat-words fall from the sky! <b>Type a word</b> to make the kitty pounce and pop it
+          <h1 className="text-3xl font-extrabold text-ink">Word Rain 🌧️</h1>
+          <p className="mx-auto mt-2 max-w-sm text-muted">
+            Words fall from the sky! <b>Type a word</b> to pop it before it lands
             before it reaches the ground. Miss 3 and it&apos;s game over. Keep a combo for bonus points!
           </p>
           <div className="mt-6 flex justify-center gap-3">
@@ -256,7 +258,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
             score: g.score,
           }}
           stars={g.score >= 800 ? 3 : g.score >= 400 ? 2 : 1}
-          title="Cat Rain"
+          title="Word Rain"
           soundOn={soundOn}
           onReplay={start}
           onMenu={() => navigate({ name: 'typing' })}
@@ -270,9 +272,9 @@ export default function CatRainScreen({ game, navigate }: Props) {
     <div className="mx-auto w-full max-w-3xl py-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex gap-4 text-lg font-extrabold">
-          <span className="text-grape">Score: {g.score}</span>
-          <span className="text-sky-500">Lvl {g.level}</span>
-          <span className={g.combo >= 5 ? 'text-bubble' : 'text-slate-400'}>
+          <span className="text-ink">Score: {g.score}</span>
+          <span className="text-body">Lvl {g.level}</span>
+          <span className={g.combo >= 5 ? 'text-accent' : 'text-stone'}>
             Combo x{g.combo}
           </span>
         </div>
@@ -283,7 +285,7 @@ export default function CatRainScreen({ game, navigate }: Props) {
       </div>
 
       <div
-        className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-b from-sky-100 to-purple-100 shadow-inner ring-2 ring-purple-100"
+        className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-b from-chalk to-tintA shadow-inner ring-2 ring-hair"
         style={{ height: AREA_HEIGHT }}
       >
         {g.words.map((w) => {
@@ -296,14 +298,14 @@ export default function CatRainScreen({ game, navigate }: Props) {
               className="absolute flex -translate-x-1/2 flex-col items-center"
               style={{ left: `${w.x}%`, top: w.y }}
             >
-              <CatMascot mood={locked ? 'wow' : 'neutral'} color={w.color} size={44} />
+              <Mascot mood={locked ? 'cheer' : 'idle'} color={w.color} size={44} />
               <div
                 className={`mt-0.5 rounded-lg px-2 py-0.5 font-mono text-lg font-bold shadow ${
-                  locked ? 'bg-white ring-2 ring-grape' : 'bg-white/90'
+                  locked ? 'bg-white ring-2 ring-accent' : 'bg-white/90'
                 }`}
               >
                 <span className="text-emerald-500">{done}</span>
-                <span className="text-slate-700">{rest}</span>
+                <span className="text-ink">{rest}</span>
               </div>
             </div>
           )
@@ -316,16 +318,16 @@ export default function CatRainScreen({ game, navigate }: Props) {
             className="pointer-events-none absolute -translate-x-1/2 animate-pop text-3xl"
             style={{ left: `${p.x}%`, top: p.y }}
           >
-            💥🐾
+            💥
           </div>
         ))}
 
         {/* ground */}
-        <div className="absolute bottom-0 left-0 right-0 h-10 bg-lime/40 backdrop-blur-sm" />
+        <div className="absolute bottom-0 left-0 right-0 h-10 bg-accent/20 backdrop-blur-sm" />
       </div>
 
       <div className="mt-3 flex justify-between">
-        <p className="text-sm text-slate-400">Type the falling words! Esc to quit.</p>
+        <p className="text-sm text-stone">Type the falling words! Esc to quit.</p>
         <Button
           variant="ghost"
           onClick={() => {

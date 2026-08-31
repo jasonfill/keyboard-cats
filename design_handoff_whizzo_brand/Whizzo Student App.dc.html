@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; background: #FAF6EF; font-family: Nunito, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: #C2410C; text-decoration: none; }
+a:hover { color: #7C2D12; text-decoration: underline; }
+@keyframes wzFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #FAF6EF; color: #1C1A16;">
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 10px 28px; background: #1C1A16; color: #FAF6EF;">
+    <span style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.16em; color: #A8A092;">PREVIEW</span>
+    <div style="display: flex; gap: 4px;">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.go }}" style="border: none; padding: 7px 13px; border-radius: 9px; font: 800 12px/1 Nunito, sans-serif; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display: flex; gap: 4px; padding-left: 8px; border-left: 1px solid #3D3831;">
+      <sc-for list="{{ bandNav }}" as="b" hint-placeholder-count="2">
+        <button onClick="{{ b.go }}" style="border: none; padding: 7px 13px; border-radius: 9px; font: 800 12px/1 Nunito, sans-serif; cursor: pointer; background: {{ b.bg }}; color: {{ b.fg }}">{{ b.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center; padding-left: 8px; border-left: 1px solid #3D3831;">
+      <sc-for list="{{ themes }}" as="th" hint-placeholder-count="10">
+        <button onClick="{{ th.pick }}" title="{{ th.name }}" style="width: 22px; height: 22px; border-radius: 999px; cursor: pointer; background: {{ th.accent }}; border: {{ th.ring }}"></button>
+      </sc-for>
+      <span style="font: 700 11px/1 'Space Grotesk', monospace; color: #C9C2B4; padding-left: 6px;">{{ t.upper }}</span>
+    </div>
+  </div>
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 40px; background: #FAF6EF; border-bottom: 1px solid #E9E0D0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 11px; background: #1C1A16; font: 900 17px/1 Outfit, sans-serif; letter-spacing: -0.08em; color: {{ t.accent }}">wz</span>
+      <span style="font: 900 24px/1 Outfit, sans-serif; letter-spacing: -0.035em;">whizzo</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px; background: #FFF1E6; font: 800 13px/1 Nunito, sans-serif; color: #C2410C;">🔥 12</span>
+      <span style="display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px; background: #F1EADC; font: 800 13px/1 Nunito, sans-serif;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 999px; font: 800 11px/1 Nunito, sans-serif; color: #fff; background: {{ t.accent }}">{{ initials }}</span>{{ name }}
+      </span>
+    </div>
+  </header>
+
+  <sc-if value="{{ isPicker }}" hint-placeholder-val="{{ false }}">
+    <main style="max-width: 1180px; margin: 0 auto; padding: 44px 40px 90px; display: flex; flex-direction: column; gap: 26px;">
+      <div style="display: flex; flex-direction: column; gap: 8px; max-width: 620px;">
+        <h1 style="margin: 0; font: 800 40px/1.05 Outfit, sans-serif; letter-spacing: -0.02em;">Pick your world</h1>
+        <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #57524A;">You can change it whenever you like. It never changes what you're learning — only who you're learning it with.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+        <sc-for list="{{ themes }}" as="th" hint-placeholder-count="10">
+          <button onClick="{{ th.pick }}" style="text-align: left; cursor: pointer; padding: 0; overflow: hidden; border-radius: 20px; background: #fff; display: flex; flex-direction: column; border: {{ th.cardBorder }}; box-shadow: {{ th.cardShadow }}">
+            <span style="display: flex; align-items: center; justify-content: center; height: 96px; font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.08em; background: {{ th.stripe }}; color: {{ th.deep }}">MASCOT SLOT</span>
+            <span style="display: flex; flex-direction: column; gap: 7px; padding: 15px 17px 17px;">
+              <span style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font: 800 17px/1 Outfit, sans-serif; color: #1C1A16;">{{ th.name }}</span>
+                <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #A29A8A;">{{ th.bands }}</span>
+              </span>
+              <span style="font-size: 13px; line-height: 1.4; color: #6B6558;">Collect {{ th.collectibleLower }}</span>
+              <span style="font: 800 12px/1 Nunito, sans-serif; padding-top: 3px; color: {{ th.deep }}">{{ th.pickLabel }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+      <p style="margin: 0; font-size: 14px; color: #8A8375;">Ten worlds, six interest families. A parent sees none of this in their reports.</p>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <main style="max-width: 1180px; margin: 0 auto; padding: 34px 40px 90px; display: flex; flex-direction: column; gap: 20px;">
+
+      <sc-if value="{{ isKid }}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: stretch; padding: 30px 34px; border-radius: 26px; background: {{ t.tintA }}">
+          <div style="display: flex; flex-direction: column; gap: 16px; justify-content: center;">
+            <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: {{ t.deep }}">{{ t.upper }} · DAY 12</div>
+            <h1 style="margin: 0; font: 800 46px/1.02 Outfit, sans-serif; letter-spacing: -0.025em;">Hi Milo — 10 minutes?</h1>
+            <p style="margin: 0; font-size: 18px; line-height: 1.45; max-width: 30ch; color: #4A453C;">Six words are waiting for you, and one of them beat you last time.</p>
+            <button style="align-self: flex-start; border: none; padding: 17px 30px; border-radius: 16px; font: 800 19px/1 Nunito, sans-serif; color: #fff; cursor: pointer; background: {{ t.accent }}; box-shadow: {{ t.btnShadow }}">{{ t.verb }} →</button>
+          </div>
+          <div style="border-radius: 20px; display: flex; align-items: center; justify-content: center; font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; animation: wzFloat 3.4s ease-in-out infinite; background: {{ t.stripe }}; color: {{ t.deep }}">MASCOT SLOT</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <div style="padding: 22px 24px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+            <span style="align-self: flex-start; padding: 6px 11px; border-radius: 999px; font: 800 11px/1 Nunito, sans-serif; background: {{ t.tintB }}; color: {{ t.deep }}">6 WORDS</span>
+            <div style="font: 800 24px/1.1 Outfit, sans-serif;">Listen &amp; spell</div>
+            <p style="margin: 0; font-size: 15px; line-height: 1.45; color: #6B6558;">Hear it in a sentence, spell it from memory. This one counts.</p>
+            <button style="margin-top: auto; border: none; padding: 13px; border-radius: 13px; font: 800 15px/1 Nunito, sans-serif; color: #fff; cursor: pointer; background: {{ t.accent }}">Start</button>
+          </div>
+          <div style="padding: 22px 24px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+            <span style="align-self: flex-start; padding: 6px 11px; border-radius: 999px; background: #F1EADC; font: 800 11px/1 Nunito, sans-serif; color: #6B6558;">PRACTICE</span>
+            <div style="font: 800 24px/1.1 Outfit, sans-serif;">Missing letters</div>
+            <p style="margin: 0; font-size: 15px; line-height: 1.45; color: #6B6558;">Fill the letters that trip people up. Warm-up — doesn't change your level.</p>
+            <button style="margin-top: auto; padding: 12px; border-radius: 13px; background: transparent; border: 2px solid #DCD3C2; font: 800 15px/1 Nunito, sans-serif; color: #1C1A16; cursor: pointer;" style-hover="border-color: #1C1A16">Start</button>
+          </div>
+          <div style="padding: 22px 24px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 12px;">
+            <span style="align-self: flex-start; padding: 6px 11px; border-radius: 999px; background: #FFF1E6; font: 800 11px/1 Nunito, sans-serif; color: #C2410C;">FROM DANA</span>
+            <div style="font: 800 24px/1.1 Outfit, sans-serif;">Unit 12 list</div>
+            <p style="margin: 0; font-size: 15px; line-height: 1.45; color: #6B6558;">20 words for Friday. You've done 14 of them once.</p>
+            <button style="margin-top: auto; padding: 12px; border-radius: 13px; background: transparent; border: 2px solid #DCD3C2; font: 800 15px/1 Nunito, sans-serif; color: #1C1A16; cursor: pointer;" style-hover="border-color: #1C1A16">Start</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTeen }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A29A8A;">{{ t.upper }} · DAY 12</div>
+            <h1 style="margin: 0; font: 800 32px/1.1 Outfit, sans-serif; letter-spacing: -0.02em;">Six due, about nine minutes.</h1>
+          </div>
+          <button style="border: none; padding: 14px 24px; border-radius: 14px; font: 800 16px/1 Nunito, sans-serif; color: #fff; cursor: pointer; background: {{ t.accent }}; box-shadow: {{ t.btnShadow }}; white-space: nowrap">{{ t.verb }} →</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div style="padding: 16px 18px; border-radius: 16px; background: #fff; border: 1px solid #EDE5D7;"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A; margin-bottom: 7px;">STREAK</div><div style="font: 800 26px/1 Outfit, sans-serif;">12</div></div>
+          <div style="padding: 16px 18px; border-radius: 16px; background: #fff; border: 1px solid #EDE5D7;"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A; margin-bottom: 7px;">UNAIDED ACCURACY</div><div style="font: 800 26px/1 Outfit, sans-serif;">84%</div></div>
+          <div style="padding: 16px 18px; border-radius: 16px; background: #fff; border: 1px solid #EDE5D7;"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; color: #A29A8A; margin-bottom: 7px;">LEVEL</div><div style="font: 800 26px/1 Outfit, sans-serif;">7.2</div></div>
+          <div style="padding: 16px 18px; border-radius: 16px; display: flex; flex-direction: column; background: {{ t.tintA }}"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.12em; margin-bottom: 7px; color: {{ t.deep }}">{{ t.unitUpper }}</div><div style="font: 800 26px/1 Outfit, sans-serif;">{{ t.owned }}</div></div>
+        </div>
+
+        <div style="border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; overflow: hidden;">
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid #F1EADC;">
+            <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">Up next</h2>
+            <span style="font: 700 11px/1 'Space Grotesk', monospace; color: #A29A8A;">ORDERED BY WHAT YOU'RE CLOSEST TO FORGETTING</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; padding: 16px 22px; border-bottom: 1px solid #F1EADC;">
+            <span style="width: 9px; height: 9px; border-radius: 999px; flex: none; background: {{ t.accent }}"></span>
+            <span style="flex: 1; font: 800 16px/1.3 Nunito, sans-serif;">Listen &amp; spell · 6 words<br><span style="font-weight: 700; font-size: 13px; color: #8A8375;">Counts toward your level</span></span>
+            <button style="border: none; padding: 11px 20px; border-radius: 12px; font: 800 14px/1 Nunito, sans-serif; color: #fff; cursor: pointer; background: {{ t.accent }}">Start</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; padding: 16px 22px; border-bottom: 1px solid #F1EADC;">
+            <span style="width: 9px; height: 9px; border-radius: 999px; background: #DCD3C2; flex: none;"></span>
+            <span style="flex: 1; font: 800 16px/1.3 Nunito, sans-serif;">Biology deck · 14 cards<br><span style="font-weight: 700; font-size: 13px; color: #8A8375;">Written recall on 9 of them</span></span>
+            <button style="padding: 10px 18px; border-radius: 12px; background: transparent; border: 2px solid #DCD3C2; font: 800 14px/1 Nunito, sans-serif; cursor: pointer;" style-hover="border-color: #1C1A16">Start</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; padding: 16px 22px;">
+            <span style="width: 9px; height: 9px; border-radius: 999px; background: #FFC542; flex: none;"></span>
+            <span style="flex: 1; font: 800 16px/1.3 Nunito, sans-serif;">Unit 12 list · set by Dana<br><span style="font-weight: 700; font-size: 13px; color: #8A8375;">Due Friday · 14 of 20 seen once</span></span>
+            <button style="padding: 10px 18px; border-radius: 12px; background: transparent; border: 2px solid #DCD3C2; font: 800 14px/1 Nunito, sans-serif; cursor: pointer;" style-hover="border-color: #1C1A16">Start</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px;">
+        <div style="padding: 22px 24px; border-radius: 20px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">{{ t.progressTitle }}</h2>
+            <span style="font: 800 14px/1 Nunito, sans-serif; color: #6B6558;">{{ t.progressCount }}</span>
+          </div>
+          <div style="height: 14px; border-radius: 999px; background: #F1EADC; overflow: hidden;"><div style="height: 100%; width: {{ t.progressPct }}; background: {{ t.accent }}"></div></div>
+          <p style="margin: 0; font-size: 15px; line-height: 1.45; color: #6B6558;">{{ t.progressLine }}</p>
+        </div>
+        <div style="padding: 22px 24px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; background: {{ t.tintA }}">
+          <h2 style="margin: 0; font: 800 18px/1 Outfit, sans-serif;">{{ t.worldNoun }}</h2>
+          <div style="display: flex; gap: 8px;">
+            <span style="flex: 1; height: 52px; border-radius: 12px; background: {{ t.stripe }}"></span>
+            <span style="flex: 1; height: 52px; border-radius: 12px; background: {{ t.stripe }}"></span>
+            <span style="flex: 1; height: 52px; border-radius: 12px; background: {{ t.stripe }}"></span>
+            <span style="flex: 1; height: 52px; border-radius: 12px; background: #FFFFFF80; border: 1px dashed #FFFFFF;"></span>
+          </div>
+          <button onClick="{{ goWorld }}" style="margin-top: auto; align-self: flex-start; border: none; background: transparent; padding: 0; font: 800 14px/1 Nunito, sans-serif; cursor: pointer; color: {{ t.deep }}">Open {{ t.worldNounLower }} →</button>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isSession }}" hint-placeholder-val="{{ false }}">
+    <main style="max-width: 800px; margin: 0 auto; padding: 40px 40px 90px; display: flex; flex-direction: column; gap: 22px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <button onClick="{{ goHome }}" style="border: none; background: transparent; padding: 0; font: 800 14px/1 Nunito, sans-serif; color: #8A8375; cursor: pointer;">← Leave</button>
+        <div style="flex: 1; display: flex; gap: 5px;">
+          <sc-for list="{{ dots }}" as="d" hint-placeholder-count="8">
+            <span style="flex: 1; height: 7px; border-radius: 999px; background: {{ d.bg }}"></span>
+          </sc-for>
+        </div>
+        <span style="font: 700 12px/1 'Space Grotesk', monospace; color: #8A8375;">4 / 8</span>
+      </div>
+
+      <div style="padding: 34px 36px 30px; border-radius: 24px; background: #fff; border: 1px solid #EDE5D7; display: flex; flex-direction: column; gap: 22px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+          <span style="padding: 7px 13px; border-radius: 999px; font: 800 12px/1 Nunito, sans-serif; background: {{ t.tintB }}; color: {{ t.deep }}">LISTEN &amp; SPELL · COUNTS</span>
+          <span style="font: 700 11px/1 'Space Grotesk', monospace; color: #A29A8A;">GRADE 4 · DOUBLED CONSONANT</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 18px;">
+          <button style="border: none; width: 68px; height: 68px; border-radius: 22px; flex: none; cursor: pointer; font-size: 26px; color: #fff; background: {{ t.accent }}; box-shadow: {{ t.btnShadow }}">▶</button>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font: 800 15px/1 Nunito, sans-serif; color: #6B6558;">Play the word again</div>
+            <div style="font-size: 17px; line-height: 1.4; color: #1C1A16;">“It is <span style="padding: 2px 10px; border-radius: 7px; background: #F1EADC; color: #8A8375;">_______</span> to bring a coat.”</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="flex: 1; display: flex; align-items: center; gap: 2px; padding: 16px 18px; border-radius: 16px; background: #FAF6EF; border: 2px solid {{ t.accent }}">
+            <span style="font: 800 30px/1 Outfit, sans-serif; letter-spacing: 0.06em;">necess</span>
+            <span style="display: inline-block; width: 3px; height: 30px; background: {{ t.accent }}"></span>
+          </div>
+          <button style="border: none; padding: 19px 26px; border-radius: 16px; font: 800 17px/1 Nunito, sans-serif; color: #fff; cursor: pointer; background: {{ t.accent }}; box-shadow: {{ t.btnShadow }}">Check</button>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 4px;">
+          <button style="padding: 10px 16px; border-radius: 12px; background: transparent; border: 2px solid #DCD3C2; font: 800 13px/1 Nunito, sans-serif; color: #6B6558; cursor: pointer;" style-hover="border-color: #1C1A16">Hint — this word stops counting</button>
+          <span style="font-size: 13px; color: #A29A8A;">You've had this one right 2 of 7 times.</span>
+        </div>
+      </div>
+
+      <div style="padding: 20px 24px; border-radius: 20px; background: {{ t.tintA }}; display: flex; align-items: center; gap: 18px;">
+        <span style="width: 62px; height: 62px; border-radius: 16px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 9px/1 'Space Grotesk', monospace; background: {{ t.stripe }}; color: {{ t.deep }}">MASCOT</span>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font: 800 16px/1 Outfit, sans-serif;">{{ t.sessionCheer }}</div>
+          <div style="font-size: 14px; color: #4A453C;">{{ t.sessionSub }}</div>
+        </div>
+      </div>
+
+      <p style="margin: 0; font-size: 13px; color: #A29A8A; text-align: center;">The mascot is the only themed element in a session. Question, sentence, and grading are identical in all ten worlds.</p>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isReward }}" hint-placeholder-val="{{ false }}">
+    <main style="max-width: 760px; margin: 0 auto; padding: 40px 40px 90px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="padding: 40px 40px 36px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; background: {{ t.tintA }}">
+        <div style="display: flex; gap: 10px; font-size: 40px; line-height: 1;">
+          <span>⭐</span><span>⭐</span><span>⭐</span>
+        </div>
+        <h1 style="margin: 0; font: 800 40px/1.05 Outfit, sans-serif; letter-spacing: -0.02em;">{{ t.rewardTitle }}</h1>
+        <p style="margin: 0; max-width: 34ch; font-size: 17px; line-height: 1.45; color: #4A453C;">7 of 8 unaided, and you beat what we predicted for this set by 12 points. The third star is for that.</p>
+        <div style="display: flex; gap: 10px; width: 100%; padding-top: 6px;">
+          <div style="flex: 1; padding: 14px; border-radius: 16px; background: #FFFFFFB8;"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #6B6558; margin-bottom: 6px;">UNAIDED</div><div style="font: 800 22px/1 Outfit, sans-serif;">7 / 8</div></div>
+          <div style="flex: 1; padding: 14px; border-radius: 16px; background: #FFFFFFB8;"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #6B6558; margin-bottom: 6px;">PREDICTED</div><div style="font: 800 22px/1 Outfit, sans-serif;">76%</div></div>
+          <div style="flex: 1; padding: 14px; border-radius: 16px; background: #FFFFFFB8;"><div style="font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; color: #6B6558; margin-bottom: 6px;">STREAK</div><div style="font: 800 22px/1 Outfit, sans-serif;">13 🔥</div></div>
+        </div>
+      </div>
+
+      <div style="padding: 26px 28px; border-radius: 22px; background: #fff; border: 1px solid #EDE5D7; display: flex; align-items: center; gap: 22px;">
+        <span style="width: 108px; height: 108px; border-radius: 18px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 10px/1 'Space Grotesk', monospace; letter-spacing: 0.08em; background: {{ t.stripe }}; color: {{ t.deep }}">REWARD ART</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: {{ t.deep }}">NEW {{ t.unitUpper }}</div>
+          <div style="font: 800 26px/1.1 Outfit, sans-serif;">{{ t.rewardItem }}</div>
+          <p style="margin: 0; font-size: 15px; line-height: 1.45; color: #6B6558; max-width: 44ch;">{{ t.rewardBecause }}</p>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button style="flex: 1; border: none; padding: 16px; border-radius: 16px; font: 800 17px/1 Nunito, sans-serif; color: #fff; cursor: pointer; background: {{ t.accent }}; box-shadow: {{ t.btnShadow }}">One more round</button>
+        <button onClick="{{ goWorld }}" style="padding: 15px 24px; border-radius: 16px; background: transparent; border: 2px solid #DCD3C2; font: 800 17px/1 Nunito, sans-serif; color: #1C1A16; cursor: pointer;" style-hover="border-color: #1C1A16">See {{ t.worldNounLower }}</button>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #A29A8A; text-align: center;">Rewards are earned on graded work only. A hinted word can't buy a fossil.</p>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isWorld }}" hint-placeholder-val="{{ false }}">
+    <main style="max-width: 1180px; margin: 0 auto; padding: 34px 40px 90px; display: flex; flex-direction: column; gap: 22px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A29A8A;">{{ t.upper }} · {{ t.archetypeUpper }}</div>
+          <h1 style="margin: 0; font: 800 36px/1.05 Outfit, sans-serif; letter-spacing: -0.02em;">{{ t.worldNoun }}</h1>
+        </div>
+        <span style="padding: 10px 16px; border-radius: 999px; font: 800 14px/1 Nunito, sans-serif; background: {{ t.tintA }}; color: {{ t.deep }}">{{ t.progressCount }}</span>
+      </div>
+
+      <sc-if value="{{ isCollection }}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px;">
+          <sc-for list="{{ cells }}" as="c" hint-placeholder-count="18">
+            <div style="border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; background: {{ c.cardBg }}; border: {{ c.cardBorder }}">
+              <span style="display: flex; align-items: center; justify-content: center; height: 84px; font: 700 9px/1 'Space Grotesk', monospace; letter-spacing: 0.08em; background: {{ c.art }}; color: {{ c.artText }}">{{ c.artLabel }}</span>
+              <span style="display: flex; flex-direction: column; gap: 3px; padding: 11px 13px 13px;">
+                <span style="font: 800 13px/1.2 Nunito, sans-serif; color: {{ c.nameColor }}">{{ c.name }}</span>
+                <span style="font: 700 10px/1 'Space Grotesk', monospace; color: #A29A8A;">{{ c.sub }}</span>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isJourney }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 34px 30px; border-radius: 24px; background: {{ t.tintA }}">
+          <div style="display: flex; align-items: flex-start; gap: 0;">
+            <sc-for list="{{ stops }}" as="s" hint-placeholder-count="8">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative;">
+                <div style="display: flex; align-items: center; width: 100%;">
+                  <span style="flex: 1; height: 5px; border-radius: 999px; background: {{ s.leftBar }}"></span>
+                  <span style="width: 34px; height: 34px; border-radius: 999px; flex: none; display: flex; align-items: center; justify-content: center; font: 800 13px/1 Nunito, sans-serif; background: {{ s.dotBg }}; color: {{ s.dotFg }}; border: {{ s.dotBorder }}">{{ s.mark }}</span>
+                  <span style="flex: 1; height: 5px; border-radius: 999px; background: {{ s.rightBar }}"></span>
+                </div>
+                <span style="font: 800 12px/1.3 Nunito, sans-serif; text-align: center; padding: 0 4px; color: {{ s.labelColor }}">{{ s.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 20px; margin-top: 30px; padding: 20px 22px; border-radius: 18px; background: #FFFFFFCC;">
+            <span style="width: 84px; height: 84px; border-radius: 16px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 9px/1 'Space Grotesk', monospace; background: {{ t.stripe }}; color: {{ t.deep }}">MASCOT</span>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <div style="font: 800 20px/1.1 Outfit, sans-serif;">{{ t.journeyNow }}</div>
+              <div style="font-size: 15px; line-height: 1.45; color: #4A453C;">{{ t.journeyNext }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAssembly }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; align-items: stretch;">
+          <div style="border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; min-height: 420px; background: {{ t.tintA }}">
+            <span style="width: 100%; max-width: 340px; height: 240px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.1em; background: {{ t.stripe }}; color: {{ t.deep }}">ASSEMBLED ART · 5 OF 8 PARTS</span>
+            <div style="font: 800 22px/1.1 Outfit, sans-serif; text-align: center;">{{ t.assemblyTitle }}</div>
+            <p style="margin: 0; max-width: 36ch; text-align: center; font-size: 15px; line-height: 1.45; color: #4A453C;">{{ t.assemblySub }}</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ parts }}" as="p" hint-placeholder-count="8">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: {{ p.rowBg }}; border: {{ p.rowBorder }}">
+                <span style="width: 40px; height: 40px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 8px/1 'Space Grotesk', monospace; background: {{ p.art }}; color: {{ p.artText }}">{{ p.artLabel }}</span>
+                <span style="flex: 1; font: 800 15px/1.2 Nunito, sans-serif; color: {{ p.nameColor }}">{{ p.name }}</span>
+                <span style="font: 700 11px/1 'Space Grotesk', monospace; color: {{ p.subColor }}">{{ p.sub }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 22px 24px; border-radius: 20px; background: #F6F1E7; border: 1px solid #EDE5D7;">
+        <div style="flex: 1; min-width: 260px;">
+          <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A29A8A; margin-bottom: 7px;">WHY ONLY THREE REWARD LAYOUTS</div>
+          <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #57524A; text-wrap: pretty;">Ten bespoke reward screens is ten things to maintain. Every theme's collectible is one of three shapes: a <strong>collection</strong> you fill (Cats, Dogs, Horses, Music), a <strong>journey</strong> you advance along (Football, Space, Ocean), or an <strong>assembly</strong> that becomes one object (Dinosaurs, Racing, Robots). Art and nouns differ; layout and logic don't.</p>
+        </div>
+        <div style="flex: 1; min-width: 260px;">
+          <div style="font: 700 11px/1 'Space Grotesk', monospace; letter-spacing: 0.14em; color: #A29A8A; margin-bottom: 7px;">EARN RATE IS FIXED ACROSS THEMES</div>
+          <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #57524A; text-wrap: pretty;">One reward per graded round that clears its predicted accuracy, plus one per level promotion. A journey stop, a fossil bone and a cat card cost exactly the same work — so switching worlds can never be a shortcut.</p>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cats&quot;,&quot;dogs&quot;,&quot;football&quot;,&quot;space&quot;,&quot;dinosaurs&quot;,&quot;ocean&quot;,&quot;racing&quot;,&quot;horses&quot;,&quot;music&quot;,&quot;robots&quot;],&quot;default&quot;:&quot;cats&quot;,&quot;tsType&quot;:&quot;ThemeId&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;band&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;K–5&quot;,&quot;6–12&quot;],&quot;default&quot;:&quot;K–5&quot;,&quot;tsType&quot;:&quot;'K–5' | '6–12'&quot;,&quot;section&quot;:&quot;Audience&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Home&quot;,&quot;Session&quot;,&quot;Reward&quot;,&quot;World&quot;,&quot;Picker&quot;],&quot;default&quot;:&quot;Home&quot;,&quot;tsType&quot;:&quot;ScreenId&quot;,&quot;section&quot;:&quot;Audience&quot;}}">
+const THEMES = [
+  { id: 'cats', name: 'Cats', accent: '#7C5CFF', deep: '#4C2FD1', tintA: '#F3EFFF', tintB: '#E9E1FF', bands: 'K–5', verb: 'Pounce in',
+    unit: 'cat cards', unitOne: 'card', arch: 'collection', worldNoun: 'Card wall', owned: 12, total: 24,
+    // names.length must equal total — the collection grid is built from names.
+    cheer: 'Nice one.', cheerSub: 'That is the word that got you last Tuesday.', rewardTitle: 'Three stars!',
+    rewardItem: 'Sleepy tabby, #13', because: 'Earned by clearing a graded round above its predicted score.',
+    names: ['Tabby','Calico','Tuxedo','Ginger','Siamese','Maine coon','Sphynx','Ragdoll','Bengal','Persian','Bombay','Manx','Russian blue','Birman','Ocicat','Korat','Savannah','Chartreux','Abyssinian','Burmese','Devon rex','Norwegian forest','Turkish van','Snowshoe'] },
+  { id: 'dogs', name: 'Dogs', accent: '#C2410C', deep: '#7C2D12', tintA: '#FDEEE6', tintB: '#F8E0D2', bands: 'K–5', verb: 'Fetch it',
+    unit: 'tricks', unitOne: 'trick', arch: 'collection', worldNoun: 'Trick book', owned: 9, total: 18,
+    cheer: 'Good one!', cheerSub: 'Two more and your pup learns something new.', rewardTitle: 'Three stars!',
+    rewardItem: 'Roll over', because: 'Tricks come from graded rounds only — practice keeps them sharp.',
+    names: ['Sit','Stay','Paw','Roll over','Fetch','Speak','Spin','Play dead','Jump','Weave','Bow','Heel','High five','Crawl','Wave','Beg','Catch','Balance'] },
+  { id: 'football', name: 'Football', accent: '#1F7A6B', deep: '#10493F', tintA: '#E6F4EF', tintB: '#D6ECE4', bands: '3–12', verb: 'Kick off',
+    unit: 'yards', unitOne: 'drive', arch: 'journey', worldNoun: 'The drive', owned: 5, total: 8,
+    cheer: 'First down.', cheerSub: 'Four more words and you are in the red zone.', rewardTitle: 'Touchdown drive!',
+    rewardItem: 'Red zone reached', because: 'Yards come from graded rounds. Hints stop the clock instead.',
+    stops: ['Kickoff','Own 35','Midfield','Their 40','Red zone','Goal line','Touchdown','Trophy'],
+    now: 'Red zone, 12 yards out.', next: 'Clear Friday\u2019s graded test and you score.' },
+  { id: 'space', name: 'Space', accent: '#4338CA', deep: '#2A2199', tintA: '#ECEBFF', tintB: '#DEDCFB', bands: '2–9', verb: 'Launch',
+    unit: 'moons', unitOne: 'moon', arch: 'journey', worldNoun: 'Flight path', owned: 5, total: 8,
+    cheer: 'Locked on.', cheerSub: 'Three more and Jupiter is in range.', rewardTitle: 'Orbit reached!',
+    rewardItem: 'Europa mapped', because: 'Each mastered list unlocks the next body on the path.',
+    stops: ['Launchpad','The Moon','Mars','Asteroids','Jupiter','Saturn','Neptune','Deep field'],
+    now: 'Approaching Jupiter.', next: 'Six graded words left before the Saturn burn.' },
+  { id: 'dinosaurs', name: 'Dinosaurs', accent: '#4D7C0F', deep: '#33520A', tintA: '#EFF4E2', tintB: '#E2EBD0', bands: 'K–4', verb: 'Start digging',
+    unit: 'fossil bones', unitOne: 'bone', arch: 'assembly', worldNoun: 'The dig site', owned: 5, total: 8,
+    cheer: 'Something\u2019s down there.', cheerSub: 'Two more words and you can brush it off.', rewardTitle: 'Bone found!',
+    rewardItem: 'Left femur', because: 'Bones only come out of graded digs. Hinted words leave the ground.',
+    parts: ['Skull','Jaw','Ribs','Spine','Tail','Claws','Legs','Plates'],
+    aTitle: 'Stegosaurus, 5 of 8', aSub: 'Three bones from a full skeleton in the museum hall.' },
+  { id: 'ocean', name: 'Ocean', accent: '#0E7490', deep: '#0A4E61', tintA: '#E4F3F7', tintB: '#D2EAF1', bands: '1–8', verb: 'Dive in',
+    unit: 'depths', unitOne: 'depth', arch: 'journey', worldNoun: 'The descent', owned: 5, total: 8,
+    cheer: 'Down you go.', cheerSub: 'The next depth has something with teeth.', rewardTitle: 'New depth!',
+    rewardItem: 'Twilight zone', because: 'Depth is earned on graded rounds — the light does not come back.',
+    stops: ['Shore','Reef','Kelp','Open water','Twilight','Midnight','Abyss','Trench'],
+    now: 'Twilight zone, 400m.', next: 'Nine graded words to reach the midnight zone.' },
+  { id: 'racing', name: 'Racing', accent: '#B91C1C', deep: '#7F1313', tintA: '#FCEAEA', tintB: '#F7D9D9', bands: '2–10', verb: 'Green light',
+    unit: 'car parts', unitOne: 'part', arch: 'assembly', worldNoun: 'The garage', owned: 5, total: 8,
+    cheer: 'Clean lap.', cheerSub: 'Two more and you can bolt on the new wing.', rewardTitle: 'Part unlocked!',
+    rewardItem: 'Rear wing', because: 'Parts come out of graded laps. A hint is a pit stop.',
+    parts: ['Chassis','Engine','Tyres','Front wing','Brakes','Exhaust','Livery','Nitro'],
+    aTitle: 'Your car, 5 of 8 parts', aSub: 'Three more parts and it is race legal.' },
+  { id: 'horses', name: 'Horses', accent: '#92400E', deep: '#63290A', tintA: '#F6EEE2', tintB: '#EEE1CC', bands: '2–8', verb: 'Saddle up',
+    unit: 'ribbons', unitOne: 'ribbon', arch: 'collection', worldNoun: 'The tack room', owned: 6, total: 15,
+    cheer: 'Steady.', cheerSub: 'Ribbons only come from graded tests — this is one.', rewardTitle: 'Blue ribbon!',
+    rewardItem: 'Dressage, first', because: 'Ribbons are awarded for graded tests, never for practice.',
+    names: ['First, spelling','Second, vocab','Show jumping','Dressage','Cross country','Trail','Barrels','Reining','Hunter','Halter','Western','Endurance','Vaulting','Polo','Grand prix'] },
+  { id: 'music', name: 'Music', accent: '#BE185D', deep: '#831043', tintA: '#FCE9F2', tintB: '#F8D7E7', bands: '4–12', verb: 'Sound check',
+    unit: 'set list', unitOne: 'track', arch: 'collection', worldNoun: 'The set list', owned: 11, total: 20,
+    cheer: 'In time.', cheerSub: 'Two more and the next track is in the set.', rewardTitle: 'Track added!',
+    rewardItem: 'Track 12', because: 'Tracks are earned on graded rounds. The encore needs all twenty.',
+    names: ['Opener','Track 2','Track 3','Track 4','Track 5','Track 6','Track 7','Track 8','Track 9','Track 10','Track 11','Track 12','Track 13','Track 14','Track 15','Track 16','Track 17','Track 18','Encore','Closer'] },
+  { id: 'robots', name: 'Robots', accent: '#475569', deep: '#2F3947', tintA: '#EDF0F3', tintB: '#DFE4EA', bands: '3–12', verb: 'Power up',
+    unit: 'bot parts', unitOne: 'part', arch: 'assembly', worldNoun: 'The workshop', owned: 5, total: 8,
+    cheer: 'Systems nominal.', cheerSub: 'Two more and the sensor array comes online.', rewardTitle: 'Part fabricated!',
+    rewardItem: 'Sensor array', because: 'Parts are fabricated from graded work only.',
+    parts: ['Head','Torso','Left arm','Right arm','Legs','Power core','Sensors','Jetpack'],
+    aTitle: 'Your bot, 5 of 8 parts', aSub: 'Three more parts and it walks on its own.' },
+];
+
+const ARCH_LABEL = { collection: 'COLLECTION', journey: 'JOURNEY', assembly: 'ASSEMBLY' };
+
+class Component extends DCLogic {
+  state = {};
+
+  get themeId() { return this.state.theme ?? this.props.theme ?? 'cats'; }
+  get band() { return this.state.band ?? this.props.band ?? 'K–5'; }
+  get screen() { return this.state.screen ?? this.props.screen ?? 'Home'; }
+
+  renderVals() {
+    const raw = THEMES.find((x) => x.id === this.themeId) || THEMES[0];
+    const stripe = 'repeating-linear-gradient(135deg, ' + raw.tintB + ' 0 9px, ' + raw.tintA + ' 9px 18px)';
+    const kid = this.band === 'K–5';
+    const screen = this.screen;
+    const pct = Math.round((raw.owned / raw.total) * 100) + '%';
+
+    const t = {
+      accent: raw.accent, deep: raw.deep, tintA: raw.tintA, tintB: raw.tintB, stripe,
+      btnShadow: '0 4px 0 ' + raw.deep,
+      upper: raw.name.toUpperCase(), verb: raw.verb,
+      unitUpper: raw.unit.toUpperCase(), owned: raw.owned + ' / ' + raw.total,
+      worldNoun: raw.worldNoun, worldNounLower: raw.worldNoun.toLowerCase(),
+      archetypeUpper: ARCH_LABEL[raw.arch],
+      progressTitle: raw.arch === 'journey' ? 'How far you have come' : 'Next ' + raw.unitOne,
+      progressCount: raw.owned + ' of ' + raw.total + ' ' + raw.unit,
+      progressPct: pct,
+      progressLine: 'Six more graded words and the next ' + raw.unitOne + ' is yours. Practice rounds keep your streak but do not earn one.',
+      sessionCheer: raw.cheer, sessionSub: raw.cheerSub,
+      rewardTitle: raw.rewardTitle, rewardItem: raw.rewardItem, rewardBecause: raw.because,
+      journeyNow: raw.now, journeyNext: raw.next,
+      assemblyTitle: raw.aTitle, assemblySub: raw.aSub,
+    };
+
+    const screens = ['Home', 'Session', 'Reward', raw.worldNoun, 'Pick world'];
+    const keys = ['Home', 'Session', 'Reward', 'World', 'Picker'];
+    const nav = screens.map((label, i) => ({
+      label,
+      go: () => this.setState({ screen: keys[i] }),
+      bg: screen === keys[i] ? '#FAF6EF' : 'transparent',
+      fg: screen === keys[i] ? '#1C1A16' : '#C9C2B4',
+    }));
+
+    const bandNav = ['K–5', '6–12'].map((label) => ({
+      label: label === 'K–5' ? 'K–5 view' : '6–12 view',
+      go: () => this.setState({ band: label }),
+      bg: this.band === label ? '#FAF6EF' : 'transparent',
+      fg: this.band === label ? '#1C1A16' : '#C9C2B4',
+    }));
+
+    const themes = THEMES.map((x) => ({
+      name: x.name, accent: x.accent, deep: x.deep, bands: x.bands,
+      collectibleLower: x.unit,
+      pickLabel: x.id === raw.id ? 'Your world ✓' : x.verb + ' →',
+      stripe: 'repeating-linear-gradient(135deg, ' + x.tintB + ' 0 9px, ' + x.tintA + ' 9px 18px)',
+      ring: x.id === raw.id ? '2px solid #FAF6EF' : '2px solid transparent',
+      cardBorder: x.id === raw.id ? '2px solid ' + x.accent : '1px solid #EDE5D7',
+      cardShadow: x.id === raw.id ? '0 8px 24px -12px ' + x.accent : 'none',
+      pick: () => this.setState({ theme: x.id }),
+    }));
+
+    const dots = Array.from({ length: 8 }, (_, i) => ({
+      bg: i < 3 ? raw.accent : i === 3 ? raw.tintB : '#F1EADC',
+    }));
+
+    const names = raw.names || [];
+    const cells = names.map((name, i) => {
+      const owned = i < raw.owned;
+      return {
+        name: owned ? name : 'Locked',
+        sub: owned ? '#' + (i + 1) : 'EARN IT',
+        art: owned ? stripe : '#F6F1E7',
+        artLabel: owned ? 'ART' : '',
+        artText: owned ? raw.deep : '#C9C0AE',
+        cardBg: owned ? '#fff' : '#FBF8F1',
+        cardBorder: owned ? '1px solid ' + raw.tintB : '1px dashed #E4DCCD',
+        nameColor: owned ? '#1C1A16' : '#A29A8A',
+      };
+    });
+
+    const stopList = raw.stops || [];
+    const stops = stopList.map((label, i) => {
+      const done = i < raw.owned - 1;
+      const here = i === raw.owned - 1;
+      return {
+        label, mark: done ? '✓' : here ? '●' : String(i + 1),
+        dotBg: done ? raw.accent : here ? '#fff' : '#FFFFFF99',
+        dotFg: done ? '#fff' : here ? raw.deep : '#A29A8A',
+        dotBorder: here ? '3px solid ' + raw.accent : '2px solid transparent',
+        leftBar: i === 0 ? 'transparent' : i <= raw.owned - 1 ? raw.accent : '#FFFFFF99',
+        rightBar: i === stopList.length - 1 ? 'transparent' : i < raw.owned - 1 ? raw.accent : '#FFFFFF99',
+        labelColor: i <= raw.owned - 1 ? raw.deep : '#8A8375',
+      };
+    });
+
+    const partList = raw.parts || [];
+    const parts = partList.map((name, i) => {
+      const owned = i < raw.owned;
+      return {
+        name, sub: owned ? 'FITTED' : 'LOCKED',
+        art: owned ? stripe : '#F6F1E7',
+        artLabel: owned ? 'ART' : '',
+        artText: owned ? raw.deep : '#C9C0AE',
+        rowBg: owned ? '#fff' : '#FBF8F1',
+        rowBorder: owned ? '1px solid ' + raw.tintB : '1px dashed #E4DCCD',
+        nameColor: owned ? '#1C1A16' : '#A29A8A',
+        subColor: owned ? raw.deep : '#C9C0AE',
+      };
+    });
+
+    return {
+      t, nav, bandNav, themes, dots, cells, stops, parts,
+      name: kid ? 'Milo' : 'Ella', initials: kid ? 'MI' : 'EL',
+      isKid: kid, isTeen: !kid,
+      isHome: screen === 'Home', isSession: screen === 'Session',
+      isReward: screen === 'Reward', isWorld: screen === 'World', isPicker: screen === 'Picker',
+      isCollection: raw.arch === 'collection', isJourney: raw.arch === 'journey', isAssembly: raw.arch === 'assembly',
+      goHome: () => this.setState({ screen: 'Home' }),
+      goWorld: () => this.setState({ screen: 'World' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

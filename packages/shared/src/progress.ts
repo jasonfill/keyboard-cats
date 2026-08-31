@@ -53,6 +53,16 @@ export interface Attempt {
   activity: string
   /** Only test-quality attempts (no hints, spelled from scratch) move ability. */
   isTest: boolean
+  /**
+   * Did the system check this answer, or did the learner tell us how they did?
+   *
+   * Flashcard self-grades are the only unverified attempts in the app. The
+   * distinction is orthogonal to `isTest` (which only means "no hints were
+   * shown") and it has to survive all the way to the database, because
+   * anything that hands out a reward has to be able to ask for evidence
+   * rather than a claim.
+   */
+  verified: boolean
   correct: boolean
   responseMs: number | null
   hintsUsed: number
@@ -60,6 +70,8 @@ export interface Attempt {
   /** What the learner actually typed, kept so mistakes can be reviewed. */
   given: string | null
   at: number
+  /** The round this belongs to. Set by whoever stores it, not by the caller. */
+  sessionId?: string | null
 }
 
 export interface SessionRecord {
@@ -79,6 +91,19 @@ export interface SessionRecord {
   meta: Record<string, unknown>
   startedAt: number
   endedAt: number
+  /**
+   * Where this session's counts came from. Derived, never sent by a client:
+   * whoever stores the row works it out from the attempts that came with it.
+   *
+   *   'attempts' — counts recomputed from the submitted attempts
+   *   'client'   — no attempts accompanied the session, so the summary is the
+   *                finest grain there is (typing rounds count keystrokes)
+   *   'legacy'   — recorded before provenance was tracked
+   */
+  evidence?: SessionEvidenceKind
+  /** Of the distinct items here, how many were system-checked rather than self-graded. */
+  verifiedItemsTotal?: number
+  verifiedItemsCorrect?: number
 }
 
 export interface ListProgress {
@@ -268,4 +293,189 @@ export interface ProgressChange {
   customLists?: CustomWordList[]
   /** Full replacement of the learner's study decks. */
   decks?: QuizDeck[]
+}
+
+// ---------------------------------------------------------------------------
+// Evidence
+// ---------------------------------------------------------------------------
+//
+// A session summary is a convenience. The attempts are the record. These two
+// helpers are the single definition of how you get from one to the other, and
+// they live here because both sides need to agree: the API applies them to
+// every round a signed-in learner posts, and guest storage applies them to
+// every round played without an account.
+
+export type SessionEvidenceKind = 'attempts' | 'client' | 'legacy'
+
+/**
+ * Modes where the learner grades themselves.
+ *
+ * Whether an answer was checked is a property of the mode it was answered in,
+ * not something a caller gets to assert — so this is applied server-side to
+ * every attempt that arrives, and a claim of `verified: true` on a self-graded
+ * mode is corrected rather than believed.
+ */
+export const SELF_GRADED_ACTIVITIES: readonly string[] = ['flashcards']
+
+export function isSelfGraded(activity: string): boolean {
+  return SELF_GRADED_ACTIVITIES.includes(activity)
+}
+
+/** Apply the mode rule to one attempt, so `verified` reflects how it was answered. */
+export function withVerifiedFlag(attempt: Attempt): Attempt {
+  const verified = attempt.verified && !isSelfGraded(attempt.activity)
+  return verified === attempt.verified ? attempt : { ...attempt, verified }
+}
+
+export interface DerivedSessionCounts {
+  itemsTotal: number
+  itemsCorrect: number
+  accuracy: number
+  verifiedItemsTotal: number
+  verifiedItemsCorrect: number
+  evidence: SessionEvidenceKind
+}
+
+/**
+ * Recompute a session's counts from the attempts it was played with.
+ *
+ * Scored on the *first* attempt at each item, in the order they were played.
+ * A round can ask the same card more than once — a missed card comes back
+ * before the round is out — and a learner who goes back over something they
+ * missed should not be scored worse than one who never returned to it.
+ *
+ * Returns null when there are no attempts to derive from, which is a real
+ * case rather than an error: a typing round's items are keystrokes and its
+ * summary is already the finest grain available.
+ */
+export function deriveSessionCounts(attempts: Attempt[]): DerivedSessionCounts | null {
+  if (!attempts.length) return null
+
+  const first = new Map<string, Attempt>()
+  for (const attempt of attempts) {
+    const key = masteryKey(attempt.subject, attempt.itemKey)
+    if (!first.has(key)) first.set(key, withVerifiedFlag(attempt))
+  }
+
+  const firsts = [...first.values()]
+  const itemsTotal = firsts.length
+  const itemsCorrect = firsts.filter((a) => a.correct).length
+  const verified = firsts.filter((a) => a.verified)
+
+  return {
+    itemsTotal,
+    itemsCorrect,
+    accuracy: Math.round((itemsCorrect / itemsTotal) * 100),
+    verifiedItemsTotal: verified.length,
+    verifiedItemsCorrect: verified.filter((a) => a.correct).length,
+    evidence: 'attempts',
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Assignments
+// ---------------------------------------------------------------------------
+//
+// Work a grown-up sets for a learner. A task names one piece of work and is
+// closed by the round that satisfied it — never by anyone ticking it off — so
+// `sessionId` on a finished task is the evidence, and the history screen can
+// open it.
+
+export type AssignmentStatus = 'open' | 'done' | 'cancelled'
+
+/**
+ * One learner's copy of a piece of work.
+ *
+ * Flattened for the client: the definition lives on the set and the state on
+ * the row, but nothing above the API cares — what a task list wants is one
+ * object per line it draws. `setId` is what makes two children's copies of the
+ * same work recognisable as the same work.
+ */
+export interface Assignment {
+  id: string
+  setId: string
+  learnerId: string
+  createdBy: string | null
+  subject: Subject
+  /** Quiz mode, spelling activity, or 'lesson' for typing. */
+  activity: string
+  /** Deck, spelling list, or typing lesson. Null lets the activity choose. */
+  targetId: string | null
+  size: number | null
+  title: string
+  note: string | null
+  /**
+   * An optional bar to clear, judged on answers the app checked rather than on
+   * the headline score. A self-graded mode has no checked answers and so can
+   * never clear one — which is why the UI only offers this on graded work.
+   */
+  minAccuracy: number | null
+  dueOn: DayString | null
+  sortOrder: number
+  status: AssignmentStatus
+  completedAt: number | null
+  /** The round that closed this task. Always set when status is 'done'. */
+  sessionId: string | null
+  createdAt: number
+}
+
+/**
+ * One piece of work and everyone it was given to.
+ *
+ * The author's view — a tutor asking "who has done this yet?". `learners` holds
+ * only the rows the caller is allowed to see, so a parent who shares work with
+ * another family sees their own child on it and nobody else's.
+ */
+export interface AssignmentSetSummary {
+  setId: string
+  subject: Subject
+  activity: string
+  targetId: string | null
+  title: string
+  note: string | null
+  minAccuracy: number | null
+  dueOn: DayString | null
+  createdAt: number
+  learners: Array<{
+    assignmentId: string
+    learnerId: string
+    displayName: string
+    avatarEmoji: string
+    status: AssignmentStatus
+    completedAt: number | null
+    sessionId: string | null
+  }>
+}
+
+/** What a grown-up sends to set a task. Everything else is decided here or by evidence. */
+export interface AssignmentDraft {
+  subject: Subject
+  activity: string
+  targetId?: string | null
+  size?: number | null
+  title: string
+  note?: string | null
+  minAccuracy?: number | null
+  dueOn?: DayString | null
+  sortOrder?: number
+}
+
+/** One child's line on the family dashboard. */
+export interface LearnerOverview {
+  learnerId: string
+  displayName: string
+  avatarEmoji: string
+  /** Tasks still to do, and how many of those are past their due date. */
+  openAssignments: number
+  overdueAssignments: number
+  /** Tasks finished in the last week. */
+  doneThisWeek: number
+  /** The most recent round of any kind, for "last seen practising". */
+  lastActiveAt: number | null
+  /** Practice in the last seven days. */
+  minutesThisWeek: number
+  itemsThisWeek: number
+  /** Accuracy over the last seven days, counting only answers the app checked. */
+  verifiedAccuracyThisWeek: number | null
+  currentStreakDays: number
 }

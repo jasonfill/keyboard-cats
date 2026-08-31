@@ -1,0 +1,13 @@
+<!--
+  Variant I - outlined paper. The web favicon and the print mark.
+
+  `wz` at -0.08em starts reading as a single glyph below about 28px, which is
+  why the favicon is the outlined variant and the store icon is the solid one:
+  at favicon size the paper ground and the ink rule keep the two letters apart.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="9" fill="#FFF7ED" stroke="#1C1A16" stroke-width="1.5"/>
+  <text x="16" y="21.5" text-anchor="middle"
+        font-family="Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-weight="900" font-size="15" letter-spacing="-1.2" fill="#1C1A16">wz</text>
+</svg>

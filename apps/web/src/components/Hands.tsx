@@ -97,7 +97,7 @@ export default function Hands({ activeFinger }: Props) {
         <Hand fingers={LEFT} active={leftActive} thumbActive={thumb} />
         <Hand fingers={RIGHT} active={rightActive} thumbActive={thumb} flip />
       </div>
-      <div className="h-6 text-center text-sm font-bold text-grape">
+      <div className="h-6 text-center text-sm font-bold text-ink">
         {activeFinger ? `Use your ${FINGER_LABELS[activeFinger]}` : ' '}
       </div>
     </div>

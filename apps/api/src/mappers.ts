@@ -20,6 +20,7 @@ export function toLearner(row: any): Learner {
     authKind: (row.auth_kind ?? 'none') as AuthKind,
     authUserId: row.auth_user_id ?? null,
     createdAt: epoch(row.created_at),
+    theme: row.theme ?? null,
   }
 }
 

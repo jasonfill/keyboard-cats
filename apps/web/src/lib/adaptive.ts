@@ -108,6 +108,39 @@ export function blendMastery(previous: number, reps: number, correct: boolean): 
   return Math.round(Math.max(0, Math.min(1, next)) * 1000) / 1000
 }
 
+/** How much of a self-reported "I got it" counts, against 0.38 for a checked answer. */
+const SELF_REPORT_WEIGHT = 0.15
+
+/**
+ * The ceiling a card can reach on self-report alone — deliberately below
+ * MASTERED_THRESHOLD, so "mastered" always means the system saw it happen.
+ */
+export const UNVERIFIED_CEILING = 0.7
+
+/** A self-reported correct answer never buys more than a couple of days off. */
+const UNVERIFIED_MAX_INTERVAL_DAYS = 3
+
+/**
+ * Fold a self-graded attempt into mastery, trusting the two answers very
+ * differently.
+ *
+ * "I missed it" is a learner volunteering bad news against their own interest,
+ * and there is no reason to doubt it — it lands at full weight, same as a
+ * checked answer. "I got it" is a claim about a card nobody verified, so it
+ * earns a fraction of the credit and can never on its own carry a card into
+ * the mastered band. A learner who taps through claiming everything gets the
+ * cards back tomorrow rather than a clean sheet, which is the point.
+ */
+export function blendSelfReport(previous: number, reps: number, correct: boolean): number {
+  if (!correct) return blendMastery(previous, reps, false)
+  const next = previous * (1 - SELF_REPORT_WEIGHT) + SELF_REPORT_WEIGHT
+  // The ceiling caps what self-report can *build*, and must never claw back
+  // what checked answers already earned: a learner flicking through a deck
+  // they have genuinely mastered should not be demoted for it.
+  const capped = Math.max(previous, Math.min(UNVERIFIED_CEILING, next))
+  return Math.round(Math.max(0, capped) * 1000) / 1000
+}
+
 export const MASTERED_THRESHOLD = 0.8
 export const LEARNING_THRESHOLD = 0.45
 
@@ -129,6 +162,10 @@ export interface ApplyAttemptOptions {
  * Fold one attempt into an item's mastery record. Practice attempts still
  * update reps and the schedule (the learner did see the word) but only graded
  * attempts move the mastery number.
+ *
+ * Verification is the second axis. An attempt the system checked is worth what
+ * it always was; a self-graded one is discounted, capped, and kept out of the
+ * mastered band entirely. See blendSelfReport.
  */
 export function applyAttemptToMastery(
   previous: ItemMastery | undefined,
@@ -154,16 +191,38 @@ export function applyAttemptToMastery(
     lastSeenAt: attempt.at,
   }
 
-  const correctStreak = attempt.correct ? base.correctStreak + 1 : 0
+  // A self-graded claim does not advance the streak, because the streak is half
+  // of what defines the mastered band and the other half is already capped.
+  // Mastered therefore always rests on answers the system checked.
+  const selfReported = attempt.verified === false
+  const correctStreak = attempt.correct
+    ? selfReported
+      ? base.correctStreak
+      : base.correctStreak + 1
+    : 0
   const lapses = !attempt.correct && base.correctStreak > 0 ? base.lapses + 1 : base.lapses
-  const mastery = attempt.isTest
-    ? blendMastery(base.mastery, base.reps, attempt.correct)
-    : base.mastery
+  const mastery = !attempt.isTest
+    ? base.mastery
+    : selfReported
+      ? blendSelfReport(base.mastery, base.reps, attempt.correct)
+      : blendMastery(base.mastery, base.reps, attempt.correct)
 
   // Scheduling: a miss re-enters the short-term queue; a hit climbs the ladder.
-  const intervalDays = attempt.correct
-    ? intervalForStreak(correctStreak - 1, base.difficulty, ability)
-    : RELEARN_INTERVAL_DAYS
+  // A self-reported hit climbs it too, but only so far — an unverified card
+  // comes back within a few days, where a checked one can go weeks.
+  const intervalDays = !attempt.correct
+    ? RELEARN_INTERVAL_DAYS
+    : selfReported
+      ? // Same rule as the mastery ceiling: a claim buys a few days at most,
+        // and never shortens a schedule that checked answers have stretched.
+        Math.max(
+          base.intervalDays,
+          Math.min(
+            UNVERIFIED_MAX_INTERVAL_DAYS,
+            intervalForStreak(Math.max(0, correctStreak - 1), base.difficulty, ability),
+          ),
+        )
+      : intervalForStreak(correctStreak - 1, base.difficulty, ability)
 
   return {
     ...base,

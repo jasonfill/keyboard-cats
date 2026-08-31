@@ -5,7 +5,16 @@
 // birth year twice. Second, remember a refusal: an age screen that resets on
 // reload is not an age screen, it is a guessing game.
 
-export type SignupRole = 'guardian' | 'learner'
+/**
+ * Which of the three ways in somebody said they were taking.
+ *
+ * 'guardian' and 'tutor' are the same *account* — same screens, same
+ * permissions, same library — and differ only in what happens next: a parent
+ * adds children they own, a tutor hands a code to families who already have
+ * their own. Keeping them apart here is what stops a tutor being marched
+ * through "add your first learner" for children who are not theirs.
+ */
+export type SignupRole = 'guardian' | 'tutor' | 'learner'
 
 export interface SignupIntent {
   role: SignupRole
@@ -36,7 +45,9 @@ export function readSignupIntent(): SignupIntent | null {
     const raw = localStorage.getItem(INTENT_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as SignupIntent
-    if (parsed.role !== 'guardian' && parsed.role !== 'learner') return null
+    if (parsed.role !== 'guardian' && parsed.role !== 'tutor' && parsed.role !== 'learner') {
+      return null
+    }
     return parsed
   } catch {
     return null

@@ -16,7 +16,15 @@ export type Route =
   | { name: 'upgrade' }
   | { name: 'progress' }
   | { name: 'custom-lists' }
-  // Typing (Keyboard Cats)
+  /** The learner's task list — what a grown-up has set them. */
+  | { name: 'tasks' }
+  /** A grown-up's own decks and lists, and the work they have set. */
+  | { name: 'library' }
+  /** "Pick your world" — the ten themes. Display only; changes nothing learned. */
+  | { name: 'theme' }
+  /** The collectibles earned so far, in whichever shape the theme uses. */
+  | { name: 'world' }
+  // Typing
   | { name: 'typing' }
   | { name: 'map' }
   | { name: 'lesson'; id: string }
@@ -24,7 +32,7 @@ export type Route =
   | { name: 'rain' }
   | { name: 'trophies' }
   | { name: 'settings' }
-  // Spelling (Spelling Cats)
+  // Spelling
   | { name: 'spelling' }
   | { name: 'spell-lists' }
   | {
@@ -35,7 +43,7 @@ export type Route =
       customListId?: string
       size?: number
     }
-  // Quiz (Quiz Cats)
+  // Quiz
   | { name: 'quiz' }
   | { name: 'quiz-deck'; deckId: string }
   /** No deckId means "start a new deck". */

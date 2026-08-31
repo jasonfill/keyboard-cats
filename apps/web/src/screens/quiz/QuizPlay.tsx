@@ -120,7 +120,7 @@ export default function QuizPlay({ mode, deckId, size, direction, navigate }: Pr
   if (saving) {
     return (
       <div className="mx-auto w-full max-w-2xl py-10 text-center">
-        <p className="text-lg font-bold text-slate-500">Saving your round…</p>
+        <p className="text-lg font-bold text-muted">Saving your round…</p>
       </div>
     )
   }
@@ -133,7 +133,7 @@ export default function QuizPlay({ mode, deckId, size, direction, navigate }: Pr
           onBack={() => navigate(deckId ? { name: 'quiz-deck', deckId } : { name: 'quiz' })}
         />
         <Card>
-          <p className="mb-3 font-bold text-slate-500">
+          <p className="mb-3 font-bold text-muted">
             {mode === 'review'
               ? 'Nothing is due for review right now. That is the system working — come back when a card is about to slip.'
               : 'There are no cards to study here yet.'}

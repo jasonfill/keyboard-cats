@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import AuthScreen from './auth/AuthScreen'
 import Background from './components/Background'
-import CatMascot from './components/CatMascot'
+import Mascot from './components/Mascot'
 import { useGameState } from './hooks/useGameState'
 import { LearnerProvider, useLearners } from './lib/learners/LearnerProvider'
 import { ProgressProvider, useProgress } from './lib/progress/ProgressProvider'
+import { ThemeProvider } from './lib/theme/ThemeProvider'
 import { setSoundEnabled } from './lib/sound'
 import type { Navigate, Route } from './routes'
 import CatRainScreen from './screens/CatRainScreen'
@@ -21,9 +22,13 @@ import SpellingLists from './screens/spelling/SpellingLists'
 import SpellingPlay from './screens/spelling/SpellingPlay'
 import AccountScreen from './screens/suite/AccountScreen'
 import FamilyScreen from './screens/suite/FamilyScreen'
+import LibraryScreen from './screens/suite/LibraryScreen'
+import TasksScreen from './screens/suite/TasksScreen'
 import CustomListsScreen from './screens/suite/CustomListsScreen'
 import ProgressScreen from './screens/suite/ProgressScreen'
 import SuiteHome from './screens/suite/SuiteHome'
+import ThemePicker from './screens/theme/ThemePicker'
+import WorldScreen from './screens/theme/WorldScreen'
 import UpgradeScreen from './screens/suite/UpgradeScreen'
 import TypingHome from './screens/TypingHome'
 import TrophyRoom from './screens/TrophyRoom'
@@ -35,12 +40,17 @@ export default function App() {
   return (
     <AuthProvider>
       <LearnerProvider>
-        <ProgressProvider>
-          <Background />
-          <main className="min-h-full px-3 pb-10 pt-4 md:px-6">
-            <Router />
-          </main>
-        </ProgressProvider>
+        {/* Above progress, below learners: the theme is chosen per learner, so
+            it has to see who is active, and everything below it paints in the
+            colour it publishes. */}
+        <ThemeProvider>
+          <ProgressProvider>
+            <Background />
+            <main className="min-h-full px-3 pb-10 pt-4 md:px-6">
+              <Router />
+            </main>
+          </ProgressProvider>
+        </ThemeProvider>
       </LearnerProvider>
     </AuthProvider>
   )
@@ -105,6 +115,14 @@ function Router() {
       return <ProgressScreen game={game} navigate={navigate} />
     case 'custom-lists':
       return <CustomListsScreen navigate={navigate} />
+    case 'tasks':
+      return <TasksScreen navigate={navigate} />
+    case 'library':
+      return <LibraryScreen navigate={navigate} />
+    case 'theme':
+      return <ThemePicker navigate={navigate} />
+    case 'world':
+      return <WorldScreen navigate={navigate} />
 
     // Typing
     case 'typing':
@@ -168,8 +186,8 @@ function Router() {
 function Loading() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-      <CatMascot mood="sleepy" size={120} className="animate-floaty" />
-      <p className="text-lg font-bold text-slate-500">Fetching your progress…</p>
+      <Mascot mood="resting" size={120} className="animate-floaty" />
+      <p className="text-lg font-bold text-muted">Fetching your progress…</p>
     </div>
   )
 }

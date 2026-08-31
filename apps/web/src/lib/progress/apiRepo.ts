@@ -10,10 +10,21 @@
 // session is often a parent recording progress for a child. The API checks
 // that, and Row Level Security checks it again underneath.
 
-import type { DecksResponse, SnapshotResponse, WordListsResponse } from '@whizzo/shared'
+import type {
+  DecksResponse,
+  SessionAttemptsResponse,
+  SnapshotResponse,
+  WordListsResponse,
+} from '@whizzo/shared'
 import { api, ApiError } from '../api/client'
 import { applyChange, type ProgressChange, type ProgressRepo } from './repo'
-import { emptySnapshot, type CustomWordList, type ProgressSnapshot, type QuizDeck } from './types'
+import {
+  emptySnapshot,
+  type Attempt,
+  type CustomWordList,
+  type ProgressSnapshot,
+  type QuizDeck,
+} from './types'
 
 export class ApiProgressRepo implements ProgressRepo {
   readonly kind = 'cloud' as const
@@ -95,5 +106,17 @@ export class ApiProgressRepo implements ProgressRepo {
   async reset(): Promise<void> {
     await api.del<void>(`/learners/${this.learnerId}/progress`)
     this.snapshot = emptySnapshot()
+  }
+
+  /**
+   * The answers behind one session. Fetched on demand rather than held in the
+   * snapshot: a year of practice is a lot of rows, and nobody needs them until
+   * they open a round to look at it.
+   */
+  async attemptsForSession(sessionId: string): Promise<Attempt[]> {
+    const { attempts } = await api.get<SessionAttemptsResponse>(
+      `/learners/${this.learnerId}/sessions/${sessionId}/attempts`,
+    )
+    return attempts
   }
 }

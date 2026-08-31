@@ -2,9 +2,6 @@ import type { GradeLevel } from './types'
 
 export const GRADE_5: GradeLevel = {
   grade: 5,
-  name: 'Lynx Lookout',
-  emoji: '🔭',
-  color: 'from-violet-300 to-fuchsia-400',
   blurb: 'Greek and Latin roots, silent letters, and endings that all sound alike.',
   lists: [
     {

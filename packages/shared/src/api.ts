@@ -5,8 +5,13 @@
 // disagree, that is now a type error at build time rather than a surprise in
 // production.
 
-import type { Guardian, InvitePurpose, Learner } from './learners.js'
-import type { CustomWordList, ProgressSnapshot, QuizDeck } from './progress.js'
+import type {
+  ConnectionCode,
+  Guardian,
+  InvitePurpose,
+  Learner,
+} from './learners.js'
+import type { Assignment, AssignmentSetSummary, Attempt, CustomWordList, LearnerOverview, ProgressSnapshot, QuizDeck } from './progress.js'
 
 export interface ApiErrorBody {
   code: string
@@ -54,6 +59,39 @@ export interface RedeemResponse {
 
 export interface SnapshotResponse {
   snapshot: ProgressSnapshot
+}
+
+/** Everything a grown-up owns: decks and word lists that are theirs, not a learner's. */
+export interface LibraryResponse {
+  decks: QuizDeck[]
+  customLists: CustomWordList[]
+}
+
+export interface ConnectionCodesResponse {
+  codes: ConnectionCode[]
+}
+
+export interface ConnectionCodeResponse {
+  code: ConnectionCode
+}
+
+export interface AssignmentsResponse {
+  assignments: Assignment[]
+}
+
+/** Work the caller has set, with everyone they can see who was given it. */
+export interface AssignmentSetsResponse {
+  sets: AssignmentSetSummary[]
+}
+
+/** Every learner the caller can see, with enough to run a family dashboard. */
+export interface FamilyOverviewResponse {
+  learners: LearnerOverview[]
+}
+
+/** Every answer given in one round, oldest first. */
+export interface SessionAttemptsResponse {
+  attempts: Attempt[]
 }
 
 export interface WordListsResponse {

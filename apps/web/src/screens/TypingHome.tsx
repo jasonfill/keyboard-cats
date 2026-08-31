@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import CatMascot from '../components/CatMascot'
+import Mascot, { MASCOT_MUTED } from '../components/Mascot'
 import ScreenHeader from '../components/suite/ScreenHeader'
 import { Button, Card } from '../components/ui'
 import { TOTAL_LESSONS } from '../data/lessons'
 import type { GameApi } from '../hooks/useGameState'
 import type { Navigate } from '../routes'
+import { useTheme } from '../lib/theme/ThemeProvider'
 
 interface Props {
   game: GameApi
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function TypingHome({ game, navigate }: Props) {
+  const { theme } = useTheme()
   const { state, setPlayerName } = game
   const [name, setName] = useState(state.playerName)
 
@@ -22,20 +24,20 @@ export default function TypingHome({ game, navigate }: Props) {
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 py-4">
       <div className="w-full">
         <ScreenHeader
-          title="Keyboard Cats ⌨️"
-          subtitle="Learn to type &amp; collect cats!"
+          title="Typing ⌨️"
+          subtitle={`Learn to type and collect ${theme.unit}.`}
           onBack={() => navigate({ name: 'home' })}
-          backLabel="← Academy"
+          backLabel="← Home"
         />
       </div>
 
       <div className="flex items-end gap-2">
-        <CatMascot mood="excited" size={120} className="animate-floaty" />
-        <CatMascot mood="happy" color="#94a3b8" size={84} className="animate-floaty" />
+        <Mascot mood="cheer" size={120} className="animate-floaty" />
+        <Mascot mood="idle" color={MASCOT_MUTED} size={84} className="animate-floaty" />
       </div>
 
       <Card className="w-full max-w-md">
-        <label className="mb-1 block text-sm font-bold text-slate-500">
+        <label className="mb-1 block text-sm font-bold text-muted">
           What should we call you?
         </label>
         <input
@@ -45,7 +47,7 @@ export default function TypingHome({ game, navigate }: Props) {
           onKeyDown={(e) => e.key === 'Enter' && commitName()}
           placeholder="Type your name..."
           maxLength={16}
-          className="mb-4 w-full rounded-xl border-2 border-purple-200 px-4 py-3 text-lg font-bold text-grape focus:border-grape focus:outline-none"
+          className="mb-4 w-full rounded-xl border-2 border-edge px-4 py-3 text-lg font-bold text-ink focus:border-ink focus:outline-none"
         />
 
         <div className="grid grid-cols-1 gap-3">
@@ -59,7 +61,7 @@ export default function TypingHome({ game, navigate }: Props) {
           </Button>
           <div className="grid grid-cols-2 gap-3">
             <Button variant="secondary" onClick={() => navigate({ name: 'rain' })}>
-              🌧️ Cat Rain
+              🌧️ Word Rain
             </Button>
             <Button variant="secondary" onClick={() => navigate({ name: 'practice' })}>
               ⌨️ Practice
@@ -79,7 +81,7 @@ export default function TypingHome({ game, navigate }: Props) {
       <div className="flex gap-6 text-center">
         <Stat big={`${state.totalStars}`} label="⭐ Stars" />
         <Stat big={`${doneLessons}/${TOTAL_LESSONS}`} label="Lessons" />
-        <Stat big={`${state.collectedCats.length}`} label="🐱 Cats" />
+        <Stat big={`${state.collectedCats.length}`} label={theme.unit} />
       </div>
     </div>
   )
@@ -88,8 +90,8 @@ export default function TypingHome({ game, navigate }: Props) {
 function Stat({ big, label }: { big: string; label: string }) {
   return (
     <div>
-      <div className="text-2xl font-extrabold text-grape">{big}</div>
-      <div className="text-sm font-bold text-slate-400">{label}</div>
+      <div className="text-2xl font-extrabold text-ink">{big}</div>
+      <div className="text-sm font-bold text-stone">{label}</div>
     </div>
   )
 }

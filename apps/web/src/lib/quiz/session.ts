@@ -91,6 +91,35 @@ export const MODES: Array<{
   },
 ]
 
+/**
+ * What a mode does with a card the learner just missed.
+ *
+ * `gap` is how many cards later it comes back — far enough that the answer has
+ * left short-term memory, near enough to still be the same sitting. `maxPasses`
+ * stops a card the learner genuinely cannot do yet from becoming an unwinnable
+ * loop: after that many tries it is parked, reported at the end, and picked up
+ * by the review schedule instead.
+ *
+ * Test is the deliberate exception. It is a measurement, and a paper that keeps
+ * handing your mistakes back until you fix them measures something else.
+ */
+export interface RequeuePolicy {
+  gap: number
+  maxPasses: number
+}
+
+export function requeuePolicy(mode: StudyMode): RequeuePolicy | null {
+  switch (mode) {
+    case 'flashcards':
+      return { gap: 4, maxPasses: 3 }
+    case 'learn':
+    case 'review':
+      return { gap: 4, maxPasses: 3 }
+    default:
+      return null
+  }
+}
+
 export function modeDef(id: StudyMode) {
   return MODES.find((m) => m.id === id) ?? MODES[0]
 }

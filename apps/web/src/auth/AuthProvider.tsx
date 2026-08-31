@@ -50,7 +50,7 @@ function toProfile(row: any): Profile {
   return {
     id: row.id,
     displayName: row.display_name ?? 'Friend',
-    avatarEmoji: row.avatar_emoji ?? '🐱',
+    avatarEmoji: row.avatar_emoji ?? '🙂',
     gradeHint: row.grade_hint ?? null,
     plan: (row.plan as PlanId) ?? 'free',
     planRenewsAt: row.plan_renews_at ?? null,
