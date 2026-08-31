@@ -33,8 +33,13 @@ export default function AssignForm({
    * Set when the form was opened from a particular piece of material — from the
    * library, where you start with the deck and choose who gets it, rather than
    * from a child, where you start with the child.
+   *
+   * More than one id means a whole document: the six sets a chapter came back
+   * as, set in one action rather than six. They become six tasks, because six
+   * is what the learner has to do — the shortcut is for the grown-up filling
+   * the form, not a change to what was set.
    */
-  fixedTarget?: { kind: 'deck' | 'list'; id: string }
+  fixedTarget?: { kind: 'deck' | 'list'; ids: string[]; label?: string }
   onDone: () => void | Promise<void>
   onCancel: () => void
 }) {
@@ -47,11 +52,27 @@ export default function AssignForm({
       : ASSIGNABLE[0],
   )
   const [selected, setSelected] = useState<string[]>(defaultLearnerIds)
-  const [targetId, setTargetId] = useState(fixedTarget?.id ?? '')
+  const [targetId, setTargetId] = useState(fixedTarget?.ids[0] ?? '')
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [dueOn, setDueOn] = useState('')
   const [minAccuracy, setMinAccuracy] = useState('')
+  /**
+   * Set an outcome rather than an activity.
+   *
+   * Default for a deck, because it is the better answer nearly every time:
+   * "master this" is what a grown-up actually wants, and choosing between
+   * Learn and Test is a pedagogical decision they should never have been
+   * handed. Picking a specific activity stays available for the teacher who
+   * genuinely wants a test on Friday.
+   */
+  const [asGoal, setAsGoal] = useState(fixedTarget?.kind === 'deck')
+  /**
+   * Only a study set can be "mastered" as a whole. A spelling list is part of a
+   * curriculum that keeps going, and a typing lesson is one lesson — neither
+   * has a finishing line a goal could measure.
+   */
+  const canSetGoal = fixedTarget?.kind === 'deck' || choice.target === 'deck'
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -67,15 +88,17 @@ export default function AssignForm({
     return CURRICULUM.map((l) => ({ id: l.id, name: l.title }))
   }, [choice, decks])
 
+  /** Every piece of material this form is about — one, or a whole document. */
+  const targetIds = fixedTarget?.ids ?? (targetId ? [targetId] : [])
   const chosenTarget =
     targets.find((t) => t.id === targetId) ??
-    (fixedTarget ? { id: fixedTarget.id, name: 'this' } : undefined)
+    (fixedTarget ? { id: targetId, name: fixedTarget.label ?? 'this' } : undefined)
   // A sensible default so the grown-up does not have to write a title for
   // "Learn — Times Tables"; they can still overwrite it.
   const effectiveTitle = title.trim() || `${choice.name}: ${chosenTarget?.name ?? '…'}`
 
   const submit = async () => {
-    if (!targetId) {
+    if (targetIds.length === 0) {
       setError('Pick what the work is on.')
       return
     }
@@ -86,16 +109,28 @@ export default function AssignForm({
     setSaving(true)
     setError(null)
     try {
-      const draft: AssignmentDraft = {
+      const drafts: AssignmentDraft[] = targetIds.map((id) => ({
         subject: choice.subject,
-        activity: choice.activity,
-        targetId,
-        title: effectiveTitle.slice(0, 120),
+        // A goal is walked by the path, so the activity is the path itself
+        // rather than one round of one thing.
+        activity: asGoal ? 'mastery-path' : choice.activity,
+        goal: asGoal ? { kind: 'mastery' } : null,
+        targetId: id,
+        // Each part of a document keeps its own name, so a task list reads
+        // "Organelles" and "Cell division" rather than six copies of the
+        // chapter's title. A title typed by hand applies to all of them.
+        title: (title.trim()
+          ? title.trim()
+          : `${choice.name}: ${targets.find((t) => t.id === id)?.name ?? chosenTarget?.name ?? '…'}`
+        ).slice(0, 120),
         note: note.trim() || null,
         dueOn: dueOn || null,
-        minAccuracy: choice.graded && minAccuracy ? Number(minAccuracy) : null,
-      }
-      await createAssignments(selected, [draft])
+        // A score bar measures one round. A goal is a statement about a state,
+        // and the two would be answering different questions about the same
+        // task.
+        minAccuracy: !asGoal && choice.graded && minAccuracy ? Number(minAccuracy) : null,
+      }))
+      await createAssignments(selected, drafts)
       await onDone()
     } catch {
       setError(
@@ -150,7 +185,48 @@ export default function AssignForm({
         </fieldset>
       )}
 
-      <label className="mb-3 block">
+      {/* Outcome or activity. The first is the default for a set because it is
+          what a grown-up actually wants; the second is there for the teacher
+          who wants a test on Friday and should get a test on Friday. */}
+      {canSetGoal && (
+        <fieldset className="mb-3">
+          <legend className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
+            What to set
+          </legend>
+          <label className="mb-1 flex items-start gap-2 font-bold text-body">
+            <input
+              type="radio"
+              name="assign-kind"
+              checked={asGoal}
+              onChange={() => setAsGoal(true)}
+              className="mt-1"
+            />
+            <span>
+              Master it
+              <span className="block text-xs font-bold text-stone">
+                They keep going until they know it. The app picks what to practise each time.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 font-bold text-body">
+            <input
+              type="radio"
+              name="assign-kind"
+              checked={!asGoal}
+              onChange={() => setAsGoal(false)}
+              className="mt-1"
+            />
+            <span>
+              One particular activity
+              <span className="block text-xs font-bold text-stone">
+                A single round of something you choose.
+              </span>
+            </span>
+          </label>
+        </fieldset>
+      )}
+
+      <label className={`mb-3 block ${asGoal ? 'hidden' : ''}`}>
         <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
           What kind
         </span>
@@ -200,9 +276,16 @@ export default function AssignForm({
         </select>
       </label>
 
+      {fixedTarget && fixedTarget.ids.length > 1 && (
+        <p className="mb-3 rounded-xl bg-wash px-3 py-2 text-sm font-bold text-body">
+          {fixedTarget.label ?? 'This document'} came back as {fixedTarget.ids.length} parts. Each
+          one becomes its own task, so finishing means finishing all of them.
+        </p>
+      )}
+
       <label className="mb-3 block">
         <span className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-stone">
-          What they see
+          {targetIds.length > 1 ? 'What they see (each part keeps its own name)' : 'What they see'}
         </span>
         <input
           value={title}
@@ -269,9 +352,13 @@ export default function AssignForm({
         <Button onClick={submit} disabled={saving}>
           {saving
             ? 'Saving…'
-            : selected.length > 1
-              ? `Set this for ${selected.length} of them`
-              : 'Set this task'}
+            : targetIds.length > 1
+              ? `Set all ${targetIds.length} parts${
+                  selected.length > 1 ? ` for ${selected.length} of them` : ''
+                }`
+              : selected.length > 1
+                ? `Set this for ${selected.length} of them`
+                : 'Set this task'}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={saving}>
           Never mind

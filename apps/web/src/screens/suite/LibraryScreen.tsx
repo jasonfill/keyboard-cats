@@ -17,6 +17,7 @@ import type { CustomWordList, QuizDeck } from '../../lib/progress/types'
 import { allDecks, newId } from '../../lib/quiz/decks'
 import type { Navigate } from '../../routes'
 import AssignForm from './AssignForm'
+import { groupBySource } from '../../lib/library/groups'
 
 /**
  * Everything a grown-up owns, and the place to set it as work.
@@ -40,7 +41,13 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
   const [lists, setLists] = useState<CustomWordList[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
-  const [assigning, setAssigning] = useState<{ kind: 'deck' | 'list'; id: string } | null>(null)
+  const [assigning, setAssigning] = useState<{
+    kind: 'deck' | 'list'
+    ids: string[]
+    label?: string
+  } | null>(null)
+
+  const groups = useMemo(() => groupBySource(decks), [decks])
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -154,39 +161,78 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
             Nothing here yet. Copy one in from below, or make a deck and add it.
           </p>
         ) : (
-          <ul className="space-y-2">
-            {decks.map((deck) => (
-              <li
-                key={deck.id}
-                className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-hair"
-              >
-                <span className="font-extrabold text-ink">{deck.title}</span>
-                <Pill className="bg-wash text-xs text-muted">
-                  {deck.cards.length} cards
-                </Pill>
-                <div className="ml-auto flex flex-wrap gap-2">
-                  <Button onClick={() => setAssigning({ kind: 'deck', id: deck.id })}>
-                    Set as work
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={busy === deck.id}
-                    onClick={async () => {
-                      setBusy(deck.id)
-                      try {
-                        await deleteLibraryDeck(deck.id)
-                        await load()
-                      } finally {
-                        setBusy(null)
+          <div className="space-y-5">
+            {/* Grouped by the document each set came from. A chapter that came
+                back as six sets is six rows under one heading with one button,
+                rather than six rows the parent has to recognise and set one at
+                a time. */}
+            {groups.map((group) => (
+              <section key={group.sourceId ?? 'loose'}>
+                {group.sourceId && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <h3 className="font-display text-lg font-extrabold text-ink">{group.title}</h3>
+                    <Pill className="bg-wash text-xs text-muted">
+                      {group.decks.length} parts · {group.cards} cards
+                    </Pill>
+                    <Button
+                      className="ml-auto"
+                      onClick={() =>
+                        setAssigning({
+                          kind: 'deck',
+                          ids: group.decks.map((d) => d.id),
+                          label: group.title,
+                        })
                       }
-                    }}
-                  >
-                    🗑️
-                  </Button>
-                </div>
-              </li>
+                    >
+                      Set the whole thing
+                    </Button>
+                  </div>
+                )}
+                {/* The heading above is what makes this a document; a numbered
+                    list under it is what makes it an order. */}
+                <ol className="space-y-2">
+                  {group.decks.map((deck, i) => (
+                    <li
+                      key={deck.id}
+                      className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/85 px-4 py-3 ring-1 ring-hair"
+                    >
+                      {group.sourceId && (
+                        <span className="font-mono text-xs font-bold text-faint">{i + 1}</span>
+                      )}
+                      <span className="font-extrabold text-ink">{deck.title}</span>
+                      <Pill className="bg-wash text-xs text-muted">
+                        {deck.cards.length} cards
+                      </Pill>
+                      <div className="ml-auto flex flex-wrap gap-2">
+                        <Button
+                          onClick={() =>
+                            setAssigning({ kind: 'deck', ids: [deck.id], label: deck.title })
+                          }
+                        >
+                          Set as work
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          disabled={busy === deck.id}
+                          onClick={async () => {
+                            setBusy(deck.id)
+                            try {
+                              await deleteLibraryDeck(deck.id)
+                              await load()
+                            } finally {
+                              setBusy(null)
+                            }
+                          }}
+                        >
+                          🗑️
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
       </Card>
 

@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { toGuardian, toLearner } from './mappers.js'
-import { dayOf, iso, toAttempt, toDaily, toSession, toSkill } from './progressMappers.js'
+import { dayOf, iso, toAttempt, toDaily, toDeck, toSession, toSkill } from './progressMappers.js'
 
 describe('toLearner', () => {
   const row = {
@@ -208,5 +208,37 @@ describe('iso', () => {
   it('keeps absent absent, rather than writing the epoch', () => {
     expect(iso(null)).toBeNull()
     expect(iso(undefined)).toBeNull()
+  })
+})
+
+
+describe('toDeck', () => {
+  const row = (over: Record<string, unknown> = {}) => ({
+    id: 'd1',
+    title: 'Organelles',
+    cards: [],
+    created_at: new Date(0),
+    updated_at: new Date(0),
+    ...over,
+  })
+
+  it('carries the document a set was made from', () => {
+    const deck = toDeck(row({ source_id: 's1', source_title: 'Chapter 7' }))
+    expect(deck.sourceId).toBe('s1')
+    expect(deck.sourceTitle).toBe('Chapter 7')
+  })
+
+  it('says nothing about a set that was typed by hand', () => {
+    // Null, not undefined and not the empty string: the library groups on this
+    // and "no document" has to be one value, not three.
+    const deck = toDeck(row())
+    expect(deck.sourceId).toBeNull()
+    expect(deck.sourceTitle).toBeNull()
+  })
+
+  it('keeps the id when only the title was not joined', () => {
+    // The single-set queries do not join the title. Losing the id there would
+    // silently ungroup a whole document on the next read.
+    expect(toDeck(row({ source_id: 's1' })).sourceId).toBe('s1')
   })
 })

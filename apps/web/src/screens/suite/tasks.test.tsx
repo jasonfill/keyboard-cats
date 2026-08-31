@@ -476,11 +476,141 @@ describe('the form for setting work', () => {
     expect(net.createAssignments).not.toHaveBeenCalled()
   })
 
-  it('opened from a piece of material, keeps that material and only offers ways to practise it', () => {
-    renderForm({ fixedTarget: { kind: 'deck', id: 'deck-1' } })
+  it('opened from a set, defaults to setting an outcome rather than an activity', () => {
+    // "Master this" is what a grown-up actually wants, and choosing between
+    // Learn and Test is a pedagogical decision they should never have been
+    // handed. With a goal selected there is no activity to pick, so neither
+    // select is on offer.
+    renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1'] } })
+    expect((screen.getByLabelText(/Master it/i) as HTMLInputElement).checked).toBe(true)
     const selects = screen.getAllByRole('combobox') as HTMLSelectElement[]
-    // Only the "what kind" select is on offer; the "on what" one is hidden.
     const visible = selects.filter((s) => !s.closest('label')?.className.includes('hidden'))
+    expect(visible).toHaveLength(0)
+  })
+
+  it('still offers a single activity for the teacher who wants a test on Friday', () => {
+    renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1'] } })
+    fireEvent.click(screen.getByLabelText(/One particular activity/i))
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[]
+    const visible = selects.filter((s) => !s.closest('label')?.className.includes('hidden'))
+    // The "what kind" select appears; the "on what" one stays fixed to the set.
     expect(visible).toHaveLength(1)
+  })
+
+  it('sets a goal rather than one round of one thing', () => {
+    renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1'] } })
+    fireEvent.click(screen.getByText('Set this task'))
+    const call = net.createAssignments.mock.calls[0] as unknown as [unknown, Array<Record<string, unknown>>]
+    expect(call[1][0]).toMatchObject({ activity: 'mastery-path', goal: { kind: 'mastery' } })
+  })
+
+  it('does not offer a goal on a spelling list, which has no finishing line', () => {
+    renderForm({ fixedTarget: { kind: 'spelling-list', ids: ['g2-l1'] } })
+    expect(screen.queryByLabelText(/Master it/i)).toBeNull()
+  })
+
+  // Setting a whole chapter. The shortcut is for the grown-up filling the
+  // form — the learner still gets one task per part, because one part is what
+  // they sit down and finish.
+  describe('a document set in one go', () => {
+    it('makes a task for every part', () => {
+      renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1', 'deck-2'], label: 'Chapter 7' } })
+      fireEvent.click(screen.getByText('Set all 2 parts'))
+      const call = net.createAssignments.mock.calls[0] as unknown as [
+        string[],
+        Array<Record<string, unknown>>,
+      ]
+      expect(call[1]).toHaveLength(2)
+      expect(call[1].map((d) => d.targetId)).toEqual(['deck-1', 'deck-2'])
+    })
+
+    it('says what setting it means before it is set', () => {
+      renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1', 'deck-2'], label: 'Chapter 7' } })
+      expect(screen.getByText(/Chapter 7 came back as 2 parts/)).toBeInTheDocument()
+    })
+
+    it('lets each part keep its own name', () => {
+      // Six tasks all called "Chapter 7" is a task list a learner cannot use.
+      // Real ids, because the naming is a lookup — with ids that name nothing
+      // the fallback would pass this test without the feature existing.
+      renderForm({
+        fixedTarget: {
+          kind: 'deck',
+          ids: ['starter-capitals', 'starter-space'],
+          label: 'Chapter 7',
+        },
+      })
+      fireEvent.click(screen.getByText('Set all 2 parts'))
+      const call = net.createAssignments.mock.calls[0] as unknown as [
+        string[],
+        Array<Record<string, unknown>>,
+      ]
+      expect(call[1][0]!.title).not.toBe(call[1][1]!.title)
+    })
+
+    it('gives every part the same title when the grown-up typed one', () => {
+      renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1', 'deck-2'], label: 'Chapter 7' } })
+      fireEvent.change(screen.getByLabelText(/What they see/i), {
+        target: { value: 'Read for Friday' },
+      })
+      fireEvent.click(screen.getByText('Set all 2 parts'))
+      const call = net.createAssignments.mock.calls[0] as unknown as [
+        string[],
+        Array<Record<string, unknown>>,
+      ]
+      expect(call[1].map((d) => d.title)).toEqual(['Read for Friday', 'Read for Friday'])
+    })
+
+    it('sets the whole document for everyone chosen', () => {
+      renderForm({ fixedTarget: { kind: 'deck', ids: ['deck-1', 'deck-2'], label: 'Chapter 7' } })
+      fireEvent.click(screen.getByText('Ben'))
+      fireEvent.click(screen.getByText('Set all 2 parts for 2 of them'))
+      const call = net.createAssignments.mock.calls[0] as unknown as [
+        string[],
+        Array<Record<string, unknown>>,
+      ]
+      expect(call[0]).toEqual(['l1', 'l2'])
+      expect(call[1]).toHaveLength(2)
+    })
+  })
+})
+
+describe('a goal on the task list', () => {
+  const goal = () =>
+    anAssignment({
+      activity: 'mastery-path',
+      targetId: 'deck-1',
+      title: 'Chapter 7',
+      goal: { kind: 'mastery' },
+    })
+
+  it('says Continue, because it is one thing worked at over days', async () => {
+    // "Start" would suggest beginning it again.
+    testState.assignments = [goal()]
+    render(<TasksScreen navigate={navigate} />)
+    expect(await screen.findByText(/Continue/)).toBeTruthy()
+  })
+
+  it('does not name an activity, because the learner is not choosing one', async () => {
+    // Naming "Learn" would tell them something that changes every round and
+    // that they have no say in.
+    testState.assignments = [goal()]
+    render(<TasksScreen navigate={navigate} />)
+    expect(await screen.findByText(/Keep going until you know it/)).toBeTruthy()
+  })
+
+  it('marks it as a goal rather than a single round', async () => {
+    testState.assignments = [goal()]
+    render(<TasksScreen navigate={navigate} />)
+    expect(await screen.findByText('master it')).toBeTruthy()
+  })
+
+  it('opens the set when it is continued', async () => {
+    testState.assignments = [goal()]
+    render(<TasksScreen navigate={navigate} />)
+    fireEvent.click(await screen.findByText(/Continue/))
+    expect(navigate).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'quiz-play', deckId: 'deck-1' }),
+    )
   })
 })

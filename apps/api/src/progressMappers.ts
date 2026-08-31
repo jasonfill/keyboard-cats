@@ -207,6 +207,10 @@ export function toDeck(row: any): QuizDeck {
     id: row.id,
     track: row.track ?? null,
     objectives: row.objectives ?? [],
+    sourceId: row.source_id ?? null,
+    // Only present on the queries that join it; a set read on its own is not
+    // worth a join for a heading nothing is about to draw.
+    sourceTitle: row.source_title ?? null,
     title: row.title,
     description: row.description ?? '',
     tags: row.tags ?? [],

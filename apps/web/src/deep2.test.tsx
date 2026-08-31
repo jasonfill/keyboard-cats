@@ -83,6 +83,7 @@ vi.mock('./lib/assignments/library', () => ({
   deleteLibraryList: vi.fn(async () => {}),
 }))
 
+import * as libraryApi from './lib/assignments/library'
 import FamilyScreen from './screens/suite/FamilyScreen'
 import LibraryScreen from './screens/suite/LibraryScreen'
 import TasksScreen from './screens/suite/TasksScreen'
@@ -207,6 +208,67 @@ describe('LibraryScreen — with material in it', () => {
     await waitFor(() => expect(screen.getByText('Capitals')).toBeInTheDocument())
     await clickIf(/assign/i)
     expect(document.body.textContent).toBeTruthy()
+  })
+
+  // A chapter arrives as several sets. In a flat list those are several rows
+  // the parent has to recognise; under the document's own name they are the
+  // thing they uploaded.
+  describe('a document that came back as several sets', () => {
+    const chapter = (over: Record<string, unknown>) => ({
+      id: 'x',
+      title: 'A part',
+      description: '',
+      cards: [],
+      createdAt: 0,
+      updatedAt: 0,
+      sourceId: 's1',
+      sourceTitle: 'Chapter 7 — Cells',
+      ...over,
+    })
+
+    beforeEach(() => {
+      vi.mocked(libraryApi.loadLibrary).mockResolvedValue({
+        decks: [
+          chapter({ id: 'd2', title: 'Cell division', createdAt: 2 }),
+          chapter({ id: 'd1', title: 'Organelles', createdAt: 1 }),
+          {
+            id: 'typed',
+            title: 'Capitals',
+            description: '',
+            cards: [],
+            createdAt: 0,
+            updatedAt: 0,
+          },
+        ],
+        customLists: [],
+        sets: [],
+      } as never)
+    })
+
+    it('shows the document by name above its parts', async () => {
+      render(<LibraryScreen navigate={navigate} />)
+      await waitFor(() => expect(screen.getByText('Chapter 7 — Cells')).toBeInTheDocument())
+    })
+
+    it('offers to set the whole thing at once', async () => {
+      render(<LibraryScreen navigate={navigate} />)
+      await waitFor(() => expect(screen.getByText('Set the whole thing')).toBeInTheDocument())
+    })
+
+    it('puts the parts back in the order the document had them', async () => {
+      render(<LibraryScreen navigate={navigate} />)
+      await waitFor(() => expect(screen.getByText('Organelles')).toBeInTheDocument())
+      const text = document.body.textContent ?? ''
+      expect(text.indexOf('Organelles')).toBeLessThan(text.indexOf('Cell division'))
+    })
+
+    it('leaves a hand-made set out of it', async () => {
+      render(<LibraryScreen navigate={navigate} />)
+      await waitFor(() => expect(screen.getByText('Capitals')).toBeInTheDocument())
+      // It is still there and still settable — it simply is not part of the
+      // chapter, and the screen does not pretend otherwise.
+      expect(screen.getAllByText('Set the whole thing')).toHaveLength(1)
+    })
   })
 })
 
