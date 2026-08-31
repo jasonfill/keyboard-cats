@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill } from '../../components/ui'
 import type { QuizItemResult, QuizSessionApi } from '../../hooks/useQuizSession'
 import { gradeWritten, type Grade } from '../../lib/quiz/questions'
@@ -120,11 +121,12 @@ export default function QuestionRunner({
         <p className="mb-1 text-xs font-extrabold uppercase tracking-widest text-stone">
           {q.kind === 'true-false' ? 'Does this match?' : 'Question'}
         </p>
-        <p className="text-2xl font-extrabold text-ink md:text-3xl">{q.prompt}</p>
+        <RichText source={q.prompt} className="text-2xl font-extrabold text-ink md:text-3xl" />
         {q.kind === 'true-false' && (
-          <p className="mt-3 rounded-2xl bg-quiet px-4 py-3 text-xl font-bold text-body">
-            {q.claim}
-          </p>
+          <RichText
+            source={q.claim ?? ''}
+            className="mt-3 block rounded-2xl bg-quiet px-4 py-3 text-xl font-bold text-body"
+          />
         )}
         {hintsUsed > 0 && current.card.hint && (
           <p className="mt-3 font-bold text-amber-600">💡 {current.card.hint}</p>
@@ -152,7 +154,7 @@ export default function QuestionRunner({
                 onClick={() => answer(choice, isAnswer ? 'correct' : 'wrong')}
                 className={`rounded-2xl px-5 py-4 text-left text-lg font-bold shadow ring-1 transition-all ${style}`}
               >
-                {choice}
+                <RichText source={choice} />
               </button>
             )
           })}
@@ -261,9 +263,9 @@ export default function QuestionRunner({
           </div>
 
           {feedback.grade !== 'correct' && (
-            <p className="mb-3 text-lg font-bold text-body">
-              The answer is <span className="text-emerald-700">{q.answer}</span>
-            </p>
+            <div className="mb-3 text-lg font-bold text-body">
+              The answer is <RichText source={q.answer} className="text-emerald-700" />
+            </div>
           )}
           {feedback.grade === 'close' && (
             <p className="mb-3 font-bold text-muted">

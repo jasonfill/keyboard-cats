@@ -156,11 +156,17 @@ export const dailySchema = z.object({
   correct: z.number().int().min(0),
 })
 
+// Either side of a card may carry maths or a figure, and a figure is a JSON
+// object inside the text — a labelled coordinate grid runs to a couple of
+// thousand characters on its own. The ceiling is still there (a deck is read
+// and written whole), just set where a real question can fit under it.
+export const MAX_CARD_TEXT = 4000
+
 export const quizCardSchema = z.object({
   id: z.string().min(1).max(80),
-  term: z.string().min(1).max(400),
-  definition: z.string().min(1).max(1000),
-  hint: z.string().max(400).nullable(),
+  term: z.string().min(1).max(MAX_CARD_TEXT),
+  definition: z.string().min(1).max(MAX_CARD_TEXT),
+  hint: z.string().max(1000).nullable(),
   difficulty: z.number().finite(),
 })
 

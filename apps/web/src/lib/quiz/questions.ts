@@ -5,6 +5,7 @@
 // nothing) and how typed answers are graded (marking "mitochondria" wrong
 // because of one transposed letter teaches the wrong lesson entirely).
 
+import { richToPlain, splitOutsideRich } from '../rich/parse'
 import type { QuizCard } from '../progress/types'
 
 export type QuestionKind = 'multiple-choice' | 'written' | 'true-false'
@@ -45,9 +46,13 @@ const ARTICLES = /^(a|an|the|to|el|la|los|las|le|les|un|una|der|die|das)\s+/i
  * Strip everything that is not the substance of the answer: case, accents,
  * punctuation, and a leading article. Someone who typed "the mitochondrion"
  * knows the answer, and a quiz that says otherwise is testing typing.
+ *
+ * Maths comes through here as what a learner would type, not as its source:
+ * the answer `$\frac{3}{4}$` is graded as "3/4", because that is what is in
+ * the box when they press enter. Nobody types a backslash.
  */
 export function normalize(value: string): string {
-  return value
+  return richToPlain(value)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -61,12 +66,26 @@ export function normalize(value: string): string {
  * Answers written as "couch / sofa" or "couch; sofa" mean either is acceptable.
  * Splitting on the slash is worth the small risk of a genuine slash in an
  * answer, because alternatives are extremely common on vocabulary decks.
+ *
+ * Two slashes are not that, and both turn up constantly on a maths deck: the
+ * one inside an equation, and the one between two numbers. "3/4 cup" is one
+ * answer, and splitting it would accept "3". Everything else still splits, so
+ * `$\frac{1}{2}$ / a half` remains two ways of saying the same thing.
  */
 export function acceptableAnswers(answer: string): string[] {
-  return answer
-    .split(/\s*[/;]\s*|\s+\bor\b\s+/i)
+  return splitOutsideRich(answer, SEPARATORS, isFractionSlash)
     .map((a) => a.trim())
     .filter(Boolean)
+}
+
+const SEPARATORS = /\s*;\s*|\s+\bor\b\s+|\s*\/\s*/i
+
+/** True when this separator is the bar of a fraction rather than "either/or". */
+function isFractionSlash(match: string, index: number, text: string): boolean {
+  if (!match.includes('/')) return false
+  const before = text.slice(0, index).slice(-1)
+  const after = text.slice(index + match.length).slice(0, 1)
+  return /\d/.test(before) && /\d/.test(after)
 }
 
 function levenshtein(a: string, b: string): number {
@@ -152,6 +171,7 @@ export function buildChoices(
 ): string[] {
   const answer = answerSide(card, direction)
   const target = normalize(answer)
+  const plainAnswer = richToPlain(answer)
   const seen = new Set([target])
 
   const candidates = pool
@@ -166,8 +186,10 @@ export function buildChoices(
     .map((text) => ({
       text,
       // Rank by similarity of shape, with a little noise so the same card does
-      // not draw the same three distractors every single round.
-      gap: Math.abs(text.length - answer.length) + rng() * 6,
+      // not draw the same three distractors every single round. Length is
+      // measured on the readable text: a card whose answer is a figure is a
+      // paragraph of JSON long, and would otherwise never look like anything.
+      gap: Math.abs(richToPlain(text).length - plainAnswer.length) + rng() * 6,
     }))
     .sort((a, b) => a.gap - b.gap)
     .slice(0, count - 1)

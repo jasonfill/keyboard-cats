@@ -23,7 +23,7 @@ import { todayString } from '../../lib/progress/types'
 import type { Navigate } from '../../routes'
 
 export default function SuiteHome({ game, navigate }: { game: GameApi; navigate: Navigate }) {
-  const { status, profile, configured } = useAuth()
+  const { profile } = useAuth()
   const { snapshot, skill, sync } = useProgress()
 
   const spelling = skill('spelling')
@@ -62,7 +62,7 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         <Wordmark />
         <div className="flex items-center gap-2">
           <LearnerChip onManage={() => navigate({ name: 'family' })} />
-          <AccountChip onOpen={() => navigate({ name: status === 'signed-in' ? 'account' : 'auth' })} />
+          <AccountChip onOpen={() => navigate({ name: 'account' })} />
         </div>
       </div>
 
@@ -302,21 +302,6 @@ export default function SuiteHome({ game, navigate }: { game: GameApi; navigate:
         </Button>
       </div>
 
-
-      {status !== 'signed-in' && configured && (
-        <Card>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-extrabold text-ink">Save your progress ☁️</h2>
-              <p className="font-bold text-muted">
-                Everything you have done so far is saved on this device. Make a free account and it
-                follows you to any other one — nothing is lost.
-              </p>
-            </div>
-            <Button onClick={() => navigate({ name: 'auth' })}>Create a free account</Button>
-          </div>
-        </Card>
-      )}
 
       <p className="mt-6 text-center text-xs font-bold text-stone">
         Free forever, no ads.{' '}

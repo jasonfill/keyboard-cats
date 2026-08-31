@@ -19,6 +19,7 @@ import {
   copyDeck,
 } from './decks'
 import type { QuizDeck } from '../progress/types'
+import { findFigure } from '../rich/figures'
 
 describe('newId', () => {
   it('is unique across many calls', () => {
@@ -176,5 +177,45 @@ describe('serializeCards', () => {
       ['Paris', 'France'],
       ['Rome', 'Italy'],
     ])
+  })
+})
+
+describe('importing cards that carry maths and figures', () => {
+  // A figure is JSON inside the card text, and JSON is built out of exactly the
+  // characters the importer splits on. Getting this wrong does not mangle one
+  // row — it picks the wrong separator for the whole paste and every row,
+  // figure or not, comes back unparseable.
+  const rows = [
+    'Find the area [[figure {"kind":"rect","width":"8 m","height":"5 m"}]], 40 square metres',
+    'Biggest? [[figure {"kind":"bar","data":[{"label":"a","value":1},{"label":"b","value":2}]}]], b',
+    'Area of a 3 by 4 rectangle, 12',
+  ].join('\n')
+
+  it('works out the separator from the prose, not from the figure JSON', () => {
+    expect(parseImport(rows).separator).toBe('comma')
+  })
+
+  it('imports every row, with the figures still whole', () => {
+    const result = parseImport(rows)
+    expect(result.skipped).toEqual([])
+    expect(result.cards.map((c) => c.definition)).toEqual(['40 square metres', 'b', '12'])
+    expect(result.cards[0].term.endsWith(']]')).toBe(true)
+    const figure = findFigure(result.cards[0].term)
+    expect(JSON.parse(figure!.json).width).toBe('8 m')
+  })
+
+  it('does not cut a row in half inside an equation', () => {
+    const result = parseImport('Simplify $f(x, y)$, the function', { between: 'comma' })
+    expect(result.cards[0].term).toBe('Simplify $f(x, y)$')
+    expect(result.cards[0].definition).toBe('the function')
+  })
+
+  it('rates a card by what it says, not by how long its figure JSON is', () => {
+    const figure =
+      '[[figure {"kind":"bar","data":[{"label":"Mon","value":4},{"label":"Tue","value":7}]}]]'
+    // Hundreds of characters of JSON, two words of answer.
+    expect(estimateDifficulty('Which day?', figure)).toBeLessThan(
+      estimateDifficulty('Which day?', 'a very long spoken answer that runs on and on and on'),
+    )
   })
 })

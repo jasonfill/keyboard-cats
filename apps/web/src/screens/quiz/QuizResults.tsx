@@ -1,5 +1,6 @@
 import Mascot from '../../components/Mascot'
 import Confetti from '../../components/Confetti'
+import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import type { QuizSummary } from '../../hooks/useQuizSession'
 import { modeDef } from '../../lib/quiz/session'
@@ -104,8 +105,14 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
           <div className="space-y-2">
             {missed.map((r, i) => (
               <div key={`${r.planned.card.id}-${i}`} className="rounded-2xl bg-rose-50 px-4 py-3">
-                <p className="font-extrabold text-ink">{r.question.prompt}</p>
-                <p className="font-bold text-emerald-700">✓ {r.question.answer}</p>
+                <RichText
+                  source={r.question.prompt}
+                  className="block font-extrabold text-ink"
+                  figures="describe"
+                />
+                <p className="font-bold text-emerald-700">
+                  ✓ <RichText source={r.question.answer} figures="describe" />
+                </p>
                 {r.given && (
                   <p className="text-sm font-bold text-rose-500">
                     You said: {r.given}

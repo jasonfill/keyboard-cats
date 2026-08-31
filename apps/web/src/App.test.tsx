@@ -63,6 +63,16 @@ beforeEach(() => {
   signIn()
 })
 
+/** Nobody signed in, on a build that has accounts. */
+function signedOut(): void {
+  testState.authStatus = 'signed-out'
+  testState.user = null
+  testState.profile = null
+  testState.learners = []
+  testState.active = null
+  testState.learnerStatus = 'unavailable'
+}
+
 describe('the first screen', () => {
   it('is the child’s home when there is a learner', async () => {
     render(<App />)
@@ -77,12 +87,12 @@ describe('the first screen', () => {
     expect(await screen.findByText('Who is learning?')).toBeTruthy()
   })
 
-  it('does not send a guest anywhere', async () => {
-    testState.authStatus = 'signed-out'
-    testState.learners = []
-    testState.active = null
-    testState.learnerStatus = 'unavailable'
+  it('is the marketing site for anyone not signed in', async () => {
+    signedOut()
     render(<App />)
+    expect(
+      await screen.findByText('Practice that knows what your child can actually do.'),
+    ).toBeTruthy()
     await waitFor(() => expect(screen.queryByText('Who is learning?')).toBeNull())
   })
 
@@ -159,5 +169,51 @@ describe('every route reachable from the home screen', () => {
   it('never shows a blank screen while progress is loading', () => {
     render(<App />)
     expect(document.body.textContent!.length).toBeGreaterThan(0)
+  })
+})
+
+describe('the door', () => {
+  // Practice only counts when it is attributed to a learner, so there is no
+  // longer a way to reach an activity without signing in first.
+  it('offers nothing playable to a visitor', async () => {
+    signedOut()
+    render(<App />)
+    await screen.findByText('Practice that knows what your child can actually do.')
+    for (const label of ['🎨 Cats', '📊 Progress', '🏆 Trophies', '✅ Tasks']) {
+      expect(screen.queryByText(label)).toBeNull()
+    }
+  })
+
+  it('takes a visitor from the marketing site to the way in, and back', async () => {
+    signedOut()
+    render(<App />)
+    fireEvent.click((await screen.findAllByText('Create a free account'))[0]!)
+    expect(await screen.findByText('Who is setting this up?')).toBeTruthy()
+
+    fireEvent.click(screen.getByText('← Back'))
+    expect(
+      await screen.findByText('Practice that knows what your child can actually do.'),
+    ).toBeTruthy()
+  })
+
+  it('shows the app the moment they are signed in', async () => {
+    render(<App />)
+    expect(await screen.findByText('🎨 Cats')).toBeTruthy()
+    expect(screen.queryByText('Practice that knows what your child can actually do.')).toBeNull()
+  })
+
+  it('waits rather than flashing the marketing site at somebody already signed in', () => {
+    testState.authStatus = 'loading'
+    render(<App />)
+    expect(screen.queryByText('Practice that knows what your child can actually do.')).toBeNull()
+  })
+
+  it('still opens the app in a build with no accounts behind it', async () => {
+    // Signing in is impossible there, so gating on it would leave a developer
+    // with a locked door and no key.
+    signedOut()
+    testState.configured = false
+    render(<App />)
+    expect(await screen.findByText('🎨 Cats')).toBeTruthy()
   })
 })

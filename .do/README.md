@@ -19,7 +19,7 @@ spent.
 ## First deploy
 
 **1. Let DigitalOcean see the repo.** In the App Platform dashboard, connect
-GitHub and authorise the `jasonfill/keyboard-cats` repository. The spec's
+GitHub and authorise the `jasonfill/whizzo` repository. The spec's
 `github:` blocks fail without it.
 
 **2. Fill in the secrets.** `app.yaml` declares eight secrets with no values, on
@@ -89,6 +89,34 @@ static build — which no longer has an API behind it, so leave the cutover shor
 - **Config**: `doctl apps update <app-id> --spec .do/app.yaml`, and re-render
   first if you touched a secret.
 
+## Tests gate the deploy
+
+`npm test` runs inside the `api` component's build command. If it fails, the
+build fails, the deployment is not promoted, and the previous one keeps
+serving.
+
+This lives here rather than in GitHub Actions because **`deploy_on_push` does
+not read GitHub's commit status.** It answers the push webhook directly, so a
+test workflow would run *alongside* this build, not before it — going red some
+minutes after the bad commit was already live. Actions can tell you a push was
+broken; only a failing build stops it shipping.
+
+Two consequences worth knowing:
+
+- **One component runs it, both are covered.** `npm test` is typecheck, lint and
+  vitest across every workspace, and a deployment is atomic across components —
+  a failure in `api` takes the whole deployment down, `web` included. So it sits
+  on `api` only and costs its few minutes once rather than twice.
+- **It has to come after the shared build.** `@whizzo/shared` has no TypeScript
+  project references; the other workspaces resolve it through `dist/`. Run
+  `npm test` before `npm run build --workspace @whizzo/shared` and every
+  typecheck fails on a clean builder.
+
+The unit tests stub the database, so they need nothing from the environment.
+What they cannot cover is Row Level Security — that only exists inside Postgres,
+so it needs `scripts/smoke.mjs` against a scratch database, which is not part of
+the deploy.
+
 ## Known rough edges
 
 - **Both components rebuild on every push.** `source_dir` is `/` for both,
@@ -96,6 +124,9 @@ static build — which no longer has an API behind it, so leave the cutover shor
   only skips a component when nothing under its `source_dir` changed, so a
   README edit rebuilds the API too. Slower deploys; nothing worse.
 - **Two `npm ci` runs per deploy**, one per component, for the same reason.
+- **The test run adds a few minutes to every deploy.** The suite is ~45s on a
+  developer machine but around 4 CPU-minutes; a build container has far less
+  parallelism to spend on it. That is the price of the gate.
 - If build times become annoying, the fix is a Dockerfile for the API component
   (`dockerfile_path`), which still deploys from GitHub on push but builds once
   and under your control.

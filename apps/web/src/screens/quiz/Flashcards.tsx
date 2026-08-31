@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill } from '../../components/ui'
 import type { QuizItemResult, QuizSessionApi } from '../../hooks/useQuizSession'
 import { REASON_LABEL } from '../../lib/quiz/session'
+import { richToPlain } from '../../lib/rich/parse'
 import { isSpeechAvailable, speak, stopSpeaking } from '../../lib/spelling/speech'
 
 /**
@@ -126,9 +128,10 @@ export default function Flashcards({
           <p className="mb-2 text-xs font-extrabold uppercase tracking-widest text-stone">
             {flipped ? 'Answer' : 'Question'}
           </p>
-          <p className="text-3xl font-extrabold text-ink md:text-4xl">
-            {flipped ? back : front}
-          </p>
+          <RichText
+            source={flipped ? back : front}
+            className="text-3xl font-extrabold text-ink md:text-4xl"
+          />
           {!flipped && current.card.hint && (
             <p className="mt-3 font-bold text-stone">💡 {current.card.hint}</p>
           )}
@@ -142,7 +145,7 @@ export default function Flashcards({
         <div className="mb-4 flex justify-center">
           <Button
             variant="ghost"
-            onClick={() => speak(flipped ? back : front)}
+            onClick={() => speak(richToPlain(flipped ? back : front))}
             aria-label="Read this side out loud"
           >
             🔊 Read it out

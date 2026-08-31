@@ -96,35 +96,35 @@ describe('AuthScreen', () => {
   it('offers a way in and a way past', () => {
     testState.authStatus = 'signed-out'
     testState.user = null
-    render(<AuthScreen onDone={() => {}} onGuest={() => {}} />)
+    render(<AuthScreen onDone={() => {}} onBack={() => {}} />)
     expect(screen.getAllByRole('button').length).toBeGreaterThan(1)
   })
 
-  it('lets somebody carry on without an account', async () => {
+  it('lets somebody back out, but not into the app', async () => {
     testState.authStatus = 'signed-out'
     testState.user = null
-    const onGuest = vi.fn()
-    render(<AuthScreen onDone={() => {}} onGuest={onGuest} />)
-    const guest = screen
-      .getAllByRole('button')
-      .find((b) => /guest|without an account|skip|later/i.test(b.textContent ?? ''))
-    if (guest) {
-      await userEvent.click(guest)
-      expect(onGuest).toHaveBeenCalled()
-    }
+    const onBack = vi.fn()
+    render(<AuthScreen onDone={() => {}} onBack={onBack} />)
+    expect(
+      screen
+        .getAllByRole('button')
+        .find((b) => /guest|without an account/i.test(b.textContent ?? '')),
+    ).toBeUndefined()
+    await userEvent.click(screen.getByText('← Back'))
+    expect(onBack).toHaveBeenCalled()
   })
 
   it('offers the child’s way in, with a code', () => {
     testState.authStatus = 'signed-out'
     testState.user = null
-    render(<AuthScreen onDone={() => {}} onGuest={() => {}} />)
+    render(<AuthScreen onDone={() => {}} onBack={() => {}} />)
     expect(screen.getAllByText(/code/i).length).toBeGreaterThan(0)
   })
 
   it('says so when the build has no accounts rather than offering a dead form', () => {
     testState.authStatus = 'signed-out'
     testState.configured = false
-    render(<AuthScreen onDone={() => {}} onGuest={() => {}} />)
+    render(<AuthScreen onDone={() => {}} onBack={() => {}} />)
     expect(document.body.textContent).toBeTruthy()
   })
 })

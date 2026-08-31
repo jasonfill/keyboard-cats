@@ -38,7 +38,7 @@ vi.mock('../lib/progress/localRepo', async () => {
 import AuthScreen from './AuthScreen'
 
 const onDone = vi.fn()
-const onGuest = vi.fn()
+const onBack = vi.fn()
 
 /** Get past "who is setting this up?" as a parent. */
 function asParent() {
@@ -47,7 +47,7 @@ function asParent() {
 
 beforeEach(() => {
   onDone.mockClear()
-  onGuest.mockClear()
+  onBack.mockClear()
   hasLocalProgress.mockReturnValue(false)
   auth.configured = true
   auth.error = null
@@ -60,25 +60,25 @@ beforeEach(() => {
 })
 
 describe('a build with no database behind it', () => {
-  it('says progress stays in this browser, and lets them play anyway', () => {
+  it('says so, and offers the way back rather than a form that cannot work', () => {
     auth.configured = false
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     expect(screen.getByText('Accounts are off')).toBeTruthy()
-    fireEvent.click(screen.getByText('Keep playing'))
-    expect(onGuest).toHaveBeenCalled()
+    fireEvent.click(screen.getByText('Back'))
+    expect(onBack).toHaveBeenCalled()
   })
 })
 
 describe('who is setting this up', () => {
   it('is the first thing asked, before any email box exists', () => {
     // The answer decides whether we may collect an email address at all.
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     expect(screen.getByText('Who is setting this up?')).toBeTruthy()
     expect(screen.queryByPlaceholderText('you@example.com')).toBeNull()
   })
 
   it('remembers a parent’s answer for the first-run screen', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     asParent()
     expect(JSON.parse(localStorage.getItem('cat-academy:signup-intent')!)).toEqual({
       role: 'guardian',
@@ -86,7 +86,7 @@ describe('who is setting this up', () => {
   })
 
   it('remembers a tutor’s answer, which changes what they see next', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('🎓 I am a tutor or teacher'))
     expect(JSON.parse(localStorage.getItem('cat-academy:signup-intent')!)).toEqual({
       role: 'tutor',
@@ -95,7 +95,7 @@ describe('who is setting this up', () => {
   })
 
   it('offers the sign-in tab to somebody who already has an account', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('I already have an account'))
     expect(screen.getByText('Welcome back.')).toBeTruthy()
   })
@@ -104,13 +104,13 @@ describe('who is setting this up', () => {
 describe('the age screen', () => {
   it('asks for a birth year rather than "are you 13?"', () => {
     // Asking the yes/no question tells you which answer opens the door.
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('🎒 I am the one learning'))
     expect(screen.getByText('What year were you born?')).toBeTruthy()
   })
 
   it('rejects something that is not a year', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('🎒 I am the one learning'))
     fireEvent.change(screen.getByPlaceholderText('2011'), { target: { value: '1066' } })
     fireEvent.click(screen.getByText('Next'))
@@ -118,7 +118,7 @@ describe('the age screen', () => {
   })
 
   it('keeps non-digits out of the year box', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('🎒 I am the one learning'))
     const input = screen.getByPlaceholderText('2011') as HTMLInputElement
     fireEvent.change(input, { target: { value: '20x1a' } })
@@ -127,7 +127,7 @@ describe('the age screen', () => {
 
   it('lets a teenager through, and remembers the year so nobody types it twice', () => {
     const year = new Date().getFullYear() - 15
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('🎒 I am the one learning'))
     fireEvent.change(screen.getByPlaceholderText('2011'), { target: { value: String(year) } })
     fireEvent.click(screen.getByText('Next'))
@@ -139,7 +139,7 @@ describe('the age screen', () => {
   })
 
   it('can be backed out of', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('🎒 I am the one learning'))
     fireEvent.click(screen.getByText('← Back'))
     expect(screen.getByText('Who is setting this up?')).toBeTruthy()
@@ -155,7 +155,7 @@ describe('somebody under thirteen', () => {
   }
 
   it('is sent to fetch a grown-up, not to an email box', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     sayUnderThirteen()
     expect(screen.getByText("Let's get a grown-up")).toBeTruthy()
     expect(screen.queryByPlaceholderText('you@example.com')).toBeNull()
@@ -163,32 +163,35 @@ describe('somebody under thirteen', () => {
 
   it('is still refused after a reload', () => {
     // Sticky on purpose: otherwise "how old are you" becomes "keep trying".
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     sayUnderThirteen()
     expect(localStorage.getItem('cat-academy:signup-refused')).toBeTruthy()
 
-    const again = render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    const again = render(<AuthScreen onDone={onDone} onBack={onBack} />)
     expect(again.getAllByText("Let's get a grown-up").length).toBeGreaterThan(0)
   })
 
   it('can still play, and can still use a code a grown-up gave them', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     sayUnderThirteen()
     fireEvent.click(screen.getByText('Sign in with a code'))
     expect(screen.getByText('Hi there!')).toBeTruthy()
   })
 
-  it('can keep playing without an account', () => {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+  it('offers the way back, and nothing playable behind it', () => {
+    // There is no guest mode to fall back to any more: without a grown-up the
+    // only thing on the other side of this screen is the marketing site.
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     sayUnderThirteen()
-    fireEvent.click(screen.getByText('Keep playing without an account'))
-    expect(onGuest).toHaveBeenCalled()
+    expect(screen.queryByText('Keep playing without an account')).toBeNull()
+    fireEvent.click(screen.getByText('← Back'))
+    expect(onBack).toHaveBeenCalled()
   })
 })
 
 describe('the child’s door', () => {
   function openKidMode() {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     fireEvent.click(screen.getByText('Kids: sign in with a code'))
   }
 
@@ -253,7 +256,7 @@ describe('the child’s door', () => {
 
 describe('the grown-up’s form', () => {
   function signupForm() {
-    render(<AuthScreen onDone={onDone} onGuest={onGuest} />)
+    render(<AuthScreen onDone={onDone} onBack={onBack} />)
     asParent()
   }
 
@@ -356,9 +359,10 @@ describe('the grown-up’s form', () => {
     expect(auth.clearError).toHaveBeenCalled()
   })
 
-  it('lets anyone keep playing without an account', () => {
+  it('leads back out to the marketing site rather than into a guest session', () => {
     signupForm()
-    fireEvent.click(screen.getByText('Keep playing without an account'))
-    expect(onGuest).toHaveBeenCalled()
+    expect(screen.queryByText('Keep playing without an account')).toBeNull()
+    fireEvent.click(screen.getByText('← Back'))
+    expect(onBack).toHaveBeenCalled()
   })
 })

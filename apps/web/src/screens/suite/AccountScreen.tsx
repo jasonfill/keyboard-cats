@@ -42,11 +42,11 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
         <ScreenHeader title="Your account" onBack={() => navigate({ name: 'home' })} />
         <Card>
           <p className="mb-4 font-bold text-muted">
-            You are playing as a guest. Progress is saved in this browser only.
+            Nobody is signed in on this device.
           </p>
           {configured ? (
             <Button className="w-full" onClick={() => navigate({ name: 'auth' })}>
-              Create a free account
+              Sign in
             </Button>
           ) : (
             <p className="font-bold text-stone">

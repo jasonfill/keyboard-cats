@@ -9,7 +9,9 @@ Three subjects so far, one account, one progress record:
 - **🃏 Quiz Cats** — flashcards for anything else. Build a deck (or paste one
   in) and study it four ways, on the same adaptive engine as the spelling.
 
-Free, ad-free, and playable with no account at all.
+Free curriculum, ad-free, and behind an account: signed out, the app serves the
+marketing site and nothing else. Practice is only worth recording when it is
+attributed to a learner, so there is no guest mode to fall into.
 
 ## Architecture
 
@@ -55,11 +57,13 @@ npm run preview          # preview that build
 npm run lint             # eslint
 npm run validate:words   # sanity-check the spelling curriculum
 npm run simulate:adaptive # put simulated learners through the adaptive engine
+npm test                 # all of the above, plus typecheck and the unit tests
 ```
 
 Accounts and cloud sync need a Supabase project — see
-[`supabase/README.md`](./supabase/README.md). **Without it the app still runs**,
-saving everything to `localStorage` in guest mode.
+[`supabase/README.md`](./supabase/README.md). **Without it the app still runs**
+unauthenticated against `localStorage`, because signing in would be impossible
+otherwise; every configured build gates the whole app behind sign-in.
 
 ## How the spelling actually adapts
 
@@ -242,6 +246,14 @@ the two sides are separated by a tab, comma, dash, or colon, handles
 definitions that run over several lines, and reports the rows it could not
 parse instead of quietly mangling them.
 
+**Cards can carry maths and figures.** `$\frac{3}{4}$` sets a fraction as real
+MathML, equations pasted out of Word come in as they are, and
+`[[figure {"kind":"triangle", …}]]` draws a labelled triangle, a bar chart, a
+number line or a coordinate grid — which is what it takes to ask a geometry
+question at all. Typed answers are graded against what the maths says, so
+`$\frac{3}{4}$` is answered by typing `3/4`. See
+[docs/card-formatting.md](docs/card-formatting.md).
+
 ## The curriculum
 
 420 words across 42 lists, 2nd through 8th grade, each with an example sentence
@@ -258,11 +270,13 @@ an optional sentence after a tab, a `|`, or a `-`.
 
 ## Accounts and progress
 
-- **Guest first.** Everything works with no account; progress lives in
-  `localStorage`.
-- **Sign up with email or Google.** On first sign-in, guest progress is merged
-  into the account — counters add, bests win, and the local copy is only cleared
-  once the merge is written.
+- **Account first.** A visitor gets the marketing site
+  (`screens/marketing/MarketingScreen.tsx`) and two doors: sign in, or a child's
+  code and PIN. No activity is reachable until one of them is used.
+- **Sign up with email or Google.** Progress found in `localStorage` from before
+  the gate — or from a build with no database behind it — is merged into the
+  account on first sign-in: counters add, bests win, and the local copy is only
+  cleared once the merge is written.
 - **Attempts are the record.** Every table other than `attempts` is a cache that
   can be rebuilt from it, and `rebuild_item_mastery()` in the database does
   exactly that — from checked answers only, because a rebuild is meant to derive
@@ -436,10 +450,54 @@ Plans are modelled end to end in the schema and gated in the UI. No payment
 processor is connected yet; wiring Stripe in means a webhook that updates
 `profiles.plan`.
 
+## Testing and deployment
+
+`npm test` is typecheck, lint, the vitest suites in `apps/api` and `apps/web`,
+the curriculum validator and the adaptive-engine simulation — in that order,
+stopping at the first failure. It needs nothing from the environment: the API's
+route tests mint real tokens and verify them for real, but stub the database
+entirely.
+
+So it proves everything above Postgres and nothing inside it. **Row Level
+Security is the actual security boundary between families, and no unit test
+touches it** — that needs a real database and lives in
+`apps/api/scripts/smoke.mjs`, run against a scratch project.
+
+### Pushing to `main` deploys
+
+Both components have `deploy_on_push`, so a merge to `main` ships. Two things
+follow from that, and the second one surprises people:
+
+**Tests gate the deploy.** `npm test` runs inside the `api` component's build
+command. A failure fails the build, the deployment is not promoted, and the
+previous one keeps serving. This is deliberately *not* a GitHub Actions job:
+`deploy_on_push` answers the push webhook and never reads GitHub's commit
+status, so a test workflow would race the build rather than gate it — going red
+some minutes after the bad commit was already live. A deployment is atomic
+across components, so running the suite on `api` alone covers `web` too.
+
+**Pushing does not deploy configuration.** App Platform does not read
+`.do/app.yaml` from the repository; the spec lives in DigitalOcean and the file
+is a version-controlled copy of it. Environment variables, routes, instance
+sizes and the build commands themselves only change when you apply it:
+
+```bash
+doctl apps update <app-id> --spec .do/app.yaml
+```
+
+Secrets are declared in that file with no values. Re-render before applying if
+you touched one — see [.do/README.md](.do/README.md), which covers the first
+deploy, both Supabase connection strings, migrations at startup, and rollback.
+
+The GitHub Pages workflow in `.github/workflows/deploy.yml` is manual-dispatch
+only. It is kept, not deleted, so the last static-only build can still be
+produced by hand if the DO app ever has to be rolled back to it — but a Pages
+build has no API behind it and would fail every request that needs data.
+
 ## Tech
 
-React 18 · TypeScript · Vite · Tailwind · Supabase (Postgres + Auth).
-The frontend stays a static build, so GitHub Pages still deploys it.
+React 18 · TypeScript · Vite · Tailwind · Fastify · Supabase (Postgres + Auth),
+deployed as one DigitalOcean App Platform app.
 
 ## Project layout
 

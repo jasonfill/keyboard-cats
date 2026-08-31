@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import ScreenHeader from '../../components/suite/ScreenHeader'
+import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import { STARTER_DECKS } from '../../data/quiz/starterDecks'
 import { useProgress } from '../../lib/progress/ProgressProvider'
@@ -222,8 +223,16 @@ function CardRow({ card, deckId }: { card: QuizCard; deckId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-hair">
-      <span className="min-w-[9rem] flex-1 font-extrabold text-ink">{card.term}</span>
-      <span className="flex-[2] font-bold text-muted">{card.definition}</span>
+      <RichText
+        source={card.term}
+        className="min-w-[9rem] flex-1 font-extrabold text-ink"
+        figures="describe"
+      />
+      <RichText
+        source={card.definition}
+        className="flex-[2] font-bold text-muted"
+        figures="describe"
+      />
       <Pill className={`shrink-0 ${band.className}`}>{band.label}</Pill>
     </div>
   )

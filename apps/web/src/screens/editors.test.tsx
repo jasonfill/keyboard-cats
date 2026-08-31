@@ -200,8 +200,9 @@ describe('editing an existing deck', () => {
       true,
     )
     fireEvent.click(screen.getAllByLabelText('Move down')[0]!)
-    const inputs = [...document.querySelectorAll('input')].map((i) => (i as HTMLInputElement).value)
-    expect(inputs.indexOf('Rome')).toBeLessThan(inputs.indexOf('Paris'))
+    // Card sides are textareas, not inputs: maths and figures need the room.
+    const fields = [...document.querySelectorAll('textarea')].map((t) => t.value)
+    expect(fields.indexOf('Rome')).toBeLessThan(fields.indexOf('Paris'))
   })
 
   it('does not count an existing deck against the new-deck limit', () => {
@@ -314,14 +315,6 @@ describe('word lists', () => {
   it('says how to make the first one rather than showing an empty list', () => {
     render(<CustomListsScreen navigate={navigate} />)
     expect(screen.getByText(/Paste one in and every spelling activity will use it/)).toBeTruthy()
-  })
-
-  it('nudges a guest that lists stay in this browser', () => {
-    testState.authStatus = 'signed-out'
-    render(<CustomListsScreen navigate={navigate} />)
-    expect(screen.getByText(/saved in this browser/)).toBeTruthy()
-    fireEvent.click(screen.getByText('Create a free account'))
-    expect(navigate).toHaveBeenCalledWith({ name: 'auth' })
   })
 
   it('takes a pasted list, with sentences after a tab, a pipe or a dash', async () => {

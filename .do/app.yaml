@@ -12,13 +12,26 @@ region: nyc
 services:
   - name: api
     github:
-      repo: jasonfill/keyboard-cats
+      repo: jasonfill/whizzo
       branch: main
       deploy_on_push: true
     source_dir: /
     environment_slug: node-js
-    # The shared package has to be built before the API can resolve its types.
-    build_command: npm ci && npm run build --workspace @whizzo/shared && npm run build --workspace @whizzo/api
+    # The shared package has to be built before the API can resolve its types,
+    # and before `npm test` for the same reason: @whizzo/shared has no project
+    # references, so every typecheck resolves it through its dist/.
+    #
+    # The tests run here, and not in GitHub Actions, because deploy_on_push
+    # answers the push webhook and never reads GitHub's commit status. A test
+    # workflow would race this build and go red on a commit that was already
+    # live. A failed build fails the deployment, and a deployment is atomic
+    # across components, so the previous one keeps serving both.
+    #
+    # `npm test` is typecheck, lint and vitest across every workspace, so this
+    # covers the web component too — which is why it sits on one component and
+    # costs its few minutes once. What it cannot cover is Row Level Security:
+    # that needs a real Postgres and stays in scripts/smoke.mjs.
+    build_command: npm ci && npm run build --workspace @whizzo/shared && npm test && npm run build --workspace @whizzo/api
     run_command: node apps/api/dist/server.js
     instance_size_slug: apps-s-1vcpu-0.5gb
     instance_count: 1
@@ -79,7 +92,7 @@ services:
 static_sites:
   - name: web
     github:
-      repo: jasonfill/keyboard-cats
+      repo: jasonfill/whizzo
       branch: main
       deploy_on_push: true
     source_dir: /

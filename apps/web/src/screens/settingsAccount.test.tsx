@@ -179,12 +179,12 @@ describe('the trophy room', () => {
 })
 
 describe('the account screen', () => {
-  it('tells a guest their progress is in this browser only', () => {
+  it('has nothing to show when nobody is signed in, and says so', () => {
     testState.authStatus = 'signed-out'
     testState.profile = null
     render(<AccountScreen navigate={navigate} />)
-    expect(screen.getByText(/saved in this browser only/)).toBeTruthy()
-    fireEvent.click(screen.getByText('Create a free account'))
+    expect(screen.getByText(/Nobody is signed in/)).toBeTruthy()
+    fireEvent.click(screen.getByText('Sign in'))
     expect(navigate).toHaveBeenCalledWith({ name: 'auth' })
   })
 

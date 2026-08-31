@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill } from '../../components/ui'
 import type { QuizItemResult, QuizSessionApi } from '../../hooks/useQuizSession'
 import { sfx } from '../../lib/sound'
@@ -168,7 +169,7 @@ export default function MatchGame({
                       : 'bg-white/90 text-ink ring-hair hover:-translate-y-0.5 hover:shadow-lg'
               }`}
             >
-              {tile.text}
+              <RichText source={tile.text} figures="describe" />
             </button>
           )
         })}

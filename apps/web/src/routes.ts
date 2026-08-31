@@ -8,9 +8,12 @@ import type { SessionMode } from './lib/spelling/session'
  * deep links to a half-finished spelling test would not be useful.
  */
 export type Route =
+  // Signed out: the only two screens a visitor can reach.
+  /** The marketing site — what this is, how it works, what it costs. */
+  | { name: 'marketing' }
+  | { name: 'auth' }
   // Suite
   | { name: 'home' }
-  | { name: 'auth' }
   | { name: 'account' }
   | { name: 'family' }
   | { name: 'upgrade' }

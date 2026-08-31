@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
+import RichField from '../../components/rich/RichField'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill } from '../../components/ui'
 import { limitsFor } from '../../lib/plans'
@@ -167,6 +168,8 @@ export default function DeckEditor({
         </Button>
       )}
 
+      <MathHelp />
+
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xl font-extrabold text-ink">
           Cards ({draft.cards.filter(isFilled).length})
@@ -209,18 +212,19 @@ export default function DeckEditor({
                 </IconButton>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <input
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <RichField
                 value={card.term}
-                onChange={(e) => setCard(card.id, { term: e.target.value })}
+                onChange={(term) => setCard(card.id, { term })}
                 placeholder={draft.termLabel}
-                className="w-full rounded-xl border-2 border-edge px-3 py-2 font-bold text-ink focus:border-ink focus:outline-none"
+                ariaLabel={`Card ${i + 1} ${draft.termLabel || 'term'}`}
               />
-              <input
+              <RichField
                 value={card.definition}
-                onChange={(e) => setCard(card.id, { definition: e.target.value })}
+                onChange={(definition) => setCard(card.id, { definition })}
                 placeholder={draft.definitionLabel}
-                className="w-full rounded-xl border-2 border-edge px-3 py-2 font-bold text-body focus:border-ink focus:outline-none"
+                ariaLabel={`Card ${i + 1} ${draft.definitionLabel || 'definition'}`}
+                className="text-body"
               />
             </div>
           </div>
@@ -250,6 +254,62 @@ export default function DeckEditor({
         </p>
       )}
     </div>
+  )
+}
+
+
+/**
+ * The one-paragraph version of the format, tucked away until asked for.
+ *
+ * Most decks never need it, so it does not get to take up room by default —
+ * but somebody writing a geometry deck needs to know that `$` starts maths
+ * without going and finding documentation, so it is one click away rather than
+ * one search away.
+ */
+function MathHelp() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mb-4">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="text-sm font-bold text-muted underline"
+      >
+        {open ? 'Hide' : 'Writing maths and diagrams?'}
+      </button>
+      {open && (
+        <Card className="mt-2">
+          <ul className="space-y-2 text-sm font-bold text-body">
+            <li>
+              Put maths between dollar signs: <Code>$\frac{'{3}'}{'{4}'}$</Code> draws three
+              quarters, <Code>$x^2$</Code> draws x squared, <Code>$45^\circ$</Code> draws 45
+              degrees.
+            </li>
+            <li>
+              Two dollar signs — <Code>$$…$$</Code> — put the maths on its own line, bigger.
+            </li>
+            <li>
+              Equations copied out of Word or Google Docs can be pasted straight in; MathML is
+              understood as it is.
+            </li>
+            <li>
+              The <strong>Figure</strong> button drops in a shape or a chart you can edit. The
+              preview under the box updates as you type.
+            </li>
+            <li>
+              Typed answers are checked against what the maths <em>says</em>, so an answer written
+              as <Code>$\frac{'{3}'}{'{4}'}$</Code> is matched by typing <Code>3/4</Code>.
+            </li>
+          </ul>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="rounded bg-wash px-1 py-0.5 font-mono text-xs text-ink">{children}</code>
   )
 }
 

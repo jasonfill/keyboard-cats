@@ -33,7 +33,7 @@ function newId(): string {
 }
 
 export default function CustomListsScreen({ navigate }: { navigate: Navigate }) {
-  const { profile, status, configured } = useAuth()
+  const { profile } = useAuth()
   const { snapshot, saveCustomLists, deleteCustomList } = useProgress()
   const limits = limitsFor(profile?.plan ?? 'free')
 
@@ -86,16 +86,6 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
         subtitle="Paste this week's class list and practise it with every activity."
         onBack={() => navigate({ name: 'home' })}
       />
-
-      {status !== 'signed-in' && configured && (
-        <Card className="mb-4">
-          <p className="mb-3 font-bold text-muted">
-            Lists you make here are saved in this browser. Add a free account and they follow you
-            between devices.
-          </p>
-          <Button onClick={() => navigate({ name: 'auth' })}>Create a free account</Button>
-        </Card>
-      )}
 
       {editing ? (
         <Card className="mb-4">

@@ -5,6 +5,7 @@
 // costs anyone their streak.
 
 import { LEARNING_THRESHOLD, MASTERED_THRESHOLD } from '../adaptive'
+import { richToPlain, splitOutsideRich, withoutRich } from '../rich/parse'
 import {
   cardKey,
   masteryKey,
@@ -16,6 +17,8 @@ import {
 
 export const MAX_CARDS_PER_DECK = 300
 export const MAX_TITLE_LENGTH = 80
+/** Matches the API's ceiling. A figure is JSON inside the text, so it is not small. */
+export const MAX_CARD_TEXT = 4000
 
 export function newId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
@@ -30,7 +33,10 @@ export function newId(prefix: string): string {
  * be produced, and how much of it is unfamiliar vocabulary.
  */
 export function estimateDifficulty(term: string, definition: string): number {
-  const answer = definition.trim()
+  // Measured on the readable text, not the source: a card carrying a figure is
+  // a few hundred characters of JSON, and rating it by that would make every
+  // geometry question the hardest card in the deck.
+  const answer = richToPlain(definition).trim()
   const words = answer.split(/\s+/).filter(Boolean).length
   const chars = answer.length
 
@@ -41,7 +47,7 @@ export function estimateDifficulty(term: string, definition: string): number {
   if (chars >= 40) score += 0.35
   if (chars >= 90) score += 0.4
   // A long prompt is a long thing to hold in mind before answering at all.
-  if (term.trim().length >= 30) score += 0.3
+  if (richToPlain(term).trim().length >= 30) score += 0.3
   // Numerals and symbols are recalled precisely or not at all — no partial credit.
   if (/[0-9]/.test(answer)) score += 0.2
 
@@ -86,9 +92,9 @@ export function normalizeDeck(deck: QuizDeck): QuizDeck {
       .slice(0, MAX_CARDS_PER_DECK)
       .map((c) => ({
         ...c,
-        term: c.term.trim(),
-        definition: c.definition.trim(),
-        hint: c.hint?.trim() || null,
+        term: c.term.trim().slice(0, MAX_CARD_TEXT),
+        definition: c.definition.trim().slice(0, MAX_CARD_TEXT),
+        hint: c.hint?.trim().slice(0, 1000) || null,
         difficulty: estimateDifficulty(c.term, c.definition),
       })),
     updatedAt: Date.now(),
@@ -137,7 +143,11 @@ const TERM_PATTERNS: Record<Exclude<TermSeparator, 'auto'>, RegExp> = {
  * shows up inside plenty of legitimate definitions, so it is tried last.
  */
 function detectTermSeparator(rows: string[]): Exclude<TermSeparator, 'auto'> {
-  const sample = rows.slice(0, 25)
+  // Counted on the prose only. A row carrying a figure contains a dozen colons
+  // and commas inside the figure's JSON, and counting those picks a separator
+  // that appears nowhere in the actual text — which then splits nothing, and
+  // every row in the paste is reported as unparseable.
+  const sample = rows.slice(0, 25).map(withoutRich)
   const hits = (re: RegExp) => sample.filter((r) => re.test(r)).length
   const order: Array<Exclude<TermSeparator, 'auto'>> = ['tab', 'dash', 'colon', 'comma']
   for (const key of order) {
@@ -148,10 +158,15 @@ function detectTermSeparator(rows: string[]): Exclude<TermSeparator, 'auto'> {
   return 'tab'
 }
 
+/**
+ * Cut the paste into rows, never inside a figure or an equation. A figure is
+ * JSON living in the card text, and JSON is made of the same commas, colons and
+ * semicolons the importer splits on.
+ */
 function splitOn(text: string, rows: Exclude<CardSeparator, 'auto'>): string[] {
-  if (rows === 'semicolon') return text.split(/\s*;\s*/)
-  if (rows === 'blank-line') return text.split(/\n\s*\n/)
-  return text.split('\n')
+  if (rows === 'semicolon') return splitOutsideRich(text, /\s*;\s*/)
+  if (rows === 'blank-line') return splitOutsideRich(text, /\n\s*\n/)
+  return splitOutsideRich(text, /\n/)
 }
 
 function clean(rows: string[]): string[] {
@@ -175,7 +190,7 @@ function buildCards(rows: string[], separator: Exclude<TermSeparator, 'auto'>): 
     // A row may legitimately span several lines when entries are separated by
     // blank lines, so newlines inside one row collapse to spaces.
     const flat = row.replace(/\s*\n\s*/g, ' ').trim()
-    const parts = flat.split(pattern)
+    const parts = splitOutsideRich(flat, pattern)
     const term = parts[0]?.trim() ?? ''
     // Everything after the first separator is the definition, so a definition
     // containing the separator survives intact.

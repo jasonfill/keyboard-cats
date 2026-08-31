@@ -17,10 +17,11 @@ type Tab = 'signin' | 'signup'
 
 interface Props {
   onDone: () => void
-  onGuest: () => void
+  /** Out of the way without signing in — back to the marketing site. */
+  onBack: () => void
 }
 
-export default function AuthScreen({ onDone, onGuest }: Props) {
+export default function AuthScreen({ onDone, onBack }: Props) {
   const {
     configured,
     signIn,
@@ -131,8 +132,8 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
           <p className="mb-5 text-sm font-bold text-stone">
             Setting one up takes about ten minutes: see <code>supabase/README.md</code>.
           </p>
-          <Button className="w-full" onClick={onGuest}>
-            Keep playing
+          <Button className="w-full" onClick={onBack}>
+            Back
           </Button>
         </Card>
       </div>
@@ -229,10 +230,10 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
             Sign in with a code
           </Button>
           <button
-            onClick={onGuest}
+            onClick={onBack}
             className="mt-4 w-full text-sm font-bold text-stone underline hover:text-ink"
           >
-            Keep playing without an account
+            ← Back
           </button>
         </Card>
       </div>
@@ -370,6 +371,12 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
           >
             Kids: sign in with a code
           </button>
+          <button
+            onClick={onBack}
+            className="mt-2 w-full text-sm font-bold text-stone underline hover:text-ink"
+          >
+            ← Back
+          </button>
         </Card>
       </div>
     )
@@ -500,10 +507,10 @@ export default function AuthScreen({ onDone, onGuest }: Props) {
       </Card>
 
       <button
-        onClick={onGuest}
+        onClick={onBack}
         className="mt-5 w-full text-center text-sm font-bold text-stone underline hover:text-ink"
       >
-        Keep playing without an account
+        ← Back
       </button>
 
       <p className="mt-3 text-center text-xs font-bold text-stone">

@@ -11,6 +11,7 @@ import { setSoundEnabled } from './lib/sound'
 import type { Navigate, Route } from './routes'
 import CatRainScreen from './screens/CatRainScreen'
 import LessonScreen from './screens/LessonScreen'
+import MarketingScreen from './screens/marketing/MarketingScreen'
 import PracticeScreen from './screens/PracticeScreen'
 import DeckEditor from './screens/quiz/DeckEditor'
 import DeckScreen from './screens/quiz/DeckScreen'
@@ -59,7 +60,7 @@ export default function App() {
 function Router() {
   const game = useGameState()
   const { ready } = useProgress()
-  const { status: authStatus } = useAuth()
+  const { status: authStatus, configured } = useAuth()
   const { learners, status: learnerStatus } = useLearners()
   const [route, setRoute] = useState<Route>({ name: 'home' })
   const sentToSetup = useRef(false)
@@ -92,17 +93,42 @@ function Router() {
     window.scrollTo({ top: 0 })
   }
 
+  // Nothing in the app is reachable while signed out. Practice only means
+  // something when it is attributed to a learner — the level, the review
+  // schedule and the report all hang off that one record — so a visitor gets
+  // the marketing site and a door, not a round of spelling that lands nowhere.
+  //
+  // The exception is a build with no Supabase behind it, where signing in is
+  // impossible: gating there would leave a developer with a locked door and no
+  // key. Every deployed build is configured, so this is a local-only path.
+  if (authStatus === 'loading') return <Loading />
+  if (authStatus !== 'signed-in' && configured) {
+    return route.name === 'auth' ? (
+      <AuthScreen
+        onDone={() => navigate({ name: 'home' })}
+        onBack={() => navigate({ name: 'marketing' })}
+      />
+    ) : (
+      <MarketingScreen navigate={navigate} />
+    )
+  }
+
   if (!ready) return <Loading />
 
   switch (route.name) {
-    // Suite
+    // Suite.
+    //
+    // `marketing` lands here too: signing in elsewhere — another tab, a
+    // restored session — can leave a grown-up standing on that route, and
+    // their home is the app.
+    case 'marketing':
     case 'home':
       return <SuiteHome game={game} navigate={navigate} />
     case 'auth':
       return (
         <AuthScreen
           onDone={() => navigate({ name: 'home' })}
-          onGuest={() => navigate({ name: 'home' })}
+          onBack={() => navigate({ name: 'home' })}
         />
       )
     case 'family':

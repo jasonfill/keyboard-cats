@@ -102,3 +102,39 @@ describe('isPass', () => {
     expect(isPass('correct', true)).toBe(true)
   })
 })
+
+describe('answers written as maths', () => {
+  it('grades against what the maths says, not how it was written', () => {
+    expect(gradeWritten('3/4', '$\\frac{3}{4}$')).toBe('correct')
+    expect(gradeWritten('45°', '$45^\\circ$')).toBe('correct')
+    expect(gradeWritten('1/2', '$\\frac{3}{4}$')).toBe('wrong')
+  })
+
+  it('keeps a fraction whole instead of reading it as two alternatives', () => {
+    // "couch / sofa" means either will do; "1/2" does not mean "1 will do".
+    expect(acceptableAnswers('1/2')).toEqual(['1/2'])
+    expect(acceptableAnswers('3/4 cup')).toEqual(['3/4 cup'])
+    expect(gradeWritten('1', '1/2')).toBe('wrong')
+    expect(gradeWritten('3', '3/4 cup')).toBe('wrong')
+  })
+
+  it('still offers alternatives on a card that has maths on it', () => {
+    // The slash inside the fraction is not a separator; the one after it is.
+    expect(acceptableAnswers('$\\frac{1}{2}$ / a half')).toEqual(['$\\frac{1}{2}$', 'a half'])
+    expect(gradeWritten('1/2', '$\\frac{1}{2}$ / a half')).toBe('correct')
+    expect(gradeWritten('a half', '$\\frac{1}{2}$ / a half')).toBe('correct')
+    expect(acceptableAnswers('couch / sofa')).toEqual(['couch', 'sofa'])
+  })
+
+  it('reads a card about money as a card about money', () => {
+    const money = 'A shirt costs $12 and pants cost $20. How much altogether?'
+    // Not "costs 12andpantscost20" — the middle of the sentence is prose.
+    expect(normalize(money)).toContain('costs $12 and pants cost $20')
+  })
+
+  it('answers a card whose prompt is a figure the same as any other card', () => {
+    const answer = '[[figure {"kind":"bar","data":[{"label":"Mon","value":4}]}]]'
+    // The description is what the card says, so it is what has to match.
+    expect(normalize(answer)).toContain('mon 4')
+  })
+})

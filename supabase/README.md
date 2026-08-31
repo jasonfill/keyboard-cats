@@ -1,9 +1,9 @@
 # Setting up the database
 
 Cat Academy stores accounts and learning progress in [Supabase](https://supabase.com)
-(hosted Postgres + auth). The app runs fine without it — everything falls back
-to `localStorage` guest mode — so this is only needed when you want real
-accounts and progress that follows a learner between devices.
+(hosted Postgres + auth). Without it the app opens unauthenticated against
+`localStorage` — the one case where the sign-in gate is lifted, because with no
+auth service there is no way through it. Any real build needs this.
 
 Budget about ten minutes.
 
@@ -140,10 +140,22 @@ applied; any failure raises, so a non-zero exit means the schema regressed.
    `https://<your-project-ref>.supabase.co/auth/v1/callback`
 3. In Supabase, go to **Authentication → Providers → Google**, enable it, and
    paste the client ID and secret.
-4. In **Authentication → URL Configuration**, set the **Site URL** to where the
-   app is served, and add every URL you use to **Redirect URLs**:
-   - `http://localhost:5173/` for local development
-   - `https://<user>.github.io/keyboard-cats/` for the GitHub Pages build
+4. In **Authentication → URL Configuration**, set the **Site URL** to
+   `https://whizzo.app` and add every origin you sign in from to
+   **Redirect URLs**:
+   - `https://whizzo.app/**` for the deployed app
+   - `http://localhost:5173/**` for local development
+
+   Both entries matter, and for the same reason. The app asks to come back to
+   its own origin (`authRedirectUrl()` in
+   [`apps/web/src/lib/supabase.ts`](../apps/web/src/lib/supabase.ts)), but
+   Supabase honours that only when it matches an entry in **Redirect URLs** —
+   otherwise it silently sends the browser to the **Site URL** instead. A new
+   project ships with `http://localhost:3000` there, so a deployment that skips
+   this step finishes Google sign-in by landing on `localhost:3000/?code=…`,
+   an origin that has neither the app nor the PKCE verifier the code is
+   exchanged with. The same allow-list governs the confirmation-email and
+   password-reset links, so all three break together.
 
 Email and password sign-in works with no extra configuration. If you would
 rather skip the confirmation email while testing, turn off **Confirm email**
