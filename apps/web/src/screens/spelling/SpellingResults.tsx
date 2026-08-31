@@ -7,6 +7,7 @@ import { sfx } from '../../lib/sound'
 import { activity as activityDef } from '../../lib/spelling/activities'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { useTheme } from '../../lib/theme/ThemeProvider'
+import { useBand } from '../../lib/band/useBand'
 import { earnedFor } from '../../lib/theme/rewards'
 import { slotLabels } from '../../lib/themes'
 import { speak } from '../../lib/spelling/speech'
@@ -29,6 +30,7 @@ function encouragement(accuracy: number, predicted: number): string {
 }
 
 export default function SpellingResults({ summary, navigate, onAgain }: Props) {
+  const { celebrates } = useBand()
   const def = activityDef(summary.activity)
   const missed = summary.results.filter((r) => !r.correct)
   const abilityDelta = summary.abilityAfter - summary.abilityBefore
@@ -50,7 +52,7 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-2xl py-4">
-      {(levelledUp || summary.accuracy >= 90) && <Confetti count={40} />}
+      {celebrates && (levelledUp || summary.accuracy >= 90) && <Confetti count={40} />}
 
       <div className="mb-4 rounded-[26px] p-7 text-center" style={{ background: theme.tintA }}>
         <div className="flex justify-center">
@@ -82,9 +84,13 @@ export default function SpellingResults({ summary, navigate, onAgain }: Props) {
           reaches this branch — which is what the footnote below promises. */}
       {earnedReward && (
         <div className="mb-4 rounded-[26px] border border-hair bg-chalk p-6 text-center">
-          <div className="mx-auto flex justify-center">
-            <Mascot mood="cheer" size={108} />
-          </div>
+          {/* The collectible itself is earned, so it is shown to everyone. The
+              cheering cat on top of it is decoration, and is not. */}
+          {celebrates && (
+            <div className="mx-auto flex justify-center">
+              <Mascot mood="cheer" size={108} />
+            </div>
+          )}
           <div className="mt-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
             New {theme.unit}
           </div>

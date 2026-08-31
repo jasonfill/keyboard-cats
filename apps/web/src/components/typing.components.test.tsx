@@ -12,6 +12,11 @@ import { THEMES } from '../lib/themes'
 vi.mock('../lib/theme/ThemeProvider', async () =>
   (await import('../test/mockProviders')).themeMock(),
 )
+// The results screen asks who is reading it, so it can say "You are a typing
+// wizard! 🧙" to a seven-year-old and "94% accurate. Steady." to a sixth-former.
+vi.mock('../lib/learners/LearnerProvider', async () =>
+  (await import('../test/mockProviders')).learnersMock(),
+)
 
 import Background from './Background'
 import Confetti from './Confetti'

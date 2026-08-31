@@ -4,9 +4,9 @@ import { Button, Card } from '../../components/ui'
 import { STARTER_DECKS } from '../../data/quiz/starterDecks'
 import { useQuizSession, type QuizItemResult, type QuizSummary } from '../../hooks/useQuizSession'
 import { useProgress } from '../../lib/progress/ProgressProvider'
+import { useBand } from '../../lib/band/useBand'
 import { allDecks, findDeck } from '../../lib/quiz/decks'
 import {
-  DEFAULT_LEARN_SIZE,
   DEFAULT_TEST_SIZE,
   MATCH_PAIRS,
   modeDef,
@@ -15,6 +15,7 @@ import {
 } from '../../lib/quiz/session'
 import type { Navigate } from '../../routes'
 import Flashcards from './Flashcards'
+import RecallRound from './RecallRound'
 import MatchGame from './MatchGame'
 import QuestionRunner from './QuestionRunner'
 import QuizResults from './QuizResults'
@@ -27,15 +28,26 @@ interface Props {
   navigate: Navigate
 }
 
-function defaultSize(mode: StudyMode): number | undefined {
+/**
+ * How long a round is when nobody asked for a particular length.
+ *
+ * A six-year-old's attention runs out well before a sixth-former's, so the
+ * band shortens the round rather than the app picking one length and hoping.
+ * This is stamina, not difficulty: the cards are chosen the same way and the
+ * ladder counts the same evidence — there are simply fewer of them in one
+ * sitting. A length in the URL still wins, because that was a deliberate ask.
+ */
+function defaultSize(mode: StudyMode, roundSize: number): number | undefined {
   if (mode === 'match') return MATCH_PAIRS
+  // A check is a check: it stays long enough to mean something at every age.
   if (mode === 'test') return DEFAULT_TEST_SIZE
-  if (mode === 'learn' || mode === 'review') return DEFAULT_LEARN_SIZE
+  if (mode === 'learn' || mode === 'review') return roundSize
   return undefined // flashcards run the whole deck
 }
 
 export default function QuizPlay({ mode, deckId, size, direction, navigate }: Props) {
   const { snapshot } = useProgress()
+  const { roundSize } = useBand()
   const session = useQuizSession()
   const [summary, setSummary] = useState<QuizSummary | null>(null)
   const [saving, setSaving] = useState(false)
@@ -56,7 +68,7 @@ export default function QuizPlay({ mode, deckId, size, direction, navigate }: Pr
       mode,
       decks,
       deckId,
-      size: size ?? defaultSize(mode),
+      size: size ?? defaultSize(mode, roundSize),
       direction,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,7 +86,7 @@ export default function QuizPlay({ mode, deckId, size, direction, navigate }: Pr
     }
     setSaving(true)
     try {
-      const durationMs = results.reduce((n, r) => n + r.responseMs, 0)
+      const durationMs = results.reduce((n, r) => n + (r.responseMs ?? 0), 0)
       const built = await session.finish(
         results,
         mode === 'match'
@@ -154,6 +166,19 @@ export default function QuizPlay({ mode, deckId, size, direction, navigate }: Pr
       />
 
       {mode === 'flashcards' && <Flashcards session={session} onFinish={complete} />}
+      {/* Free recall does not walk a queue: the learner writes what they can
+          and the whole set is graded against it in one go, so it takes the
+          plan rather than the session. */}
+      {mode === 'recall' && (
+        <RecallRound
+          plan={session.plan}
+          deckTitle={title}
+          onFinish={(result) => {
+            void session.submitRecall(result)
+            complete([])
+          }}
+        />
+      )}
       {mode === 'match' && <MatchGame session={session} onFinish={complete} />}
       {(mode === 'learn' || mode === 'test' || mode === 'review') && (
         <QuestionRunner session={session} strict={mode === 'test'} onFinish={complete} />

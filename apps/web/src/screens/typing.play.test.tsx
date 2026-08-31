@@ -11,6 +11,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../lib/theme/ThemeProvider', async () =>
   (await import('../test/mockProviders')).themeMock(),
 )
+// The results screen asks who is reading it, so it can say "You are a typing
+// wizard! 🧙" to a seven-year-old and "94% accurate. Steady." to a sixth-former.
+vi.mock('../lib/learners/LearnerProvider', async () =>
+  (await import('../test/mockProviders')).learnersMock(),
+)
 
 import { aGame, spies } from '../test/mockProviders'
 import { CURRICULUM } from '../data/lessons'

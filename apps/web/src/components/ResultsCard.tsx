@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { RoundResult } from '../lib/stats'
 import { feedbackLine } from '../lib/stats'
+import { useBand } from '../lib/band/useBand'
 import type { Achievement } from '../data/achievements'
 import { randomTypingFact } from '../lib/facts'
 import { sfx } from '../lib/sound'
@@ -32,6 +33,7 @@ export default function ResultsCard({
   onNext,
   onMenu,
 }: Props) {
+  const { band, celebrates } = useBand()
   const { theme } = useTheme()
 
   useEffect(() => {
@@ -45,13 +47,13 @@ export default function ResultsCard({
 
   return (
     <div className="relative mx-auto w-full max-w-2xl">
-      {stars >= 2 && <Confetti />}
+      {celebrates && stars >= 2 && <Confetti />}
       <Card className="text-center">
         <h2 className="text-3xl font-extrabold text-ink">{title} complete!</h2>
         <div className="my-4 flex justify-center">
           <StarRow stars={stars} size={52} />
         </div>
-        <p className="mb-4 text-lg font-bold text-body">{feedbackLine(result.accuracy)}</p>
+        <p className="mb-4 text-lg font-bold text-body">{feedbackLine(result.accuracy, band)}</p>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat label="Score" value={result.score.toLocaleString()} color="text-ink" />

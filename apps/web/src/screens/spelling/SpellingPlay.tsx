@@ -7,6 +7,7 @@ import { wordDifficulty } from '../../data/spelling'
 import { useSpellingSession, type ItemResult } from '../../hooks/useSpellingSession'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { useTheme } from '../../lib/theme/ThemeProvider'
+import { useBand } from '../../lib/band/useBand'
 import { sfx, unlockAudio } from '../../lib/sound'
 import {
   activity as activityDef,
@@ -47,6 +48,7 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
   const session = useSpellingSession()
   const { snapshot } = useProgress()
   const { theme } = useTheme()
+  const { band, say, roundSize } = useBand()
   const def = activityDef(activity)
 
   const [phase, setPhase] = useState<Phase>('prompt')
@@ -78,8 +80,17 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
     if (startedRef.current) return
     startedRef.current = true
     primeVoices()
-    session.start({ activity, mode, listId, customWords, size })
-  }, [activity, customWords, listId, mode, session, size])
+    // Same rule as the quiz: the band sets how long a round is when nobody
+    // asked, and an explicit size from the URL still wins. A placement round
+    // is left alone — it has to span the grades to place anyone.
+    session.start({
+      activity,
+      mode,
+      listId,
+      customWords,
+      size: size ?? (mode === 'placement' ? undefined : roundSize),
+    })
+  }, [activity, customWords, listId, mode, roundSize, session, size])
 
   // Voices load asynchronously, so the answer to "can this device talk?" may
   // change a beat after mount.
@@ -291,23 +302,38 @@ export default function SpellingPlay({ activity, mode, listId, customListId, siz
       >
         <Mascot mood={mood} size={62} className={phase === 'prompt' ? 'animate-floaty' : ''} />
         <div>
-          {/* The theme's cheer is praise, so it only appears where praise is
-              true. A miss gets the same even tone the `thinking` mascot has:
-              not congratulation, and not disappointment either. */}
-          {phase === 'feedback' && last && !last.correct ? (
-            <>
-              <div className="font-display text-lg font-extrabold text-ink">
-                That one goes back in the pile.
-              </div>
-              <div className="text-[15px] text-body">
-                You will see it again before long — that is how it sticks.
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="font-display text-lg font-extrabold text-ink">{theme.cheer}</div>
-              <div className="text-[15px] text-body">{theme.cheerSub}</div>
-            </>
+          {/* Praise belongs to an answer, and only to a right one.
+              This used to be the `else` of the miss branch, which meant it also
+              rendered while the learner was still reading the word — so word
+              one of a placement check congratulated a brand-new learner before
+              they had typed anything, and told them "that is the word that got
+              you last Tuesday" about a word they had never seen. Being
+              congratulated for nothing is how a child learns the praise means
+              nothing; being told a false thing about their own history is
+              worse. Nothing is said until there is something to say. */}
+          {phase === 'feedback' && last && (
+            last.correct ? (
+              <>
+                {/* The theme owns the words; the band owns whether they are
+                    said at all. A sixteen-year-old gets "Correct · 1.4s", not
+                    a cheer and a mascot line about last Tuesday. */}
+                <div className="font-display text-lg font-extrabold text-ink">
+                  {band === 'upper' ? say(true, last.responseMs) : theme.cheer}
+                </div>
+                {band !== 'upper' && (
+                  <div className="text-[15px] text-body">{theme.cheerSub}</div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="font-display text-lg font-extrabold text-ink">
+                  {band === 'upper' ? 'Not right.' : 'That one goes back in the pile.'}
+                </div>
+                <div className="text-[15px] text-body">
+                  You will see it again before long — that is how it sticks.
+                </div>
+              </>
+            )
           )}
         </div>
       </div>

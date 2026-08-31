@@ -4,6 +4,7 @@ import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import type { QuizSummary } from '../../hooks/useQuizSession'
 import { modeDef } from '../../lib/quiz/session'
+import { useBand } from '../../lib/band/useBand'
 
 interface Props {
   summary: QuizSummary
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props) {
+  const { band, celebrates } = useBand()
   const def = modeDef(summary.mode)
   // Not "everything you ever got wrong" — the cards still unresolved when the
   // round ended. One missed and then fixed is a success story, not a to-do.
@@ -22,14 +24,18 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
 
   return (
     <div className="mx-auto w-full max-w-2xl py-4">
-      {summary.stars >= 3 && <Confetti />}
+      {celebrates && summary.stars >= 3 && <Confetti />}
 
       <Card className="mb-4 text-center">
-        <Mascot
-          mood={summary.accuracy >= 80 ? 'cheer' : summary.accuracy >= 50 ? 'idle' : 'resting'}
-          size={110}
-          className="mx-auto animate-pounce"
-        />
+        {/* The mascot bounces for the learner it was drawn for. Higher up, the
+            score is the thing on the screen and the cat is in the way of it. */}
+        {celebrates && (
+          <Mascot
+            mood={summary.accuracy >= 80 ? 'cheer' : summary.accuracy >= 50 ? 'idle' : 'resting'}
+            size={110}
+            className="mx-auto animate-pounce"
+          />
+        )}
         <h1 className="mt-2 text-4xl font-extrabold text-ink">
           {summary.itemsCorrect} / {summary.itemsTotal}
         </h1>
@@ -76,7 +82,9 @@ export default function QuizResults({ summary, onAgain, onDeck, onHome }: Props)
             this exact set of cards, not a flat pass mark. */}
         <p className="mt-4 font-bold text-muted">
           {beatPrediction
-            ? `We expected about ${summary.predictedAccuracy}% on these cards — you beat it. 🎉`
+            ? `We expected about ${summary.predictedAccuracy}% on these cards — you beat it.${
+                band === 'upper' ? '' : ' 🎉'
+              }`
             : `We expected about ${summary.predictedAccuracy}% on these. These were hard cards; keep going.`}
         </p>
       </Card>
