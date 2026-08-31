@@ -96,6 +96,11 @@ export function normalizeDeck(deck: QuizDeck): QuizDeck {
         definition: c.definition.trim().slice(0, MAX_CARD_TEXT),
         hint: c.hint?.trim().slice(0, 1000) || null,
         difficulty: estimateDifficulty(c.term, c.definition),
+        // Enrichment survives a normalise. `...c` already carries it; these
+        // two are trimmed because an empty string is not a category, and a
+        // card claiming a blank one would light up Sort with nothing in it.
+        category: c.category?.trim() || null,
+        example: c.example?.trim() || null,
       })),
     updatedAt: Date.now(),
   }

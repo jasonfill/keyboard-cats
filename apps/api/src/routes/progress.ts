@@ -161,11 +161,11 @@ async function writeSkill(
 ): Promise<void> {
   await db.query(
     `insert into public.skill_states
-       (learner_id, subject, ability, ability_sd, level_index, placed,
+       (learner_id, subject, track, ability, ability_sd, level_index, placed,
         total_attempts, total_correct, streak_days, best_streak_days,
         last_active_on, settings, updated_at)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, now())
-     on conflict (learner_id, subject) do update set
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, now())
+     on conflict (learner_id, subject, track) do update set
        ability = excluded.ability,
        ability_sd = excluded.ability_sd,
        level_index = excluded.level_index,
@@ -180,6 +180,9 @@ async function writeSkill(
     [
       learnerId,
       skill.subject,
+      // '' is the whole-subject pool, which is what every row meant before
+      // tracks — and what spelling and typing still mean.
+      skill.track ?? '',
       skill.ability,
       skill.abilitySd,
       skill.levelIndex,
@@ -307,6 +310,8 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
       await assertVisible(db, id)
 
       if (change.skill) await writeSkill(db, id, change.skill)
+      // A review round crosses decks and moves each card's own pool.
+      for (const state of change.skills ?? []) await writeSkill(db, id, state)
       if (change.mastery?.length) await writeMastery(db, id, change.mastery)
 
       if (change.list) {
@@ -336,8 +341,8 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
              (id, learner_id, subject, activity, list_id, is_test, items_total,
               items_correct, accuracy, score, wpm, duration_ms, ability_before,
               ability_after, meta, started_at, ended_at,
-              evidence, verified_items_total, verified_items_correct)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+              evidence, verified_items_total, verified_items_correct, track)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
            on conflict (id) do update set
              items_total = excluded.items_total,
              items_correct = excluded.items_correct,
@@ -356,7 +361,7 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
            s.abilityBefore, s.abilityAfter, JSON.stringify(s.meta ?? {}),
            iso(s.startedAt), iso(s.endedAt),
            s.evidence ?? 'client', s.verifiedItemsTotal ?? 0,
-           s.verifiedItemsCorrect ?? 0],
+           s.verifiedItemsCorrect ?? 0, s.track ?? null],
         )
       }
 
@@ -369,11 +374,11 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
           'public.attempts',
           ['learner_id', 'session_id', 'subject', 'item_key', 'activity', 'is_test',
            'verified', 'correct', 'response_ms', 'hints_used', 'difficulty', 'given',
-           'created_at'],
+           'created_at', 'track', 'asked_at'],
           attempts.map((a) => [
             id, session?.id ?? null, a.subject, a.itemKey, a.activity, a.isTest,
             a.verified, a.correct, a.responseMs, a.hintsUsed, a.difficulty, a.given,
-            iso(a.at),
+            iso(a.at), a.track ?? null, a.askedAt ?? null,
           ]),
         )
       }
@@ -384,6 +389,11 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
       // be impossible to say without one.
       if (session) {
         await db.query('select public.complete_matching_assignments($1, $2)', [id, session.id])
+        // And any goal this round tipped over. Separate because it is a
+        // different question: an activity task asks "did they do it", a goal
+        // asks "do they know it" — and one good afternoon must not answer the
+        // second one.
+        await db.query('select public.close_met_goals($1, $2)', [id, session.id])
       }
 
       if (change.achievements?.length) {
@@ -565,11 +575,12 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
         const set = await db.query(
           `insert into public.assignment_sets
              (created_by, subject, activity, target_id, size, title, note,
-              min_accuracy, due_on)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+              min_accuracy, due_on, goal)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
            returning id`,
           [caller.id, d.subject, d.activity, d.targetId ?? null, d.size ?? null,
-           d.title, d.note ?? null, d.minAccuracy ?? null, d.dueOn ?? null],
+           d.title, d.note ?? null, d.minAccuracy ?? null, d.dueOn ?? null,
+           d.goal ? JSON.stringify(d.goal) : null],
         )
         const setId = set.rows[0].id
 
@@ -796,8 +807,8 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
         const { rows } = await db.query(
           `insert into public.decks
              (id, owner_user_id, title, description, tags, cards, term_label,
-              definition_label, updated_at)
-           values ($1,$2,$3,$4,$5,$6,$7,$8, now())
+              definition_label, track, objectives, updated_at)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, now())
            on conflict (id) do update set
              title = excluded.title,
              description = excluded.description,
@@ -805,11 +816,14 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
              cards = excluded.cards,
              term_label = excluded.term_label,
              definition_label = excluded.definition_label,
+             track = excluded.track,
+             objectives = excluded.objectives,
              updated_at = now()
            returning *`,
           [deck.id, caller.id, deck.title, deck.description ?? '', deck.tags ?? [],
            JSON.stringify(deck.cards ?? []), deck.termLabel ?? 'Term',
-           deck.definitionLabel ?? 'Definition'],
+           deck.definitionLabel ?? 'Definition', deck.track ?? null,
+           deck.objectives ?? []],
         )
         out.push(toDeck(rows[0]))
       }
@@ -942,8 +956,8 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
         const { rows } = await db.query(
           `insert into public.decks
              (id, learner_id, title, description, tags, cards, term_label,
-              definition_label, created_by, updated_at)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9, now())
+              definition_label, created_by, track, objectives, updated_at)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, now())
            on conflict (id) do update set
              title = excluded.title,
              description = excluded.description,
@@ -951,10 +965,13 @@ export async function progressRoutes(app: FastifyInstance): Promise<void> {
              cards = excluded.cards,
              term_label = excluded.term_label,
              definition_label = excluded.definition_label,
+             track = excluded.track,
+             objectives = excluded.objectives,
              updated_at = now()
            returning *`,
           [deck.id, id, deck.title, deck.description, deck.tags,
-           JSON.stringify(deck.cards), deck.termLabel, deck.definitionLabel, caller.id],
+           JSON.stringify(deck.cards), deck.termLabel, deck.definitionLabel, caller.id,
+           deck.track ?? null, deck.objectives ?? []],
         )
         const row = rows[0]
         if (row) out.push(toDeck(row))

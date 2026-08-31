@@ -10,7 +10,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { aGame, spies } from '../../test/mockProviders'
-import { aLearner, anAssignment, signIn, skill, testState } from '../../test/state'
+import { aLearner, anAssignment, goPro, signIn, skill, testState } from '../../test/state'
 import { emptySnapshot } from '../../lib/progress/types'
 import type { SessionRecord } from '../../lib/progress/types'
 
@@ -334,7 +334,7 @@ describe('ProgressScreen — the parent’s report', () => {
   })
 
   it('shows every trouble word on the paid plan', () => {
-    testState.profile = { ...testState.profile!, plan: 'pro' }
+    goPro()
     testState.snapshot = {
       ...emptySnapshot(),
       mastery: Object.fromEntries(

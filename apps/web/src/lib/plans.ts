@@ -1,8 +1,16 @@
-// Plan definitions.
+// What the plans are *called*, and what they say they include.
 //
 // The whole core curriculum is free on purpose: a spelling app that paywalls
 // fourth grade is not much use to the kid who needs it. Pro pays for the things
 // a parent or teacher wants rather than the things a learner needs.
+//
+// **The gating no longer lives here.** It moved to `@whizzo/shared/billing`
+// and is keyed on whether a *learner* is covered, not on whether a user is
+// Pro — because "is this user Pro?" has no answer for a teacher with
+// twenty-five students across twelve families. What is left is the copy on the
+// upgrade screen. `limitsFor` and `allows` remain for the marketing table and
+// for anything not yet migrated; the numbers in them are mirrored from
+// `billing.ts`, which is the authority.
 
 export type PlanId = 'free' | 'pro'
 

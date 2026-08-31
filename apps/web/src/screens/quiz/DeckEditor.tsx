@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import { useAuth } from '../../auth/AuthProvider'
+import { AREAS, tracksInArea } from '@whizzo/shared'
 import RichField from '../../components/rich/RichField'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill } from '../../components/ui'
-import { limitsFor } from '../../lib/plans'
+import { useCoverage } from '../../lib/billing/coverage'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import type { QuizCard, QuizDeck } from '../../lib/progress/types'
 import {
@@ -30,9 +30,8 @@ export default function DeckEditor({
   deckId?: string
   navigate: Navigate
 }) {
-  const { profile } = useAuth()
-  const { snapshot, saveDeck } = useProgress()
-  const limits = limitsFor(profile?.plan ?? 'free')
+    const { snapshot, saveDeck } = useProgress()
+  const coverage = useCoverage()
 
   const existing = deckId ? snapshot.decks.find((d) => d.id === deckId) : undefined
   const [draft, setDraft] = useState<QuizDeck>(() => existing ?? emptyDeck())
@@ -41,7 +40,7 @@ export default function DeckEditor({
   const [error, setError] = useState<string | null>(null)
 
   const isNew = !existing
-  const overDeckLimit = isNew && snapshot.decks.length >= limits.decks
+  const overDeckLimit = isNew && snapshot.decks.length >= coverage.deckLimit
 
   const update = (patch: Partial<QuizDeck>) => setDraft((d) => ({ ...d, ...patch }))
 
@@ -98,7 +97,7 @@ export default function DeckEditor({
       {overDeckLimit && (
         <Card className="mb-4">
           <p className="font-bold text-amber-700">
-            You have used all {limits.decks} of your free decks.{' '}
+            You have used all {coverage.deckLimit} of your free decks.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
               Family Pro
             </button>{' '}
@@ -127,6 +126,35 @@ export default function DeckEditor({
           maxLength={300}
           className="mb-4 w-full rounded-xl border-2 border-edge px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
         />
+
+        {/* Filing is an upgrade, never a gate: a deck with no subject is a
+            working deck, it just shares one ability pool with everything else
+            unfiled. Saying so out loud is the difference between an optional
+            field and one people feel bad about skipping. */}
+        <label className="mb-1 block text-sm font-bold text-muted" htmlFor="deck-track">
+          Subject <span className="font-normal text-stone">(optional)</span>
+        </label>
+        <select
+          id="deck-track"
+          value={draft.track ?? ''}
+          onChange={(e) => update({ track: e.target.value || null })}
+          className="mb-1 w-full rounded-xl border-2 border-edge bg-white px-4 py-3 font-bold text-ink focus:border-ink focus:outline-none"
+        >
+          <option value="">Not sure yet</option>
+          {AREAS.filter((area) => area.id !== 'general').map((area) => (
+            <optgroup key={area.id} label={`${area.emoji} ${area.name}`}>
+              {tracksInArea(area.id).map((track) => (
+                <option key={track.id} value={track.id}>
+                  {track.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <p className="mb-4 text-xs font-bold text-stone">
+          Picking one keeps this set&rsquo;s progress separate, so a report can say how
+          they are doing in <em>this</em> rather than an average of everything.
+        </p>
 
         <div className="grid grid-cols-2 gap-3">
           <div>

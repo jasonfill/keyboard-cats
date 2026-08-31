@@ -251,6 +251,13 @@ topics asked for in one response produces a long, flat, increasingly lazy list
 their best work, run in parallel, fail independently, and let a partial failure
 land five topics instead of none.
 
+**The first topic runs alone, then the rest fan out.** This looks like a
+needless serialisation and is the opposite: the cache is *written* by the first
+request to reach the server, so firing all six at once means all six start
+before any cache exists — every one is a miss, and the document is paid for six
+times. The failure is invisible in the output and shows up only on the bill.
+One call to warm it, then everything else reads it.
+
 **Prompt caching is what makes this affordable.** The document block, the
 system prompt and the card-formatting grammar are identical across every
 topic's call, so they go in front of a `cache_control` breakpoint with
@@ -453,26 +460,41 @@ Pricing is settled — see [billing-spec.md](billing-spec.md). **Parents pay,
 coverage follows the learner, and teachers never pay.** Ingestion is the only
 feature in the app with a real marginal cost, so it is the only thing metered.
 
-| Who | Documents | Pages | Size |
+| Who | Included credits | Pages | Size |
 | --- | --- | --- | --- |
-| Any account, no covered learner | **2, ever** — not per month | 20 | 10 MB |
-| Per covered learner | **+10 / month**, pooled on the payer | 100 | 25 MB |
-| Teacher or tutor account | **3 / month**, free | 100 | 25 MB |
+| Any account, no covered learner | **20, ever** | 20 | 10 MB |
+| First covered learner | **30 / month** | 100 | 25 MB |
+| Each additional covered learner | **+15 / month**, pooled on the payer | 100 | 25 MB |
+| Teacher or tutor account | **40 / month**, free | 100 | 25 MB |
 
-The free two are once rather than monthly, so the value is felt rather than
-described — and whatever comes back is honestly what the product does.
-Teachers get a standing allowance they never pay for, because they are the
-people most likely to be holding a chapter PDF and the reason families arrive
-at all.
+**Credits, not documents.** `1 credit ≈ 1 page`, floor of 5. A document is not
+a unit of cost and a page very nearly is — metering by document prices ten
+worksheets the same as ten chapters, and the chapters cost four times as much.
+The billing spec has the arithmetic.
 
-**Every refusal happens before the money is spent.** A job that would breach
-the quota, the page cap, or the deck limit is refused *before the first model
-call*, never after. A bundle that would breach `limits.decks` says so up front.
+Beyond the allowance, credits are bought in packs. **"No rush" costs half**,
+running through the Batch API — which is the same lever §5 already identified,
+turned into a choice the person paying gets to make.
 
-Quota is counted server-side against `content_sources` and shown as
-*"8 of 30 documents this month"*. It is derived from coverage, not from a
-constant in `plans.ts` — a parent covering three learners has thirty against
-one bill.
+The free twenty are once rather than monthly, so the value is felt rather than
+described. Teachers get a standing allowance they never pay for, because they
+are the people most likely to be holding a chapter PDF and the reason families
+arrive at all.
+
+**Every refusal happens before the money is spent**, and now it can be exact:
+a PDF's page count is known at acquisition, before either model call. So the
+flow is *estimate → show → reserve → run → settle*:
+
+> *"This is 24 pages — about 24 credits. You have 30."*
+
+shown **before** the read call, with the reservation taken at job start and the
+difference released on completion. A job that would breach the page cap, the
+credit balance or `limits.decks` is refused there, never after. **A failed job
+is refunded in full** — the tokens were spent and `llm_usage` records them, but
+the cost is ours.
+
+Balance is derived from `credit_ledger`, never a running total anybody
+overwrites, and is shown as *"38 credits left this month"*.
 
 Rate limits: the API's global 300/min is irrelevant here. Ingestion gets its
 own scoped `@fastify/rate-limit` registration — a handful of jobs per hour per
@@ -541,7 +563,7 @@ That is a real privacy position and it should be stated as one, not buried.
 
 ## 11. Data model
 
-One migration, **0016**, from the registry in
+One migration, **0017**, from the registry in
 [build-sequence.md](build-sequence.md). Numbers are claimed there and nowhere
 else.
 
@@ -671,12 +693,13 @@ is not a fact they need.
 **`apps/web`**
 - `src/screens/content/` — the three screens in §13.
 - `src/lib/content/api.ts` — the client and the poll loop.
-- `src/lib/plans.ts` — `documentsPerMonth` on `PlanLimits`.
+- `src/lib/plans.ts` — credit balance and the pack picker, read from
+  `credit_ledger` rather than from a `PlanLimits` constant.
 - `DeckScreen` / `DeckEditor` — the draft banner and the provenance chips.
 
 **`.do/app.yaml`** — `ANTHROPIC_API_KEY` as a `SECRET`, `RUN_TIME` scope.
 
-**Migration 0015** — §11.
+**Migration 0017** — §11.
 
 ---
 

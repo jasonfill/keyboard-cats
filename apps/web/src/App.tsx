@@ -41,6 +41,7 @@ import SpellingLists from './screens/spelling/SpellingLists'
 import SpellingPlay from './screens/spelling/SpellingPlay'
 import AccountScreen from './screens/suite/AccountScreen'
 import FamilyScreen from './screens/suite/FamilyScreen'
+import ContentScreen from './screens/content/ContentScreen'
 import LibraryScreen from './screens/suite/LibraryScreen'
 import TasksScreen from './screens/suite/TasksScreen'
 import CustomListsScreen from './screens/suite/CustomListsScreen'
@@ -185,6 +186,7 @@ function Router() {
       <Route path="/custom-lists" element={<CustomListsScreen navigate={navigate} />} />
       <Route path="/tasks" element={<TasksScreen navigate={navigate} />} />
       <Route path="/library" element={<LibraryScreen navigate={navigate} />} />
+      <Route path="/library/add" element={<ContentScreen navigate={navigate} />} />
       <Route path="/theme" element={<ThemePicker navigate={navigate} />} />
       <Route path="/world" element={<WorldScreen navigate={navigate} />} />
       <Route path="/settings" element={<SettingsScreen game={game} navigate={navigate} />} />

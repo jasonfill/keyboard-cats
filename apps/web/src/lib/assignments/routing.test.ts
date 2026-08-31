@@ -6,6 +6,9 @@
 
 import { describe, expect, it } from 'vitest'
 import { ASSIGNABLE, assignableFor, routeForAssignment, targetName } from './routing'
+import { activityDef } from '@whizzo/shared'
+import { MODES } from '../quiz/session'
+import { ACTIVITIES } from '../spelling/activities'
 import { GRADES } from '../../data/spelling'
 import { CURRICULUM } from '../../data/lessons'
 import type { Assignment } from '../progress/types'
@@ -134,6 +137,45 @@ describe('targetName', () => {
       for (const targetId of [null, 'missing']) {
         expect(targetName(task({ subject, targetId }), noDecks)).toBeTruthy()
       }
+    }
+  })
+})
+
+// The list is generated now, so the thing worth pinning is that generating it
+// did not quietly drop or invent anything a grown-up can set.
+describe('what can be assigned', () => {
+  it('offers every quiz mode and every spelling activity, and typing', () => {
+    const quiz = ASSIGNABLE.filter((a) => a.subject === 'quiz').map((a) => a.activity).sort()
+    const spelling = ASSIGNABLE.filter((a) => a.subject === 'spelling').map((a) => a.activity).sort()
+    expect(quiz).toEqual(MODES.map((m) => m.id).sort())
+    expect(spelling).toEqual(ACTIVITIES.map((a) => a.id).sort())
+    expect(ASSIGNABLE.filter((a) => a.subject === 'typing')).toHaveLength(1)
+  })
+
+  it('does not offer a question kind as though it were a round', () => {
+    // `letter-hint`, `word-bank` and `cloze` are how a card is asked inside
+    // Learn, chosen per card by the ladder. Setting one as homework would be a
+    // task with nowhere to go.
+    const ids = ASSIGNABLE.map((a) => a.activity)
+    expect(ids).not.toContain('letter-hint')
+    expect(ids).not.toContain('word-bank')
+    expect(ids).not.toContain('cloze')
+  })
+
+  it('can route every single thing it offers', () => {
+    for (const a of ASSIGNABLE) {
+      const route = routeForAssignment({
+        subject: a.subject,
+        activity: a.activity,
+        targetId: a.subject === 'typing' ? CURRICULUM[0]!.id : 'x',
+      } as never)
+      expect(route, `${a.subject}/${a.activity}`).not.toBeNull()
+    }
+  })
+
+  it('agrees with the catalogue about which activities are checked', () => {
+    for (const a of ASSIGNABLE) {
+      expect(a.graded, a.activity).toBe(activityDef(a.activity)?.isTest)
     }
   })
 })

@@ -42,6 +42,8 @@ export function routeToPath(route: Route): string {
       return '/tasks'
     case 'library':
       return '/library'
+    case 'content-new':
+      return '/library/add'
     case 'theme':
       return '/theme'
     case 'world':

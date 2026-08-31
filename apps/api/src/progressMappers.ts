@@ -50,6 +50,10 @@ function dayString(value: any): string | null {
 export function toSkill(row: any): SkillState {
   return {
     subject: row.subject,
+    // The empty string is the whole-subject row, which is what every row meant
+    // before tracks existed. Left off the domain object rather than sent as ''
+    // so nothing downstream has to know that.
+    ...(row.track ? { track: row.track } : {}),
     ability: Number(row.ability),
     abilitySd: Number(row.ability_sd),
     levelIndex: row.level_index,
@@ -116,6 +120,7 @@ export function toSession(row: any): SessionRecord {
     evidence: row.evidence ?? 'legacy',
     verifiedItemsTotal: row.verified_items_total ?? 0,
     verifiedItemsCorrect: row.verified_items_correct ?? 0,
+    track: row.track ?? null,
   }
 }
 
@@ -126,8 +131,10 @@ export function toSession(row: any): SessionRecord {
 export function toAttempt(row: any): Attempt {
   return {
     subject: row.subject,
+    track: row.track ?? null,
     itemKey: row.item_key,
     activity: row.activity,
+    askedAt: row.asked_at ?? null,
     isTest: row.is_test,
     verified: row.verified,
     correct: row.correct,
@@ -149,6 +156,7 @@ export function toAssignment(row: any): Assignment {
     createdBy: row.created_by,
     subject: row.subject,
     activity: row.activity,
+    goal: row.goal ?? null,
     targetId: row.target_id,
     size: row.size,
     title: row.title,
@@ -197,6 +205,8 @@ export function toDaily(row: any): DailyActivityRow {
 export function toDeck(row: any): QuizDeck {
   return {
     id: row.id,
+    track: row.track ?? null,
+    objectives: row.objectives ?? [],
     title: row.title,
     description: row.description ?? '',
     tags: row.tags ?? [],
@@ -212,6 +222,8 @@ export function toDeck(row: any): QuizDeck {
 export function toCustomList(row: any): CustomWordList {
   return {
     id: row.id,
+    track: row.track ?? null,
+    objectives: row.objectives ?? [],
     title: row.title,
     subject: row.subject,
     grade: row.grade,

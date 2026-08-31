@@ -1,6 +1,16 @@
 # Build sequence — the three specs as one plan
 
-**Status:** plan · **Date:** 2026-08-31 · **Governs:** activities, structure, ingestion
+**Status:** in progress · **Date:** 2026-08-31 · **Governs:** activities, structure, ingestion, billing
+
+| Stage | | |
+| --- | --- | --- |
+| 0 Foundations | **done** | `rich` in `shared`, one `QuizCard`, migration registry |
+| 0.5 Billing | **schema done** | migration 0013, coverage model, `llm_usage`, `credit_ledger`, gates moved off `profiles.plan`. Stripe deliberately deferred |
+| 1 Tracks | **done** | registry, `track` end to end, migration 0014, deck picker, per-track reporting |
+| 2 The ladder | **done** | `ladder.ts`, catalog, capability matrix, puzzles, `simulate:ladder`, the two scaffolded question kinds, `ASSIGNABLE` generated |
+| 3 Ingestion | **done** | migration 0017, validator, credit gate, model layer, SSRF fence, pipeline, job runner, routes, screen |
+| 4 Mastery Path | **planner + goals done** | `path.ts`, batching, readiness gate, migration 0015, goals closed by state. UI remains |
+| 5+ | not started | |
 
 Three proposals exist, they overlap, and each one has its own "Phase 1". This
 document is the single authority on **what gets built when**, and on the
@@ -16,13 +26,16 @@ Read this before starting work in any of them.
 
 ## 1. The alignment audit
 
-Fifteen findings. Four are **conflicts** — the specs disagree, and building
-either as written creates rework. Four are **collisions** — the same resource
-claimed twice. Six are **gaps** — nobody covers it, so it surfaces at
-integration. One is **drift**.
+Fifteen findings. Four **conflicts**, four **collisions**, six **gaps**, one
+**drift**.
 
-| # | Kind | Finding | Resolution | Stage |
-| --- | --- | --- | --- | --- |
+**All fifteen are now resolved in the specs themselves** — the Resolution
+column says what was decided, and the decision is written into the document it
+belongs to rather than living here. What remains is the code, at the stage
+named. Finding 1 is the only one that cannot be resolved by writing: it is a
+file move, and it is the first thing stage 0 does.
+
+| # | Kind | Finding | Resolution — **written into the specs** | Code at |
 | 1 | collision | `lib/rich` lives in `apps/web`. Ingestion needs it server-side; the activities capability matrix needs it client-side. Both specs assume they will move it. | Move to `packages/shared/src/rich/` **once**, re-export from the old path. File move, not a rewrite. | 0 |
 | 2 | collision | `QuizCard`'s optional fields are defined in activities §7 and again in ingestion §5's `GeneratedCard`, with different members. | One definition in `packages/shared`, the superset: activities' fields **plus** `explanation` and `sourcePages`. | 0 |
 | 3 | collision | Migration numbers: activities claims 0013 and 0014, ingestion assumes 0015, structure is unnumbered. | Assigned in §3 below. This document is the registry. | 0 |
@@ -70,10 +83,13 @@ six.
 
 *Blocks all three specs. Nothing else starts cleanly until this is done.*
 
-- Move `apps/web/src/lib/rich/` → `packages/shared/src/rich/`, re-export from
-  the old path so no web import changes (finding 1).
-- One `QuizCard` in `packages/shared`, carrying the union of every field the
-  three specs ask for (finding 2).
+- ~~Move `apps/web/src/lib/rich/` → `packages/shared/src/rich/`~~ **done.** Four
+  files, not five: `layout.ts` is drawing arithmetic and stayed in the web app,
+  because validating a figure and drawing one are different jobs and only the
+  first is the server's. Not one import in `apps/web` changed.
+- ~~One `QuizCard` in `packages/shared`~~ **done**, carrying every field the
+  three specs ask for, all optional; the API schema accepts them and
+  `normalizeDeck` preserves them.
 - State the figure/`media` boundary in activities §7 (finding 9).
 - Fix the nine stale cross-references (finding 5).
 - Adopt this document's stage names in all three specs (finding 4).
@@ -82,14 +98,43 @@ six.
 
 | Number | What | Stage |
 | --- | --- | --- |
-| 0013 | tracks: `track` on decks, word lists, attempts, sessions, skill states | 1 |
-| 0014 | `assignments.goal` and the goal-completion predicate | 4 |
-| 0015 | `rewards`, `reward_points`, `award_matching_rewards()` | 5 |
-| 0016 | `content_sources`, `content_jobs`, `source_id`, `accepted_at` | 3 |
+| 0013 | `subscriptions`, `learner_coverage`, `is_learner_covered()`, `llm_usage`, `credit_ledger` | 0.5 |
+| 0014 | tracks: `track` on decks, word lists, attempts, sessions, skill states | 1 |
+| 0015 | `assignments.goal` and the goal-completion predicate | 4 |
+| 0016 | `rewards`, `reward_points`, `award_matching_rewards()` | 5 |
+| 0017 | `content_sources`, `content_jobs`, `source_id`, `accepted_at` | 3 |
 
-Ingestion lands at 0016 rather than 0015 because rewards is the smaller, more
-certain change and there is no reason to hold a number for a stage that has an
-unresolved cost model.
+Numbers follow the stages except ingestion, which is built third and numbered
+last: rewards is the smaller and more certain change, and there is no value in
+holding a low number for the stage with the least settled cost model.
+
+Billing takes the first number because it is the one migration that changes an
+existing table's *meaning* — `profiles.plan` stops being read — and that is
+better done before four others sit on top of it.
+
+### Stage 0.5 — Billing
+
+*Not a blocker for stages 1 and 2. A hard blocker for stage 3.*
+
+**Schema only.** Coverage replaces plans: `subscriptions`, `learner_coverage`,
+`is_learner_covered()`, and every gate moved off `profiles.plan`. Plus
+`llm_usage` and `credit_ledger`, which must exist **before the first model call
+is ever made** — cost logging written after the fact is cost logging that never
+happened.
+
+**Stripe wiring is not in this stage.** Subscriptions and credit-pack purchases
+are weeks of external integration that help no learner and block nothing until
+stage 3. Put the schema in early, take the money later.
+
+See [billing-spec.md](billing-spec.md). The short version: **parents pay,
+teachers and tutors never do, and what is bought is coverage of one child.**
+Assigning stays free for everybody, permanently, because a teacher setting work
+for twenty-five children is how twenty-five families find out the product
+exists.
+
+Half a stage rather than a whole one because nothing before stage 3 charges
+anybody — but ingestion cannot be metered against a model that does not exist,
+and cost logging written after the fact is cost logging that never happened.
 
 ### Stage 1 — Structure v1: tracks
 
@@ -113,6 +158,11 @@ report goes from *"Quiz: 71%"* to *"Biology 62% · Spanish 88% · Geometry 45%"*
 `catalog.ts`, `ladder.ts`, the capability matrix, `first-letter`, the
 requeue-never-promotes rule, the choose-within-a-rung menu, and
 **`simulate:ladder` in the same pull request as the ladder** (finding 15).
+
+It earned its place on the first run: with demotion on a single miss, a
+simulated learner answering 90% correctly stalled two rungs short of free
+recall, ping-ponging between levels. No unit test would have caught that — each
+rule was individually right. Demotion now needs two misses running.
 
 Resolves finding 6 — the capability matrix is where maths and figures lock out
 the activities that chop answers into characters, and it must be right the
@@ -139,12 +189,12 @@ Its acceptance test is now checkable, because the capability matrix exists
 ### Stage 4 — The Mastery Path
 
 Planning within a track (needs stage 1), batching, placement, the readiness
-gate, goal assignments, migration 0014.
+gate, goal assignments, migration 0015.
 
 ### Stage 5 — Rewards, and the mastery criteria they rest on
 
 `set_mastered` and `mastery_count`, the strict learned/mastered/retained split,
-the rewards table and ledger, migration 0015. Close the flashcard-points hole
+the rewards table and ledger, migration 0016. Close the flashcard-points hole
 in the same stage — it is a payout surface with no verification behind it.
 
 Pick up findings 13 and 14 here: `solve` finishes what the rich work started,
@@ -208,12 +258,26 @@ win.
 
 | Question | Blocks | Why it can wait |
 | --- | --- | --- |
-| Seat-based billing for tutors | stages 5, 8, and ingestion's quota | Nothing before stage 5 charges anybody |
-| What ingestion costs per document | stage 3's plan gate | Log usage from day one; decide the gate with numbers |
+| ~~Seat-based billing for tutors~~ | — | **Settled.** Parents pay, coverage follows the learner, teachers never pay — [billing-spec.md](billing-spec.md) |
+| What a page actually costs | stage 3's credit numbers | `llm_usage` lands in stage 0.5; the mechanism is committed to, the numbers are not |
+| Annual pricing, and what a lapsed parent sees | nothing yet | needs a renewal cohort to measure |
 | Maturity band on the learner or the guardian link | stage 6 | Learner is simpler and probably right |
 | Whether achievements stay cross-track | stage 1 | Cross-track is the default and needs no decision to keep |
 | Whether a group's slot must exist before content is offered into it | stage 8 | Far enough out to learn from real use |
 
 The one that matters soonest is **ingestion cost**, and it does not need an
-answer — it needs the `usage` logging written in stage 3 even though the gate
-lands later. Guessing at a price with no data is how this becomes expensive.
+answer — it needs `llm_usage` written in stage 0.5 and populated from the very
+first model call, even though the quota gate lands in stage 3. Guessing at a
+price with no data is how this becomes expensive; measuring it costs one insert
+per call.
+
+One number is worth an alert rather than a dashboard: **cache read tokens on
+the second topic call of a build fan-out.** If it is zero, something upstream
+is varying and that document costs roughly ten times what it should.
+
+The reason credits exist at all is worth restating, because it was found by
+arithmetic rather than by argument: an allowance of *ten documents a month*
+prices ten worksheets ($1.25 of cost) identically to ten chapters ($5.00) —
+against $4.00 of revenue. **Metering by document is a 25% loss on exactly the
+use case the feature exists to serve.** A page is a unit of cost; a document
+is not.

@@ -113,6 +113,14 @@ understands climbing. Underneath, an item's position is **three coordinates,
 not one rung**, because the review in §5 found that a single ladder conflates
 three genuinely different things.
 
+**`Attempt.askedAt` is what makes this derivable.** A mode is a container — a
+round of Learn asks each card at whatever rung that card is on — so `activity`
+alone does not say what happened, and a scaffolded question inside Learn would
+read back as unaided recall and promote an item on evidence that does not
+exist. Every attempt records the rung it was actually asked at; attempts from
+before the ladder fall back to the mode's own rung, which is what those rounds
+meant at the time.
+
 ### Axis 1 — retrieval support (the rungs a learner sees)
 
 How much scaffolding the retrieval gets. This is a real continuum and it is the
@@ -154,8 +162,14 @@ the Checkpoint measures.
   nothing as evidence of durable retrieval. It restores the item, it does not
   advance it. Without this rule the requeue policy quietly manufactures
   promotions, which is the most likely way this ladder gets silently wrong.
-- **A miss descends one level, not to the bottom.** A lapse is a lapse, not
-  amnesia.
+- **One miss spends the banked evidence; two misses running cost a rung.**
+  Originally this demoted on every miss, and the ladder simulation showed why
+  that is wrong: an item practised at the learner's frontier is *meant* to be
+  missed sometimes, and if one miss both wipes the progress and drops the rung,
+  the item ping-pongs — a learner answering 90% correctly never reaches free
+  recall at all. So a miss always costs the banked corrects, and the rung only
+  moves on a second consecutive miss with nothing right in between. Dropping to
+  the bottom is never on the table: a lapse is a lapse, not amnesia.
 - **Nothing skips level 3.** An item can *arrive* at level 3 by testing out —
   answered right, first time, unaided — but it cannot pass it. Free production
   is load-bearing, and it stays in rotation after transfer work begins rather
@@ -419,7 +433,7 @@ harder than a style quiz and it is the version that works.
 - §13 splits **learned** from **mastered** (finding 4).
 - §12's round assembly gains the activity chooser, and the Mastery Path's
   "Continue" button becomes "Continue" plus a quiet "or pick how".
-- Phase 1 gains the choose-within-a-rung menu; it is small, and it is the part
+- Stage 2 gains the choose-within-a-rung menu; it is small, and it is the part
   of this spec a learner will notice first.
 
 ## 7. The item model — one paste, many activities
@@ -547,7 +561,7 @@ Speed Recall, Brain Dump and Mastery Check on **every deck that already
 exists**, with no adult action whatsoever. That is the cheapest large win in
 this document.
 
-### Tier 2 — assisted, server-side, Pro
+### Tier 2 — assisted, server-side, metered
 
 A single API endpoint, `POST /content/enrich`, that takes a set and returns
 proposed field values. It writes `generated: ['example', 'category']` onto each
@@ -799,7 +813,7 @@ type InputMode = 'type' | 'tap' | 'tiles' | 'speak'
 - Reading load capped: sets with a `readingLevel` above the learner's show the
   plain-language definition when one exists.
 
-`speak` (say the answer aloud, checked by speech recognition) is phase 4 and
+`speak` (say the answer aloud, checked by speech recognition) is stage 8 and
 lands unverified until confidence thresholds have been tested against real
 children's voices. It is the one thing that would let a pre-writing child
 produce free recall, so it is worth doing properly rather than early.
@@ -957,25 +971,26 @@ their own competence, delivered without decoration:
 
 Every number in that line comes from data this spec already collects, and two
 of the three come from `responseMs`, which we record on every attempt and
-currently read nowhere. That is why Rapid Fire and the fluency work in phase 3
+currently read nowhere. That is why Rapid Fire and the fluency work at stage 6
 matter more than they look: **they are the entire reward system for older
 learners.** A high schooler will not open this app for a fossil. They will open
 it for a number that says they are getting faster.
 
-### Build order changes
+### Where engagement lands
 
-Engagement is not a phase at the end; it interleaves.
+Engagement is not a stage at the end; it interleaves. Stages are from
+[build-sequence.md](build-sequence.md).
 
-- **Phase 1** also ships: the maturity band and band-aware copy (the cheapest
-  age fix in the app), and the rung-climb micro-moment.
-- **Phase 2** also ships: batch-cleared as an earn event, and the `track` shell
-  for the Mastery Check.
-- **Phase 3** also ships: `falling` generalised off typing, the `record` shape,
-  and the Focus theme — the same phase as fluency, because they are the same
-  feature for the same learner.
-- **Phase 4** also ships: the retention reward, once Checkpoints have run long
-  enough for anyone to have earned one.
-- **Phase 6** also ships: the `board` shell and full early-band presentation.
+- **Stage 2**, with the ladder: the maturity band and band-aware copy — the
+  cheapest age fix in the app — and the rung-climb micro-moment.
+- **Stage 4**, with the Mastery Path: batch-cleared as an earn event, and the
+  `track` shell for the Mastery Check.
+- **Stage 6**, with fluency: `falling` generalised off typing, the `record`
+  shape, and the Focus theme. The same stage as `speed-recall` because for an
+  older learner they are the same feature.
+- **Stage 7**: the retention reward, once Checkpoints have run long enough for
+  anyone to have earned one.
+- **Stage 8**: the `board` shell and full early-band presentation.
 
 ### Open questions this raises
 
@@ -1111,7 +1126,13 @@ one line of UI copy.
    it was offered. Setting a reward the child has already met is a mistake, not
    a gift, and the form should say so rather than paying out instantly.
 
-### Two payout models
+### Rewards are a covered-learner feature ([billing-spec.md](billing-spec.md)):
+setting a payout is grown-up leverage rather than learning, so it sits behind
+coverage. One rule survives a lapse regardless — **a reward already earned is
+always payable**, because coverage ending cannot un-earn a promise any more
+than a deleted session can.
+
+Two payout models
 
 Both ship; they serve different ages and the mechanics are shared.
 
@@ -1218,7 +1239,7 @@ same split would be complexity without a case. If shared rewards are wanted
 later, the assignment migration is the known path.
 
 ```sql
--- migration 0014
+-- migration 0016
 create table public.rewards (
   id             uuid primary key default gen_random_uuid(),
   learner_id     uuid not null references public.learners (id) on delete cascade,
@@ -1284,18 +1305,19 @@ theoretical.
    first content the server can regenerate and re-grade on its own, which makes
    them the natural place to prove that pattern.
 
-### Build order
+### Where rewards land
 
-Rewards slot in after the evidence they depend on exists.
+Rewards slot in after the evidence they depend on exists. Stages are from
+[build-sequence.md](build-sequence.md).
 
-- **Phase 2** — `rewards` table, direct rewards, `assignment` and `streak`
-  criteria, the ledger, marking paid, and the unpaid reminder. Everything here
-  runs on evidence the app already produces today.
-- **Phase 3** — `set_mastered` and `mastery_count`, once the strict mastery
-  definition lands. Close the flashcard points hole in the same phase.
-- **Phase 4** — the points economy and the store, plus reward templates in your
-  account.
-- **Phase 5** — the `checkpoint` criterion, once Checkpoints have run long
+- **Stage 5** — the `rewards` table, direct rewards, the `assignment`,
+  `streak`, `set_mastered` and `mastery_count` criteria, the ledger, marking
+  paid, and the unpaid reminder. Coverage already exists by then (stage 0.5),
+  so the gate is one predicate. **Close the flashcard points hole here** — it
+  is a payout surface with no verification behind it.
+- **Stage 7** — the points economy and the store, alongside the generated
+  banks, plus reward templates in your account.
+- **Stage 8** — the `checkpoint` criterion, once Checkpoints have run long
   enough for one to be earnable. Then make it the suggested default.
 
 ## 12. The Mastery Path — the part that removes the setup
@@ -1466,14 +1488,15 @@ The ask is K–12; spelling covers 2–8. What is actually missing:
 - a `mastery-path` assignable whose route is "continue this set".
 
 **`apps/api`**
-- `POST /content/enrich` (Tier 2), Pro-gated, provenance-marking.
+- `POST /content/enrich` (Tier 2), metered against the ingestion quota and
+  provenance-marking. See [billing-spec.md](billing-spec.md).
 - goal assignments: evaluate-and-close in the write transaction.
 
-**Migration 0014** (number from the registry in [build-sequence.md](build-sequence.md))
+**Migration 0015** (number from the registry in [build-sequence.md](build-sequence.md))
 - `assignments.goal jsonb` and the goal-completion predicate.
 - nothing else. The content changes are all in `jsonb` already.
 
-**Migration 0015**
+**Migration 0016**
 - `rewards`, `reward_points`, and `award_matching_rewards()`, called in the same
   transaction as `complete_matching_assignments()`. Deliberately **no** reopen
   trigger on sessions — see §11.
@@ -1530,8 +1553,10 @@ sequence.
    server-side answer keys eventually; math facts are the one content type the
    server can regenerate and re-grade trivially, so they may be worth putting
    there first as the pattern for everything else.
-4. **How much does Tier 2 enrichment cost per set**, and does it price against
-   the Pro tier? This interacts with the unresolved seat-based billing question.
+4. **How much does Tier 2 enrichment cost per set?** Billing itself is settled
+   — parents pay, coverage follows the learner, teachers never pay — but where
+   enrichment sits against the ingestion quota needs the `llm_usage` numbers
+   before it can be decided sensibly. See [billing-spec.md](billing-spec.md).
 5. **Reading level as a first-class field** on sets — needed for the K–2 layer,
    probably needed for differentiation generally, not specified here.
 

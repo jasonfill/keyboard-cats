@@ -6,7 +6,15 @@
 // long definition scores.
 
 import { describe, expect, it } from 'vitest'
-import { acceptableAnswers, gradeWritten, isPass, normalize } from './questions'
+import {
+  acceptableAnswers,
+  buildQuestion,
+  gradeWritten,
+  isPass,
+  isProduced,
+  normalize,
+} from './questions'
+import type { QuizCard } from '../progress/types'
 
 describe('normalize', () => {
   it('ignores case, punctuation and stray spacing', () => {
@@ -136,5 +144,61 @@ describe('answers written as maths', () => {
     const answer = '[[figure {"kind":"bar","data":[{"label":"Mon","value":4}]}]]'
     // The description is what the card says, so it is what has to match.
     expect(normalize(answer)).toContain('mon 4')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The scaffolded rung
+// ---------------------------------------------------------------------------
+
+describe('scaffolded questions', () => {
+  const pool: QuizCard[] = ['osmosis', 'diffusion', 'mitosis', 'meiosis', 'lysis'].map((d, i) => ({
+    id: `c${i}`,
+    term: `Term ${i}`,
+    definition: d,
+    hint: null,
+    difficulty: 2,
+  }))
+
+  it('shows the shape of the answer and hides the rest', () => {
+    const q = buildQuestion(pool[0], pool, 'letter-hint', 'term-first')
+    expect(q.kind).toBe('letter-hint')
+    expect(q.masked).toBe('o______')
+  })
+
+  it('lists candidates that always include the answer', () => {
+    const q = buildQuestion(pool[0], pool, 'word-bank', 'term-first')
+    expect(q.kind).toBe('word-bank')
+    expect(q.bank).toContain('osmosis')
+    expect(q.bank!.length).toBeGreaterThan(2)
+  })
+
+  it('falls back to a word bank when the answer has no letters to hint at', () => {
+    // `$\frac{3}{4}$` masked character by character is nonsense, not a hint.
+    const maths: QuizCard[] = pool.map((c, i) => ({ ...c, definition: `$\\frac{${i}}{4}$` }))
+    const q = buildQuestion(maths[0], maths, 'letter-hint', 'term-first')
+    expect(q.kind).toBe('word-bank')
+  })
+
+  it('asks outright when there are too few candidates for a bank', () => {
+    // A bank of one is the answer with decoration.
+    const two = pool.slice(0, 2)
+    expect(buildQuestion(two[0], two, 'word-bank', 'term-first').kind).toBe('written')
+  })
+
+  it('keeps the answer the same however it is asked', () => {
+    const kinds = ['letter-hint', 'word-bank', 'written'] as const
+    const answers = kinds.map((k) => buildQuestion(pool[0], pool, k, 'term-first').answer)
+    expect(new Set(answers).size).toBe(1)
+  })
+
+  it('counts both scaffolds as production, and neither choice kind', () => {
+    // This is what keeps a scaffolded answer out of the ability estimate while
+    // still letting it be typed: produced, but not unaided.
+    expect(isProduced('letter-hint')).toBe(true)
+    expect(isProduced('word-bank')).toBe(true)
+    expect(isProduced('written')).toBe(true)
+    expect(isProduced('multiple-choice')).toBe(false)
+    expect(isProduced('true-false')).toBe(false)
   })
 })

@@ -4,8 +4,7 @@ import MasteryBar from '../../components/suite/MasteryBar'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill, StarRow } from '../../components/ui'
 import { STARTER_DECKS } from '../../data/quiz/starterDecks'
-import { limitsFor } from '../../lib/plans'
-import { useAuth } from '../../auth/AuthProvider'
+import { useCoverage } from '../../lib/billing/coverage'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import { listKey, todayString, type QuizDeck } from '../../lib/progress/types'
 import { allDecks, deckStats } from '../../lib/quiz/decks'
@@ -13,10 +12,9 @@ import { dueAcrossDecks } from '../../lib/quiz/session'
 import type { Navigate } from '../../routes'
 
 export default function QuizHome({ navigate }: { navigate: Navigate }) {
-  const { profile } = useAuth()
-  const { snapshot, skill } = useProgress()
+    const { snapshot, skill } = useProgress()
   const state = skill('quiz')
-  const limits = limitsFor(profile?.plan ?? 'free')
+  const coverage = useCoverage()
   const today = todayString()
 
   const mine = useMemo(
@@ -41,7 +39,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
     return { cards, mastered, practiced, learning }
   }, [everything, snapshot, today])
 
-  const atLimit = mine.length >= limits.decks
+  const atLimit = mine.length >= coverage.deckLimit
 
   return (
     <div className="mx-auto w-full max-w-4xl py-4">
@@ -116,7 +114,7 @@ export default function QuizHome({ navigate }: { navigate: Navigate }) {
       {atLimit && (
         <Card className="mb-4">
           <p className="font-bold text-amber-700">
-            The free plan saves {limits.decks} decks.{' '}
+            The free plan saves {coverage.deckLimit} decks.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
               Family Pro
             </button>{' '}

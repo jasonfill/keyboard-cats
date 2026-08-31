@@ -21,6 +21,9 @@ export default function AccountChip({ onOpen }: { onOpen: () => void }) {
     >
       <span className="text-lg leading-none">{emoji}</span>
       <span className="max-w-[9rem] truncate">{label}</span>
+      {/* A badge about the account, not a gate on a learner — so this is the
+          one place `profiles.plan` is still the right question to ask. Every
+          capability moved to `useCoverage`, which asks about the child. */}
       {isPro(profile?.plan) && (
         <span className="rounded-full bg-sun px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">
           Pro

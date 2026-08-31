@@ -2,9 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import RichText from '../../components/rich/RichText'
 import { Button, Card, Pill } from '../../components/ui'
 import type { QuizItemResult, QuizSessionApi } from '../../hooks/useQuizSession'
-import { gradeWritten, type Grade } from '../../lib/quiz/questions'
+import { gradeWritten, isProduced, type Grade } from '../../lib/quiz/questions'
 import { REASON_LABEL } from '../../lib/quiz/session'
 import { sfx } from '../../lib/sound'
+import type { QuestionKind } from '../../lib/quiz/questions'
+
+/** What the learner is being asked to do, said plainly above the question. */
+const KIND_LABEL: Record<QuestionKind, string> = {
+  'multiple-choice': 'Pick the answer',
+  'true-false': 'True or false',
+  'letter-hint': 'Write it out — here is the shape',
+  'word-bank': 'Write it out — the answers are below',
+  written: 'Write it out',
+}
 
 /**
  * Runs the graded modes: Learn and Test.
@@ -92,11 +102,7 @@ export default function QuestionRunner({
             {reason.emoji} {reason.label}
           </Pill>
           <Pill className="bg-wash text-muted">
-            {q.kind === 'multiple-choice'
-              ? 'Pick the answer'
-              : q.kind === 'true-false'
-                ? 'True or false'
-                : 'Write it out'}
+            {KIND_LABEL[q.kind]}
           </Pill>
         </div>
         <span className="font-bold text-stone">
@@ -187,7 +193,7 @@ export default function QuestionRunner({
         </div>
       )}
 
-      {q.kind === 'written' && (
+      {isProduced(q.kind) && (
         <form
           className="mb-4"
           onSubmit={(e) => {
@@ -196,6 +202,31 @@ export default function QuestionRunner({
             answer(typed, gradeWritten(typed, q.answer))
           }}
         >
+          {/* The scaffold. Shown above the box rather than inside it, so the
+              learner's own typing is never mixed up with the help. */}
+          {q.kind === 'letter-hint' && q.masked && (
+            <p
+              className="mb-3 font-mono text-2xl font-extrabold tracking-[0.35em] text-stone"
+              aria-label={`The answer starts with ${q.masked[0]} and has ${q.masked.length} characters`}
+            >
+              {q.masked}
+            </p>
+          )}
+          {q.kind === 'word-bank' && q.bank && (
+            <div className="mb-3 flex flex-wrap gap-2" aria-label="Possible answers">
+              {q.bank.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  disabled={revealed}
+                  onClick={() => setTyped(option)}
+                  className="rounded-xl bg-quiet px-3 py-2 text-sm font-bold text-body ring-1 ring-hair transition-all hover:-translate-y-0.5 hover:shadow disabled:opacity-60"
+                >
+                  <RichText source={option} />
+                </button>
+              ))}
+            </div>
+          )}
           <input
             ref={inputRef}
             value={typed}

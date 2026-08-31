@@ -21,7 +21,33 @@ import {
   type SessionRecord,
   type SkillState,
 } from '../lib/progress/types'
-import { buildQuestion, type Grade, type Question } from '../lib/quiz/questions'
+import { skillKey } from '@whizzo/shared'
+import { buildQuestion, type Grade, type Question, type QuestionKind } from '../lib/quiz/questions'
+
+/**
+ * Which rung a question kind asks at.
+ *
+ * Kept here rather than in the catalog because it is about a *question*, not
+ * an activity: one round of Learn contains several of these.
+ */
+function askedRung(kind: QuestionKind): 0 | 1 | 2 | 3 {
+  switch (kind) {
+    case 'multiple-choice':
+    case 'true-false':
+      return 1
+    case 'letter-hint':
+    case 'word-bank':
+      return 2
+    case 'written':
+      return 3
+  }
+  // Exhaustive on purpose rather than defaulted. A `default: return 3` would
+  // read any future question kind as unaided recall and promote items on
+  // evidence that does not exist — a mistake that fails toward numbers looking
+  // good. This way adding a kind is a compile error until it is classified.
+  const unclassified: never = kind
+  throw new Error(`Unclassified question kind: ${String(unclassified)}`)
+}
 import {
   modeDef,
   planStudy,
@@ -310,12 +336,39 @@ export function useQuizSession() {
       const today = todayString()
       const durationMs = Math.max(0, now - startedAtRef.current)
 
+      // One ability estimate per pool touched. A round pinned to one deck
+      // moves one; a review round crosses decks and moves each card's own,
+      // because a Spanish answer is not evidence about biology and averaging
+      // them is the exact problem tracks were added to fix.
+      const pools = new Map<string, SkillState>()
+      const poolFor = (track: string): SkillState => {
+        const key = track
+        const existing = pools.get(key)
+        if (existing) return existing
+        const seeded: SkillState =
+          snapshot.skills[skillKey('quiz', track)] ??
+          // A pool nobody has worked in yet starts from the learner's existing
+          // whole-subject estimate rather than from the default — the same
+          // seeding `seed_track_ability` does server-side. Nobody restarts
+          // from zero the day their decks get filed.
+          ({ ...state, track } as SkillState)
+        const copy = { ...seeded, track }
+        pools.set(key, copy)
+        return copy
+      }
+
       let working: SkillState = { ...state }
       const abilityBefore = working.ability
 
       const attempts: Attempt[] = []
       const masteryUpdates = new Map<string, ItemMastery>()
       const newlyMastered: string[] = []
+
+      // Which pool this work counts toward, per card. A review round crosses
+      // decks, so this is looked up per attempt rather than once per round —
+      // a Spanish card and a biology card in the same sitting belong to
+      // different pools and must not be averaged together.
+      const trackOfDeck = new Map(options.decks.map((d) => [d.id, d.track ?? null]))
 
       for (const r of rows) {
         const key = cardKey(r.planned.deckId, r.planned.card.id)
@@ -333,14 +386,37 @@ export function useQuizSession() {
           difficulty: r.planned.card.difficulty,
           given: r.given,
           at: now,
+          // What was actually asked, not just which mode was running. Learn
+          // asks each card at its own rung, so the mode alone would read a
+          // scaffolded answer back as unaided recall.
+          askedAt: askedRung(r.question.kind),
+          track: trackOfDeck.get(r.planned.deckId) ?? null,
         }
         attempts.push(attempt)
 
         // Unaided, checked, written recall is the only thing that moves the
         // estimate. `verified` is redundant with `def.isTest` today — no graded
         // mode self-reports — but the rule belongs where it is enforced.
+        // Unaided production only. A scaffolded answer is real practice and
+        // moves the card's mastery and its schedule; it does not move the
+        // learner's level, because half the answer was on the screen.
         const movesAbility = graded && r.verified && def.isTest && r.question.kind === 'written'
         if (movesAbility) {
+          // Unfiled work has no pool of its own — the whole-subject estimate
+          // below already is that pool, so there is nothing extra to move.
+          const track = trackOfDeck.get(r.planned.deckId) ?? null
+          if (track) {
+            const pool = poolFor(track)
+            const poolUpdate = updateAbility(pool, r.planned.card.difficulty, r.correct)
+            pools.set(track, {
+              ...pool,
+              ability: poolUpdate.ability,
+              abilitySd: poolUpdate.abilitySd,
+              totalAttempts: pool.totalAttempts + 1,
+              totalCorrect: pool.totalCorrect + (r.correct ? 1 : 0),
+            })
+          }
+
           const update = updateAbility(working, r.planned.card.difficulty, r.correct)
           working = {
             ...working,
@@ -410,9 +486,15 @@ export function useQuizSession() {
         ? (options.decks.find((d) => d.id === options.deckId)?.title ?? 'Deck')
         : 'Review'
 
+      // A round pinned to one deck belongs to that deck's pool. A review round
+      // crosses decks by design, so it belongs to none and says so rather than
+      // picking one of them arbitrarily.
+      const sessionTrack = deckId ? (trackOfDeck.get(deckId) ?? null) : null
+
       const sessionRecord: SessionRecord = {
         id: newSessionId(),
         subject: 'quiz',
+        track: sessionTrack,
         activity: options.mode,
         listId: deckId,
         isTest: def.isTest,
@@ -465,6 +547,10 @@ export function useQuizSession() {
 
       const change: ProgressChange = {
         skill: working,
+        // Every pool this round moved. The whole-subject estimate above is
+        // kept as well: spelling and typing read it, the home screen quotes
+        // it, and a learner who has filed nothing has only that one.
+        skills: [...pools.values()],
         mastery: [...masteryUpdates.values()],
         attempts,
         session: sessionRecord,

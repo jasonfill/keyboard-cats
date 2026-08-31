@@ -439,3 +439,13 @@ describe('letting a tutor in', () => {
     expect(codes.redeemConnectionCode).not.toHaveBeenCalled()
   })
 })
+
+describe('the door into the library', () => {
+  it('offers handing over a document, which is the thing a grown-up will do', async () => {
+    // Typing forty rows is the thing they will not.
+    signIn()
+    render(<LibraryScreen navigate={navigate} />)
+    fireEvent.click(await screen.findByText('Add a document'))
+    expect(navigate).toHaveBeenCalledWith({ name: 'content-new' })
+  })
+})

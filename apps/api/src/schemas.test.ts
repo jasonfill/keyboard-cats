@@ -16,6 +16,8 @@ import {
   attemptSchema,
   itemMasterySchema,
   listProgressSchema,
+  quizCardSchema,
+  quizDeckSchema,
   sessionRecordSchema,
   skillStateSchema,
   subjectSchema,
@@ -305,5 +307,229 @@ describe('assignments — what a grown-up may and may not set', () => {
     expect(assignmentPatchSchema.safeParse({ status: 'done' }).success).toBe(false)
     expect(assignmentPatchSchema.safeParse({ status: 'cancelled' }).success).toBe(true)
     expect(assignmentPatchSchema.safeParse({ status: 'open' }).success).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Card enrichment
+// ---------------------------------------------------------------------------
+//
+// These fields are what let one pasted list be practised many ways. They are
+// all optional on purpose: every deck saved before they existed still has to
+// validate, and a parent pasting two columns is never asked for any of them.
+
+function card(over: Record<string, unknown> = {}) {
+  return {
+    id: 'c1',
+    term: 'mitochondrion',
+    definition: 'the powerhouse of the cell',
+    hint: null,
+    difficulty: 2.4,
+    ...over,
+  }
+}
+
+describe('quizCardSchema', () => {
+  it('accepts a card with none of the enrichment fields', () => {
+    expect(quizCardSchema.safeParse(card()).success).toBe(true)
+  })
+
+  it('accepts every enrichment field at once', () => {
+    const result = quizCardSchema.safeParse(
+      card({
+        category: 'organelles',
+        example: 'The mitochondrion makes ATP.',
+        order: 3,
+        media: { kind: 'image', url: 'https://example.test/cell.png', alt: 'a cell' },
+        answerKind: 'text',
+        tolerance: null,
+        altAnswers: ['mitochondria'],
+        explanation: 'It releases energy from glucose.',
+        sourcePages: [4, 5],
+        generated: ['example', 'category'],
+      }),
+    )
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts an explicitly null category rather than demanding it be absent', () => {
+    // normalizeDeck writes null for a blank one, and that round trip must work.
+    expect(quizCardSchema.safeParse(card({ category: null, example: null })).success).toBe(true)
+  })
+
+  it('refuses an answer kind it does not know how to grade', () => {
+    expect(quizCardSchema.safeParse(card({ answerKind: 'vibes' })).success).toBe(false)
+  })
+
+  it('refuses a media kind that is not an image or a sound', () => {
+    expect(
+      quizCardSchema.safeParse(card({ media: { kind: 'video', url: 'u', alt: 'a' } })).success,
+    ).toBe(false)
+  })
+
+  it('refuses a negative tolerance, which would accept nothing', () => {
+    expect(quizCardSchema.safeParse(card({ tolerance: -1 })).success).toBe(false)
+  })
+
+  it('refuses an infinite tolerance, which would accept everything', () => {
+    expect(quizCardSchema.safeParse(card({ tolerance: Number.POSITIVE_INFINITY })).success).toBe(
+      false,
+    )
+  })
+
+  it('bounds the arrays, because a deck is read and written whole', () => {
+    expect(quizCardSchema.safeParse(card({ altAnswers: Array(9).fill('x') })).success).toBe(false)
+    expect(quizCardSchema.safeParse(card({ sourcePages: Array(9).fill(1) })).success).toBe(false)
+  })
+
+  it('refuses a fractional page number', () => {
+    expect(quizCardSchema.safeParse(card({ sourcePages: [1.5] })).success).toBe(false)
+  })
+
+  it('still refuses a card with no answer side', () => {
+    expect(quizCardSchema.safeParse(card({ definition: '' })).success).toBe(false)
+  })
+})
+
+describe('quizDeckSchema carries enrichment through', () => {
+  it('keeps the fields on the way in', () => {
+    const parsed = quizDeckSchema.safeParse({
+      id: UUID,
+      title: 'Cells',
+      cards: [card({ category: 'organelles', explanation: 'why' })],
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.cards[0]).toMatchObject({
+        category: 'organelles',
+        explanation: 'why',
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Tracks
+// ---------------------------------------------------------------------------
+//
+// The pool a piece of work counts toward. Bounded rather than enumerated on
+// purpose: the registry ships with the client and grows without a schema
+// change, and an unknown track resolves to General rather than being rejected.
+// A learner must never lose work because a registry moved on.
+
+describe('track on the write boundary', () => {
+  it('accepts a deck with no track, which is most of them', () => {
+    expect(quizDeckSchema.safeParse({ id: UUID, title: 'Cells', cards: [] }).success).toBe(true)
+  })
+
+  it('accepts a filed deck and keeps the filing', () => {
+    const parsed = quizDeckSchema.safeParse({
+      id: UUID,
+      title: 'Cells',
+      cards: [],
+      track: 'science.biology',
+      objectives: ['bio.cell-structure'],
+    })
+    expect(parsed.success && parsed.data.track).toBe('science.biology')
+  })
+
+  it('accepts an explicitly null track, which is how "unfile this" arrives', () => {
+    expect(
+      quizDeckSchema.safeParse({ id: UUID, title: 'x', cards: [], track: null }).success,
+    ).toBe(true)
+  })
+
+  it('does not reject a track it has never heard of', () => {
+    // The registry is the authority and it is not on this side of the wire.
+    expect(
+      quizDeckSchema.safeParse({ id: UUID, title: 'x', cards: [], track: 'made.up' }).success,
+    ).toBe(true)
+  })
+
+  it('bounds it, because an unbounded string is an unbounded row', () => {
+    expect(
+      quizDeckSchema.safeParse({ id: UUID, title: 'x', cards: [], track: 'a'.repeat(61) }).success,
+    ).toBe(false)
+    expect(
+      quizDeckSchema.safeParse({ id: UUID, title: 'x', cards: [], objectives: Array(5).fill('o') })
+        .success,
+    ).toBe(false)
+  })
+
+  it('carries the pool on an attempt, so attempts alone can still rebuild', () => {
+    const parsed = attemptSchema.safeParse(attempt({ track: 'world.spanish' }))
+    expect(parsed.success && parsed.data.track).toBe('world.spanish')
+  })
+
+  it('records which rung a question was asked at, and refuses one that is not a rung', () => {
+    expect(attemptSchema.safeParse(attempt({ askedAt: 2 })).success).toBe(true)
+    expect(attemptSchema.safeParse(attempt({ askedAt: 4 })).success).toBe(false)
+    expect(attemptSchema.safeParse(attempt({ askedAt: -1 })).success).toBe(false)
+    // Absent is the honest state for every attempt recorded before the ladder.
+    expect(attemptSchema.safeParse(attempt()).success).toBe(true)
+  })
+
+  it('lets a skill state name its pool', () => {
+    const parsed = skillStateSchema.safeParse({
+      subject: 'quiz',
+      track: 'science.biology',
+      ability: 2,
+      abilitySd: 1,
+      levelIndex: 0,
+      placed: false,
+      totalAttempts: 0,
+      totalCorrect: 0,
+      streakDays: 0,
+      bestStreakDays: 0,
+      lastActiveOn: null,
+    })
+    expect(parsed.success && parsed.data.track).toBe('science.biology')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Goals
+// ---------------------------------------------------------------------------
+//
+// A goal is set instead of an activity — "master this set" rather than "do
+// Learn on this deck" — which stops a grown-up having to choose between Learn
+// and Test, a pedagogical decision they should never have been handed.
+
+describe('goal assignments', () => {
+  const draft = (over: Record<string, unknown> = {}) => ({
+    subject: 'quiz',
+    activity: 'mastery-path',
+    targetId: 'deck-1',
+    title: 'Chapter 7',
+    ...over,
+  })
+
+  it('accepts an ordinary activity task with no goal at all', () => {
+    expect(assignmentDraftSchema.safeParse(draft({ activity: 'learn' })).success).toBe(true)
+  })
+
+  it('accepts a goal, with the bar left to the default', () => {
+    const parsed = assignmentDraftSchema.safeParse(draft({ goal: { kind: 'mastery' } }))
+    expect(parsed.success).toBe(true)
+  })
+
+  it('accepts a bar somebody set deliberately', () => {
+    const parsed = assignmentDraftSchema.safeParse(
+      draft({ goal: { kind: 'mastery', fraction: 0.8 } }),
+    )
+    expect(parsed.success && parsed.data.goal?.fraction).toBe(0.8)
+  })
+
+  it('refuses a goal it does not know how to measure', () => {
+    expect(assignmentDraftSchema.safeParse(draft({ goal: { kind: 'vibes' } })).success).toBe(false)
+  })
+
+  it('refuses a bar nobody could clear, or one already cleared', () => {
+    expect(
+      assignmentDraftSchema.safeParse(draft({ goal: { kind: 'mastery', fraction: 1.5 } })).success,
+    ).toBe(false)
+    expect(
+      assignmentDraftSchema.safeParse(draft({ goal: { kind: 'mastery', fraction: 0 } })).success,
+    ).toBe(false)
   })
 })

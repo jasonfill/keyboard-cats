@@ -89,6 +89,14 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
   /**
+   * Needed only by document ingestion, and optional for the same reason the
+   * service-role key is: a contributor without one should still be able to run
+   * the whole rest of the API. The content routes refuse politely when it is
+   * absent rather than the process refusing to boot.
+   */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+
+  /**
    * Comma-separated origins allowed to call the API. Empty means same-origin
    * only, which is the production shape: the SPA and the API sit behind one
    * DigitalOcean app on one hostname.

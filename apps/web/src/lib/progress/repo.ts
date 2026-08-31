@@ -9,6 +9,7 @@ import {
   withVerifiedFlag,
   listKey,
   masteryKey,
+  skillKey,
   todayString,
   type Attempt,
   type DailyActivityRow,
@@ -73,8 +74,13 @@ export function applyChange(
 ): ProgressSnapshot {
   const next: ProgressSnapshot = { ...snapshot }
 
-  if (change.skill) {
-    next.skills = { ...next.skills, [change.skill.subject]: change.skill }
+  const skillUpdates = [...(change.skill ? [change.skill] : []), ...(change.skills ?? [])]
+  if (skillUpdates.length) {
+    const skills = { ...next.skills }
+    for (const state of skillUpdates) {
+      skills[skillKey(state.subject, state.track)] = state
+    }
+    next.skills = skills
   }
 
   if (change.mastery?.length) {

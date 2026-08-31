@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useAuth } from '../../auth/AuthProvider'
 import ChildSwitcher from '../../components/suite/ChildSwitcher'
 import ThemeChoice from '../../components/suite/ThemeChoice'
 import MasteryBar from '../../components/suite/MasteryBar'
@@ -8,7 +7,7 @@ import SessionDetail from '../../components/suite/SessionDetail'
 import { Button, Card, Pill } from '../../components/ui'
 import { ALL_WORDS, GRADES } from '../../data/spelling'
 import type { GameApi } from '../../hooks/useGameState'
-import { limitsFor } from '../../lib/plans'
+import { useCoverage } from '../../lib/billing/coverage'
 import { STARTER_DECKS } from '../../data/quiz/starterDecks'
 import { allDecks, deckStats } from '../../lib/quiz/decks'
 import { MODES } from '../../lib/quiz/session'
@@ -17,16 +16,15 @@ import { useProgress } from '../../lib/progress/ProgressProvider'
 import { addDays, todayString } from '../../lib/progress/types'
 import { breakdown, gradeBreakdown, troubleWords, turnaroundWords } from '../../lib/spelling/stats'
 import { errorPattern } from '../../lib/spelling/activities'
-import { unaidedAccuracy } from '../../lib/progress/summary'
+import { trackReadings, unaidedAccuracy } from '../../lib/progress/summary'
 import { useTheme } from '../../lib/theme/ThemeProvider'
 import { useAssignments } from '../../hooks/useAssignments'
 import { useLearners } from '../../lib/learners/LearnerProvider'
 import type { Navigate } from '../../routes'
 
 export default function ProgressScreen({ game, navigate }: { game: GameApi; navigate: Navigate }) {
-  const { profile } = useAuth()
-  const { snapshot, skill } = useProgress()
-  const limits = limitsFor(profile?.plan ?? 'free')
+    const { snapshot, skill } = useProgress()
+  const coverage = useCoverage()
 
   const [openSession, setOpenSession] = useState<string | null>(null)
 
@@ -38,8 +36,8 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const turnaround = turnaroundWords(snapshot, 8)
 
   // The history window is the one place the free plan is limited.
-  const horizon = Number.isFinite(limits.historyDays)
-    ? addDays(todayString(), -limits.historyDays)
+  const horizon = Number.isFinite(coverage.historyDays)
+    ? addDays(todayString(), -coverage.historyDays)
     : '0000-00-00'
   const visibleSessions = snapshot.sessions.filter(
     (s) => new Date(s.endedAt).toISOString().slice(0, 10) >= horizon,
@@ -72,6 +70,11 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
   const { theme } = useTheme()
   const { open: openTasks, done: doneTasks } = useAssignments()
   const unaided = unaidedAccuracy(snapshot)
+
+  const byTrack = useMemo(() => {
+    const decks = new Map(allDecks(snapshot, STARTER_DECKS).map((d) => [d.id, d.track ?? null]))
+    return trackReadings(snapshot, (deckId) => decks.get(deckId))
+  }, [snapshot])
   const last21 = useMemo(() => buildActivityChart(snapshot.daily), [snapshot.daily])
   const insight = useMemo(() => activityInsight(last21), [last21])
 
@@ -110,6 +113,43 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
           invert
         />
       </div>
+
+      {/* By subject, when there is more than one to tell apart.
+          A single "study decks" number averages Spanish, biology and state
+          capitals — three unrelated things — and tells a parent nothing they
+          can act on. Split, it says where to help. Hidden entirely for a
+          learner with one pool, because a list of one is not a comparison. */}
+      {byTrack.length > 1 && (
+        <Card className="mb-4">
+          <h2 className="mb-1 font-display text-xl font-extrabold text-ink">By subject</h2>
+          <p className="mb-3 text-sm font-bold text-stone">
+            Each subject is scored on its own, so a strong one never hides a weak one.
+          </p>
+          <div className="flex flex-col gap-2">
+            {byTrack.map((t) => (
+              <div
+                key={t.trackId}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-quiet px-4 py-3"
+              >
+                <div>
+                  <p className="font-extrabold text-ink">{t.name}</p>
+                  <p className="text-xs font-bold text-stone">{t.areaName}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Pill className="bg-white text-body">
+                    {t.mastered} of {t.items} mastered
+                  </Pill>
+                  {/* Nothing rather than 0% when no answer has been checked:
+                      "not measured yet" and "measured badly" are different. */}
+                  {t.accuracy !== null && (
+                    <Pill className="bg-white text-body">{t.accuracy}% checked</Pill>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Three weeks. A day with nothing on it is floored rather than dropped:
           absence is the thing a parent most needs to be able to see. */}
@@ -212,7 +252,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
                 </tr>
               </thead>
               <tbody>
-                {(limits.detailedWordReport ? trouble : trouble.slice(0, 4)).map((m) => (
+                {(coverage.can('itemReport') ? trouble : trouble.slice(0, 4)).map((m) => (
                   <tr key={m.itemKey} className="border-t border-hair">
                     <td className="py-2 font-mono text-[15px] font-bold text-ink">{m.itemKey}</td>
                     <td className="py-2 text-[14px] font-bold text-body">
@@ -237,7 +277,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
             </table>
           </div>
         )}
-        {!limits.detailedWordReport && trouble.length > 4 && (
+        {!coverage.can('itemReport') && trouble.length > 4 && (
           <p className="mt-3 rounded-xl bg-spark/10 px-4 py-3 text-[14px] font-bold text-[#7C4A22]">
             Showing 4 of {trouble.length}.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
@@ -404,7 +444,7 @@ export default function ProgressScreen({ game, navigate }: { game: GameApi; navi
         {hiddenSessions > 0 && (
           <p className="mt-3 rounded-xl bg-spark/10 px-4 py-3 text-[14px] font-bold text-[#7C4A22]">
             {hiddenSessions} older {hiddenSessions === 1 ? 'session is' : 'sessions are'} outside the
-            free {limits.historyDays}-day window.{' '}
+            free {coverage.historyDays}-day window.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
               Family Pro
             </button>{' '}

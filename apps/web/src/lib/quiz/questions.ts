@@ -5,10 +5,33 @@
 // nothing) and how typed answers are graded (marking "mitochondria" wrong
 // because of one transposed letter teaches the wrong lesson entirely).
 
+import { buildLetterHint, buildWordBank, hasPlainAnswer } from '@whizzo/shared'
 import { richToPlain, splitOutsideRich } from '../rich/parse'
 import type { QuizCard } from '../progress/types'
 
-export type QuestionKind = 'multiple-choice' | 'written' | 'true-false'
+/**
+ * How a question is asked.
+ *
+ * The two scaffolded kinds are the rung that was missing. A card used to go
+ * from a four-way choice straight to a blank page, and a learner who was not
+ * ready for that failed at a *format* rather than at the content — which
+ * teaches them the wrong thing about themselves. `letter-hint` and `word-bank`
+ * both ask for the answer to be produced, with just enough support to make the
+ * attempt worth making.
+ */
+export type QuestionKind =
+  | 'multiple-choice'
+  | 'true-false'
+  | 'letter-hint'
+  | 'word-bank'
+  | 'written'
+
+/** Kinds where the learner produces the answer rather than picking it. */
+export const PRODUCED_KINDS: readonly QuestionKind[] = ['letter-hint', 'word-bank', 'written']
+
+export function isProduced(kind: QuestionKind): boolean {
+  return PRODUCED_KINDS.includes(kind)
+}
 
 /** Which side of the card the learner is shown. */
 export type Direction = 'term-first' | 'definition-first'
@@ -26,6 +49,10 @@ export interface Question {
   /** True/false only: the statement shown, and whether it is in fact true. */
   claim?: string
   claimIsTrue?: boolean
+  /** letter-hint only: the answer's first letter and shape, e.g. `m____`. */
+  masked?: string
+  /** word-bank only: every candidate, shuffled, always including the answer. */
+  bank?: string[]
 }
 
 export function promptSide(card: QuizCard, direction: Direction): string {
@@ -246,6 +273,23 @@ export function buildQuestion(
   if (kind === 'true-false') {
     const { claim, claimIsTrue } = buildTrueFalse(card, pool, direction, rng)
     return { ...base, claim, claimIsTrue }
+  }
+
+  if (kind === 'letter-hint') {
+    // An answer that is an equation or a figure has no letters to give away,
+    // so the scaffold degrades to a word bank rather than showing nonsense.
+    if (!hasPlainAnswer({ definition: base.answer })) {
+      return buildQuestion(card, pool, 'word-bank', direction, rng)
+    }
+    return { ...base, masked: buildLetterHint(base.answer).masked }
+  }
+
+  if (kind === 'word-bank') {
+    const others = pool.filter((c) => c.id !== card.id).map((c) => answerSide(c, direction))
+    // Too few candidates and the bank is the answer with decoration. Better to
+    // ask for it outright than to pretend there was a choice.
+    if (others.length < 2) return { ...base, kind: 'written' }
+    return { ...base, bank: buildWordBank(base.answer, shuffle(others, rng), 5, rng) }
   }
 
   return base

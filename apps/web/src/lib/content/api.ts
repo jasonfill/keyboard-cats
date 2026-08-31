@@ -1,0 +1,81 @@
+// The client half of document ingestion.
+//
+// The shape mirrors the API's, and the reason is the one thing worth carrying
+// into the UI: **the estimate is a separate call from the run.** Nothing here
+// starts a job as a side effect of asking what a job would cost.
+
+import { api } from '../api/client'
+
+export interface CreditBalanceView {
+  included: number
+  purchased: number
+  total: number
+}
+
+export interface ContentStatus {
+  enabled: boolean
+  balance: CreditBalanceView | null
+}
+
+export type JobStatus = 'queued' | 'reading' | 'building' | 'done' | 'failed'
+
+export interface JobView {
+  id: string
+  status: JobStatus
+  /** Already in words — the API says "Reading the document", not "reading". */
+  stage: string
+  error: string | null
+  result: { setsLanded?: number } | null
+}
+
+export interface EstimateView {
+  estimate: { pages: number; credits: number; noRush: boolean }
+  balance: CreditBalanceView
+  allowed: boolean
+  reason: string | null
+}
+
+export function contentStatus(signal?: AbortSignal): Promise<ContentStatus> {
+  return api.get<ContentStatus>('/content/status', signal)
+}
+
+export function addLink(url: string): Promise<{ sourceId: string; job: JobView }> {
+  return api.post('/content/sources/link', { url })
+}
+
+export function estimateFor(sourceId: string, noRush: boolean): Promise<EstimateView> {
+  return api.get<EstimateView>(`/content/sources/${sourceId}/estimate?noRush=${noRush}`)
+}
+
+export function startBuild(
+  sourceId: string,
+  opts: { topicIds?: string[]; noRush?: boolean } = {},
+): Promise<{ job: JobView }> {
+  return api.post(`/content/sources/${sourceId}/build`, {
+    topicIds: opts.topicIds ?? [],
+    noRush: opts.noRush ?? false,
+  })
+}
+
+export function jobStatus(jobId: string, signal?: AbortSignal): Promise<{ job: JobView }> {
+  return api.get(`/content/jobs/${jobId}`, signal)
+}
+
+export function acceptDeck(deckId: string): Promise<{ acceptedAt: number }> {
+  return api.post(`/library/decks/${deckId}/accept`)
+}
+
+export function isFinished(job: JobView): boolean {
+  return job.status === 'done' || job.status === 'failed'
+}
+
+/**
+ * How long to wait before asking again.
+ *
+ * Backs off, because a run takes one to three minutes and a one-second poll
+ * for three minutes is 180 requests to watch a progress line change twice.
+ * Capped so a finished job is still noticed promptly.
+ */
+export function pollDelay(attempt: number): number {
+  return Math.min(1000 * 2 ** Math.floor(attempt / 3), 8000)
+}

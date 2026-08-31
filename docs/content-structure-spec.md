@@ -274,8 +274,8 @@ traceable to whoever wrote it.
 learners' evidence about different things. Objective-level relation is enough
 for every question worth asking.
 
-The exception, and it is a real one: **generated banks** (activities spec §8,
-Tier 0) derive card ids from their parameters, so every learner practising
+The exception, and it is a real one: **generated banks** (the activities spec's
+*Enrichment*, Tier 0) derive card ids from their parameters, so every learner practising
 multiplication within 100 is genuinely on the same items with no coordination
 at all. For the content most worth comparing across a class, identity is free —
 which is another argument for building the generators early.
@@ -284,7 +284,7 @@ which is another argument for building the generators early.
 
 ## 7. Data model
 
-One additive migration — **0013**, per the registry in
+One additive migration — **0014**, per the registry in
 [build-sequence.md](build-sequence.md). Nothing is rewritten.
 
 ```sql
@@ -359,11 +359,13 @@ class asking for it rather than in anticipation of one.
 
 ## 9. What this changes elsewhere
 
-- **Activities spec §12 (the Mastery Path)** plans within a track. Batching,
+- **The Mastery Path** (activities spec) plans within a track. Batching,
   placement and the readiness gate are all track-scoped.
-- **Activities spec §14** — skill tracks versus content tracks stops being a
+- **Activities spec, *Spelling and typing in the same frame*** — skill tracks
+  versus content tracks stops being a
   distinction in prose and becomes a field.
-- **Ingestion spec §5** — the build call should propose `track` and `objective`
+- **Ingestion spec, *Stage 3 — the build*** — the build call proposes `track`
+  and `objectives`
   alongside the enrichment fields. It has read the document; it knows what the
   material is about, and asking costs a few output tokens.
 - **`quizAchievements.ts`** counts mastered cards where `subject === 'quiz'`,

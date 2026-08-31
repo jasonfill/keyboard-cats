@@ -78,15 +78,46 @@ describe('what kind of question to ask', () => {
     expect(kindFor(undefined, 20)).toBe('multiple-choice')
   })
 
-  it('moves to recall once a card is well known', () => {
-    expect(kindFor({ mastery: 0.9, reps: 8 } as never, 20)).toBe('written')
+  it('moves to recall once a card is well known and holding', () => {
+    expect(kindFor({ mastery: 0.9, reps: 8, correctStreak: 3 } as never, 20)).toBe('written')
   })
 
-  it('mixes choice and true-or-false in the middle', () => {
-    const easy = kindFor({ mastery: 0.5, reps: 4 } as never, 20, () => 0.1)
-    const harder = kindFor({ mastery: 0.5, reps: 4 } as never, 20, () => 0.9)
-    expect(easy).toBe('multiple-choice')
-    expect(harder).toBe('true-false')
+  it('drops back to a scaffold when the streak has just broken', () => {
+    // Same high mastery, but the learner missed it last time. Handing them a
+    // blank page straight after a miss is the moment they are least likely to
+    // succeed at it, so the question comes back with support.
+    expect(kindFor({ mastery: 0.9, reps: 8, correctStreak: 0 } as never, 20)).not.toBe('written')
+  })
+
+  it('asks a half-known card to be produced, with support', () => {
+    // This rung used to be answered with multiple choice and true/false, which
+    // are *recognition*: the learner never produced anything, so nothing
+    // bridged the gap between picking from four and facing a blank page. Both
+    // kinds here ask for the answer and hand over just enough to make the
+    // attempt worth making.
+    const half = { mastery: 0.5, reps: 4 } as never
+    expect(kindFor(half, 20, () => 0.1)).toBe('letter-hint')
+    expect(kindFor(half, 20, () => 0.9)).toBe('word-bank')
+  })
+
+  it('still recognises before it asks for production', () => {
+    // A card met once is picked out from among others, not written from
+    // nothing. Recognition is where recall starts.
+    expect(kindFor({ mastery: 0.1, reps: 1 } as never, 20)).toBe('multiple-choice')
+  })
+
+  it('walks a card up the rungs as it becomes known', () => {
+    const seen = [
+      kindFor(undefined, 20),
+      kindFor({ mastery: 0.1, reps: 1 } as never, 20),
+      kindFor({ mastery: 0.5, reps: 4 } as never, 20, () => 0.1),
+      kindFor({ mastery: 0.9, reps: 8, correctStreak: 3 } as never, 20),
+    ]
+    // Never the same question twice in a row as the card is learned, and it
+    // ends where every card has to end: produced from nothing.
+    expect(seen[0]).toBe('multiple-choice')
+    expect(seen[2]).toBe('letter-hint')
+    expect(seen[3]).toBe('written')
   })
 })
 

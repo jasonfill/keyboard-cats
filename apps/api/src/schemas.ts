@@ -15,8 +15,17 @@ const dayString = z
 
 const epochMs = z.number().int().min(0)
 
+/**
+ * Which ability pool a row belongs to. Bounded rather than enumerated: the
+ * registry lives in `@whizzo/shared` and grows without a schema change, and an
+ * unknown track resolves to General rather than being rejected — a learner
+ * must never lose work because a registry moved on.
+ */
+export const trackId = z.string().max(60)
+
 export const skillStateSchema = z.object({
   subject: subjectSchema,
+  track: trackId.optional(),
   ability: z.number().finite(),
   abilitySd: z.number().finite().nonnegative(),
   levelIndex: z.number().int().min(0),
@@ -51,7 +60,13 @@ export const itemMasterySchema = z.object({
  * purpose: a task is closed by the round that satisfied it, so they are never
  * something a caller supplies.
  */
+export const assignmentGoalSchema = z.object({
+  kind: z.literal('mastery'),
+  fraction: z.number().min(0.1).max(1).optional(),
+})
+
 export const assignmentDraftSchema = z.object({
+  goal: assignmentGoalSchema.nullable().optional(),
   subject: subjectSchema,
   activity: z.string().min(1).max(60),
   targetId: z.string().max(120).nullable().optional(),
@@ -81,8 +96,13 @@ export const assignmentPatchSchema = z.object({
 
 export const attemptSchema = z.object({
   subject: subjectSchema,
+  track: trackId.nullable().optional(),
   itemKey: z.string().min(1).max(200),
   activity: z.string().min(1).max(60),
+  // Which rung the question was actually asked at. A mode is a container —
+  // Learn asks each card at its own rung — so the activity alone would read a
+  // scaffolded answer back as unaided recall.
+  askedAt: z.number().int().min(0).max(3).nullable().optional(),
   isTest: z.boolean(),
   // Older clients predate the flag; they only ever sent system-checked
   // attempts, so defaulting to true keeps their rows honest.
@@ -101,6 +121,7 @@ export const attemptSchema = z.object({
 export const sessionRecordSchema = z.object({
   id: z.string().uuid(),
   subject: subjectSchema,
+  track: trackId.nullable().optional(),
   activity: z.string().min(1).max(60),
   listId: z.string().max(120).nullable(),
   isTest: z.boolean(),
@@ -162,16 +183,40 @@ export const dailySchema = z.object({
 // and written whole), just set where a real question can fit under it.
 export const MAX_CARD_TEXT = 4000
 
+// The enrichment fields are optional everywhere: a deck saved before they
+// existed must still validate, and a two-column paste must still be a deck.
+// Bounds are ceilings rather than guidance — each one is well past the point
+// where the field stops being useful on a card.
 export const quizCardSchema = z.object({
   id: z.string().min(1).max(80),
   term: z.string().min(1).max(MAX_CARD_TEXT),
   definition: z.string().min(1).max(MAX_CARD_TEXT),
   hint: z.string().max(1000).nullable(),
   difficulty: z.number().finite(),
+
+  category: z.string().max(60).nullable().optional(),
+  example: z.string().max(600).nullable().optional(),
+  order: z.number().int().finite().nullable().optional(),
+  media: z
+    .object({
+      kind: z.enum(['image', 'audio']),
+      url: z.string().max(2000),
+      alt: z.string().max(300),
+    })
+    .nullable()
+    .optional(),
+  answerKind: z.enum(['text', 'numeric', 'set']).optional(),
+  tolerance: z.number().finite().nonnegative().nullable().optional(),
+  altAnswers: z.array(z.string().max(200)).max(8).optional(),
+  explanation: z.string().max(600).nullable().optional(),
+  sourcePages: z.array(z.number().int().nonnegative()).max(8).optional(),
+  generated: z.array(z.string().max(40)).max(12).optional(),
 })
 
 export const quizDeckSchema = z.object({
   id: z.string().uuid(),
+  track: trackId.nullable().optional(),
+  objectives: z.array(z.string().max(80)).max(4).optional(),
   title: z.string().trim().min(1).max(80),
   description: z.string().max(500).default(''),
   tags: z.array(z.string().max(40)).max(20).default([]),
@@ -187,6 +232,8 @@ export const quizDeckSchema = z.object({
 
 export const customWordListSchema = z.object({
   id: z.string().uuid(),
+  track: trackId.nullable().optional(),
+  objectives: z.array(z.string().max(80)).max(4).optional(),
   title: z.string().trim().min(1).max(80),
   subject: subjectSchema,
   grade: z.number().int().min(0).max(12).nullable(),
@@ -199,6 +246,9 @@ export const customWordListSchema = z.object({
 export const progressChangeSchema = z
   .object({
     skill: skillStateSchema.optional(),
+    // A review round crosses decks, so it moves several pools at once. Bounded
+    // like everything else here: an unbounded array is an unbounded request.
+    skills: z.array(skillStateSchema).max(40).optional(),
     mastery: z.array(itemMasterySchema).max(1000).optional(),
     session: sessionRecordSchema.optional(),
     attempts: z.array(attemptSchema).max(1000).optional(),

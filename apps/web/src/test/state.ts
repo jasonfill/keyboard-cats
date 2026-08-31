@@ -111,6 +111,21 @@ export function skill(subject: Subject, over: Partial<SkillState> = {}): SkillSt
   return { ...defaultSkillState(subject), ...over }
 }
 
+/**
+ * Mark the selected child as paid for.
+ *
+ * Coverage is a property of the *learner*, not of whoever is looking — that is
+ * the whole billing model — so a fixture that only set `profile.plan` was
+ * testing a question the app no longer asks. `plan` is set too, because the
+ * upgrade screen still reads it for its copy.
+ */
+export function goPro(): void {
+  testState.profile = { ...testState.profile!, plan: 'pro' }
+  const covered = testState.active ? { ...testState.active, covered: true } : null
+  testState.active = covered
+  testState.learners = covered ? [covered] : []
+}
+
 /** Sign in as a grown-up with one child selected. */
 export function signIn(learner: Learner = aLearner()): void {
   testState.authStatus = 'signed-in'

@@ -5,7 +5,7 @@
 // one that already draws something. They double as the worked examples in the
 // tests: if a template stops validating, the menu is offering something broken.
 
-import { figureSource, type FigureKind, type FigureSpec } from './figures'
+import { figureSource, type FigureKind, type FigureSpec } from '@whizzo/shared/rich'
 
 export interface FigureTemplate {
   kind: FigureKind

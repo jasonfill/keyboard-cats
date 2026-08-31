@@ -57,6 +57,15 @@ export interface Learner {
   authUserId: string | null
   createdAt: number
   /**
+   * Whether a subscription covers this child.
+   *
+   * A property of the learner rather than of whoever is looking, which is the
+   * whole billing model in one field: a tutor working with a covered child
+   * sees the full picture for that child and has never bought anything.
+   * Absent on older payloads, and absent means uncovered — the safe reading.
+   */
+  covered?: boolean
+  /**
    * The learner's chosen world. Display state only — it never touches the
    * curriculum, the difficulty, or what earns a reward. Null means the client
    * default. Kept here rather than in browser storage because a grown-up can

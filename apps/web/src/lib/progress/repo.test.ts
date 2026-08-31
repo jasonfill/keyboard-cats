@@ -274,3 +274,52 @@ describe('mergeSnapshots — signing in must never cost a learner progress', () 
     expect(mergeSnapshots(cloud, local).skills.spelling?.placed).toBe(true)
   })
 })
+
+// The pool an ability estimate belongs to.
+//
+// This was wired half way once: the schema and the report knew about pools and
+// the write still went to the whole-subject row, so per-track ability silently
+// never accumulated. Everything typechecked and every test passed. These are
+// the assertions that would have caught it.
+describe('ability lands in the pool it was earned in', () => {
+  it('keys a track-scoped state by its pool', () => {
+    const next = applyChange(emptySnapshot(), {
+      skill: { ...defaultSkillState('quiz', 'science.biology'), ability: 4.2 },
+    })
+    expect(next.skills['quiz:science.biology']?.ability).toBe(4.2)
+    // ...and does not overwrite the whole-subject estimate on the way.
+    expect(next.skills.quiz).toBeUndefined()
+  })
+
+  it('keeps the whole-subject estimate separate from a pool', () => {
+    let snapshot = applyChange(emptySnapshot(), {
+      skill: { ...defaultSkillState('quiz'), ability: 2.0 },
+    })
+    snapshot = applyChange(snapshot, {
+      skill: { ...defaultSkillState('quiz', 'world.spanish'), ability: 5.5 },
+    })
+    expect(snapshot.skills.quiz?.ability).toBe(2.0)
+    expect(snapshot.skills['quiz:world.spanish']?.ability).toBe(5.5)
+  })
+
+  it('applies several pools from one round', () => {
+    // A review round crosses decks: each answer is evidence about its own
+    // subject, and folding them together is the averaging problem tracks fix.
+    const next = applyChange(emptySnapshot(), {
+      skill: { ...defaultSkillState('quiz'), ability: 3 },
+      skills: [
+        { ...defaultSkillState('quiz', 'science.biology'), ability: 4 },
+        { ...defaultSkillState('quiz', 'world.spanish'), ability: 6 },
+      ],
+    })
+    expect(next.skills['quiz:science.biology']?.ability).toBe(4)
+    expect(next.skills['quiz:world.spanish']?.ability).toBe(6)
+    expect(next.skills.quiz?.ability).toBe(3)
+  })
+
+  it('leaves spelling and typing whole, because their curriculum is the pool', () => {
+    const next = applyChange(emptySnapshot(), { skill: defaultSkillState('spelling') })
+    expect(next.skills.spelling).toBeDefined()
+    expect(Object.keys(next.skills)).toEqual(['spelling'])
+  })
+})

@@ -118,6 +118,17 @@ export default function LibraryScreen({ navigate }: { navigate: Navigate }) {
         onBack={() => navigate({ name: 'home' })}
       />
 
+      {/* The widest door into the library. Typing forty rows is the thing a
+          grown-up will not do; handing over the chapter they already have is
+          the thing they will. */}
+      <Card className="mb-4">
+        <p className="mb-1 font-extrabold text-ink">Have a document already?</p>
+        <p className="mb-3 text-sm font-bold text-stone">
+          A chapter, a study guide, a worksheet — hand it over and get cards back.
+        </p>
+        <Button onClick={() => navigate({ name: 'content-new' })}>Add a document</Button>
+      </Card>
+
       {assigning && (
         <div className="mb-4">
           <AssignForm

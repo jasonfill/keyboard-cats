@@ -9,6 +9,7 @@ import { CURRICULUM } from '../../data/lessons'
 import { GRADES } from '../../data/spelling'
 import type { Route } from '../../routes'
 import type { Assignment, Subject } from '../progress/types'
+import { assignableActivities } from '@whizzo/shared'
 import { MODES, type StudyMode } from '../quiz/session'
 import { ACTIVITIES, type ActivityId } from '../spelling/activities'
 
@@ -24,32 +25,36 @@ export interface AssignableActivity {
   target: 'deck' | 'spelling-list' | 'typing-lesson'
 }
 
-export const ASSIGNABLE: AssignableActivity[] = [
-  ...MODES.map((m) => ({
-    subject: 'quiz' as const,
-    activity: m.id as string,
-    name: m.name,
-    emoji: m.emoji,
-    graded: m.isTest,
-    target: 'deck' as const,
-  })),
-  ...ACTIVITIES.map((a) => ({
-    subject: 'spelling' as const,
-    activity: a.id as string,
-    name: a.name,
-    emoji: a.emoji,
-    graded: a.isTest,
-    target: 'spelling-list' as const,
-  })),
-  {
-    subject: 'typing',
-    activity: 'lesson',
-    name: 'Typing lesson',
-    emoji: '⌨️',
-    graded: true,
-    target: 'typing-lesson',
-  },
-]
+/** What `targetId` points at, per subject. */
+const TARGET_OF: Record<Subject, AssignableActivity['target']> = {
+  quiz: 'deck',
+  spelling: 'spelling-list',
+  typing: 'typing-lesson',
+}
+
+/**
+ * Generated from the shared catalogue rather than hand-kept.
+ *
+ * This used to be three lists welded together, and every activity added meant
+ * remembering to edit it — which is exactly the kind of thing nobody remembers.
+ * The catalogue knows what each activity is; this only has to say how a
+ * grown-up reads it.
+ *
+ * Only genuinely startable rounds appear. The scaffolded question kinds are
+ * chosen per card by the ladder inside Learn, so "do twenty word-banks" is not
+ * a thing to set and a task pointing at one would have nowhere to go.
+ */
+export const ASSIGNABLE: AssignableActivity[] = (['quiz', 'spelling', 'typing'] as const).flatMap(
+  (subject) =>
+    assignableActivities(subject).map((a) => ({
+      subject,
+      activity: a.id,
+      name: a.name,
+      emoji: a.emoji,
+      graded: a.isTest,
+      target: TARGET_OF[subject],
+    })),
+)
 
 export function assignableFor(
   subject: Subject,

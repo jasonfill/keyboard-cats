@@ -99,7 +99,12 @@ export async function learnerRoutes(app: FastifyInstance): Promise<void> {
     const caller = callerOf(request)
     const learners = await withUser(caller.id, async (db) => {
       const { rows } = await db.query(
-        'select * from public.learners order by created_at asc',
+        // Coverage comes back with the learner because every gate in the app
+        // asks about it, and asking per learner per screen would be a query
+        // per row on the family dashboard.
+        `select l.*, public.is_learner_covered(l.id) as covered
+           from public.learners l
+          order by l.created_at asc`,
       )
       return rows.map(toLearner)
     })

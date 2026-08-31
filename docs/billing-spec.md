@@ -1,6 +1,6 @@
 # Billing — parents pay, coverage follows the learner
 
-**Status:** proposal · **Date:** 2026-08-31 · **Migration:** 0012b (see the registry in [build-sequence.md](build-sequence.md))
+**Status:** proposal · **Date:** 2026-08-31 · **Migration:** 0013 (registry in [build-sequence.md](build-sequence.md))
 
 The decision that settles it: **parents pay, teachers and tutors never do, and
 what is bought is coverage of a specific child.**
@@ -107,30 +107,124 @@ Everything a grown-up wants *about that child*.
 
 ### Metered — real marginal cost
 
-**Document ingestion only.** It is the one feature where a use costs money.
+**Document ingestion only**, and it is metered in **credits**, not documents.
 
-| | Documents / month | Pages | Size |
-| --- | --- | --- | --- |
-| Any account, uncovered | **2**, ever — not per month | 20 | 10 MB |
-| Per covered learner | **+10 / month**, pooled on the payer | 100 | 25 MB |
-| Any teacher or tutor account | **3 / month** | 100 | 25 MB |
+That distinction is not pedantry, it is the difference between a margin and a
+loss. Taking the ingestion spec's own cost estimates — a 5-page worksheet
+around $0.15, a 20-page chapter around $0.50, a 60-page study guide around
+$1.15 — a document is not a unit of cost and a page very nearly is, at roughly
+**$0.025 a page** with the big ones a little cheaper.
 
-Three things worth saying about that table.
+An allowance of *ten documents a month* therefore prices a parent uploading ten
+worksheets ($1.25) identically to one uploading ten chapters ($5.00) — against
+$4.00 of revenue. **The second parent is a 25% loss**, and a chapter PDF is
+precisely the case this feature exists to serve.
 
-**The free two are once, not monthly**, so the value is felt rather than
-described, and the demo is the real product.
-
-**Quota pools on the payer and scales with children**, so a parent covering
-three learners gets thirty documents a month against one bill.
-
-**Teachers get a standing allowance they never pay for.** They are the people
-most likely to have a chapter PDF, and they are the reason families arrive.
-Three a month is enough to be genuinely useful and small enough that abuse is
-bounded. If the number is wrong we will know, because §4 logs everything.
+So: **1 credit ≈ 1 page**, with a 5-credit floor because even a one-page upload
+pays for a full read call.
 
 ---
 
-## 3. Rules at the edges
+## 3. Credits
+
+Coverage includes a monthly allowance. Anything beyond it is bought in packs.
+This is what keeps a heavy user from being a loss instead of a customer, and it
+is the only thing in the app that behaves like consumption.
+
+### The included allowance
+
+| Who | Credits | Roughly |
+| --- | --- | --- |
+| Uncovered account | **20, once — ever** | one worksheet, or a short chapter |
+| First covered learner | **30 / month** | a chapter, or six worksheets |
+| Each additional covered learner | **+15 / month** | pooled on the payer |
+| Teacher or tutor account | **40 / month**, free | they hold the good material |
+
+Sized against revenue rather than guessed: $4 of subscription with AI held under
+a fifth of it is about 30 pages. A family of three gets 60 a month against $8.
+
+The teacher allowance is an **acquisition cost, not a gift** — roughly $1 a
+month per active teacher, buying the thing that puts the app in front of whole
+classes. It is worth watching and worth capping; it is not worth removing.
+
+### Packs
+
+| Pack | Price | Rough cost to us | Margin |
+| --- | --- | --- | --- |
+| 100 credits | $5 | ~$2.50 | ~50% |
+| 300 credits | $13 | ~$7.50 | ~42% |
+| 1,000 credits | $40 | ~$25 | ~37% |
+
+**Every number on this page is provisional and is meant to be replaced.** They
+are sized from estimates so that the mechanism can be built; `llm_usage` (*Cost logging*)
+exists to make them measurements within a month of the first real upload.
+
+### "No rush" costs half
+
+The ingestion spec already names the lever: the Batch API runs at 50% and fits
+*"upload the textbook on Sunday"* perfectly while fitting *"generate this while
+I wait"* not at all.
+
+So expose it as a choice the learner's grown-up makes: **standard, or half the
+credits and it lands within a day.** It aligns their patience with our cost,
+it makes a big upload affordable instead of forbidding, and it is the rare
+lever that feels generous while reducing what we spend.
+
+### The mechanics that keep it honest
+
+1. **Two buckets, and included is spent first.** The monthly allowance resets
+   and the remainder expires; purchased credits roll over for twelve months.
+   Spending the *included* bucket first is not a detail — the reverse order
+   burns a parent's bought credits while free ones expire underneath, which is
+   how you generate the angriest email you will ever receive.
+2. **Estimate before spending, in front of the person deciding.** A PDF's page
+   count is known at upload. *"This is 24 pages — about 24 credits. You have
+   30."* is shown **before** the first model call, never after.
+3. **Reserve, then settle.** Reserve the estimate when the job starts, record
+   actuals on completion, release the difference. A job that runs long cannot
+   overdraw a balance.
+4. **Hard stop. Never overage billing.** Running out offers a pack; it never
+   quietly charges. This is a product bought by parents for children, and a
+   surprise bill would cost more in trust than the credits are worth.
+5. **A failed job is refunded in full.** The tokens were still spent and
+   `llm_usage` still records them, so failure cost stays visible — but it is
+   ours. Charging somebody for a run that produced nothing is how a support
+   queue becomes a chargeback queue.
+6. **A daily ceiling applies regardless of balance.** A compromised account
+   holding a 1,000-credit pack must not be able to spend it in an hour.
+
+### The ledger
+
+Credits get the same treatment as attempts: **an append-only ledger, with the
+balance derived.** Every dispute is then answerable from the record rather than
+from a number somebody overwrote.
+
+```sql
+create table public.credit_ledger (
+  id              uuid primary key default gen_random_uuid(),
+  subscription_id uuid references public.subscriptions (id) on delete cascade,
+  user_id         uuid references auth.users (id) on delete set null,  -- teacher grants
+  at              timestamptz not null default now(),
+  kind            text not null,      -- grant | purchase | reserve | consume
+                                      -- | release | refund | expire
+  bucket          text not null,      -- included | purchased
+  credits         integer not null,   -- signed: grants positive, spend negative
+  job_id          uuid,
+  source_id       uuid,
+  provider_payment_id text,
+  note            text,
+  constraint credit_ledger_kind_check check (kind in
+    ('grant','purchase','reserve','consume','release','refund','expire')),
+  constraint credit_ledger_bucket_check check (bucket in ('included','purchased'))
+);
+
+create index credit_ledger_balance on public.credit_ledger (subscription_id, at desc);
+```
+
+`credit_balance(subscription_id)` sums it, per bucket. A monthly cron writes the
+`grant` and `expire` rows; nothing anywhere updates a running total in place.
+
+## 4. Rules at the edges
 
 These are the ones that get decided badly under time pressure, so they are
 decided here.
@@ -157,10 +251,10 @@ decided here.
 
 ---
 
-## 4. Cost logging — every call, from the first one
+## 5. Cost logging — every call, from the first one
 
-Nothing here is priced with confidence, and it should not be. The quota numbers
-in §2 are estimates to start from and replace.
+Nothing here is priced with confidence, and it should not be. The credit numbers in
+*Credits* are estimates to start from and replace.
 
 ```sql
 create table public.llm_usage (
@@ -208,7 +302,7 @@ rows keep the price that was true when they were written.
 
 ---
 
-## 5. Data model
+## 6. Data model
 
 ```sql
 create table public.subscriptions (
@@ -266,32 +360,46 @@ quantity is updated when coverage rows change.
 
 ---
 
-## 6. What this changes in the other specs
+## 7. What this changes in the other specs
 
 - **Activities spec, Plans** — rewritten around coverage. Rewards move from
   unstated to covered-learner. The "whole curriculum is free" commitment stands
   and now extends to every new activity.
-- **Ingestion spec, §9** — the quota table above replaces the Pro/free split,
-  and `documentsPerMonth` becomes a pooled, coverage-derived number rather than
-  a `PlanLimits` constant.
+- **Ingestion spec, *Quota and abuse*** — credits replace the document count,
+  and the allowance becomes a pooled, coverage-derived balance rather than a
+  `PlanLimits` constant. The spec's own "refuse before the money is spent" rule
+  becomes precise: a PDF's page count is known at upload, so the estimate is
+  shown and the reservation taken before the first model call.
 - **Structure spec** — nothing. Tracks are free; a taxonomy is not a feature.
-- **Build sequence** — billing lands in **stage 0.5**: after foundations,
-  before ingestion, because ingestion cannot be metered against a model that
-  does not exist. It does not block the ladder or tracks.
+- **Build sequence** — the *schema* lands in **stage 0.5**: coverage,
+  `llm_usage` and `credit_ledger`, because ingestion cannot be metered against
+  a model that does not exist and cost logging written after the fact is cost
+  logging that never happened. **Stripe wiring — subscriptions and pack
+  purchases — is not stage 0.5.** It is weeks of external integration that
+  helps no learner and blocks nothing until stage 3. Put the schema in early,
+  take the money later.
 
 ---
 
-## 7. Open questions
+## 8. Open questions
 
-1. **Annual pricing?** Probably, at two months free, but not before there is a
+1. **Are the credit numbers right?** Almost certainly not. They are sized from
+   estimates against a $4 subscription; `llm_usage` replaces them with
+   measurements within a month of the first real upload. The mechanism is the
+   thing being committed to here, not the numbers.
+2. **Should teachers be able to buy packs?** They never pay for the product,
+   but a teacher wanting more than 40 credits is revenue nobody expected and it
+   does not weaken "teachers never pay" — the base is still free. Probably yes,
+   and it costs nothing to allow.
+3. **Annual pricing?** Probably, at two months free, but not before there is a
    renewal cohort to measure.
-2. **What does a lapsed parent see?** A lock with the number behind it —
+4. **What does a lapsed parent see?** A lock with the number behind it —
    *"Ava has retained 87% of what she has mastered"* with the detail greyed —
    is more honest and more effective than hiding that the number exists. Worth
    testing rather than assuming.
-3. **Does a teacher ever want to pay** to cover an uncovered student they care
+5. **Does a teacher ever want to pay** to cover an uncovered student they care
    about? The schema allows it. Whether to offer it is a product decision that
    can wait for someone to ask.
-4. **The district model's payer** is an organisation, not a user. That is the
+6. **The district model's payer** is an organisation, not a user. That is the
    only real schema addition it needs, and it is one nullable column on
    `subscriptions`. Not now.

@@ -1,6 +1,8 @@
 // Types shared by every learning objective in the suite. Adding a subject means
 // adding a string here, not a new set of tables.
 
+import type { TrackId } from './tracks.js'
+
 export type Subject = 'spelling' | 'typing' | 'quiz'
 
 export const SUBJECTS: Subject[] = ['spelling', 'typing', 'quiz']
@@ -15,6 +17,12 @@ export type DayString = string
  */
 export interface SkillState {
   subject: Subject
+  /**
+   * Which ability pool this is. Empty string means the learner's whole-subject
+   * state, which is what every row was before tracks existed — spelling and
+   * typing keep using it, because their curriculum *is* the track.
+   */
+  track?: TrackId
   ability: number
   abilitySd: number
   levelIndex: number
@@ -72,6 +80,29 @@ export interface Attempt {
   at: number
   /** The round this belongs to. Set by whoever stores it, not by the caller. */
   sessionId?: string | null
+  /**
+   * Which pool this work counted toward.
+   *
+   * Denormalised on purpose. It could be recovered by joining through `decks`,
+   * and that would be wrong twice: a deleted deck takes its track with it, and
+   * — more importantly — it breaks the property the whole schema rests on,
+   * that `attempts` alone can rebuild every other table.
+   */
+  track?: TrackId | null
+  /**
+   * Which rung this question was actually asked at, 0-3.
+   *
+   * `activity` records the *mode* — a round of Learn records `learn` on every
+   * attempt in it — but Learn asks a card at whatever rung that card is on, so
+   * the mode does not say what happened. Without this, a scaffolded question
+   * inside Learn would be read back as unaided recall and would promote the
+   * item on evidence that does not exist.
+   *
+   * Optional because attempts recorded before the ladder have none; the ladder
+   * falls back to the mode's own rung, which is what those rounds meant at the
+   * time.
+   */
+  askedAt?: number | null
 }
 
 export interface SessionRecord {
@@ -104,6 +135,8 @@ export interface SessionRecord {
   /** Of the distinct items here, how many were system-checked rather than self-graded. */
   verifiedItemsTotal?: number
   verifiedItemsCorrect?: number
+  /** Which pool this round counted toward. See `Attempt.track`. */
+  track?: TrackId | null
 }
 
 export interface ListProgress {
@@ -158,6 +191,68 @@ export interface QuizCard {
    * because nobody making a deck at 10pm wants to rate 40 cards by hand.
    */
   difficulty: number
+
+  // --- Enrichment ---------------------------------------------------------
+  //
+  // Every field below is optional, and every one of them unlocks an activity
+  // that cannot run without it. They are the whole mechanism behind "load
+  // content once, practise it many ways": the capability matrix reads what is
+  // present and offers what the content can actually support, and an activity
+  // whose field is missing degrades to the nearest one that works rather than
+  // disappearing. See docs/learning-activities-spec.md, *The item model*.
+  //
+  // Nothing here is required of an author. A pasted two-column list still
+  // makes a working deck; these are filled in by import, by enrichment, or
+  // not at all.
+
+  /** Bucket this item belongs to. Unlocks Sort and Odd One Out. */
+  category?: string | null
+  /** A sentence or scenario using the term. Unlocks Fill the Blank and Apply. */
+  example?: string | null
+  /** Position in an ordered set. Unlocks Put It In Order. */
+  order?: number | null
+  /**
+   * Photographs and recorded audio only. Anything drawable — charts, shapes,
+   * number lines, geometry — is a `[[figure {…}]]` inside the text instead,
+   * per docs/card-formatting.md. Two ways to carry a diagram would be one too
+   * many, and the figure is the better one: it is data, it is describable, and
+   * a model can write it.
+   */
+  media?: QuizCardMedia | null
+  /**
+   * How a typed answer is graded. `numeric` switches off the edit-distance
+   * tolerance entirely: a transposition in a number is a wrong answer, not a
+   * typo. Defaults to `text` when absent.
+   */
+  answerKind?: QuizAnswerKind
+  /** Numeric answers only: the acceptable absolute error. */
+  tolerance?: number | null
+  /**
+   * Extra acceptable answers, beyond the `/` and `;` splitting that
+   * `acceptableAnswers` already does on the definition itself.
+   */
+  altAnswers?: string[]
+  /**
+   * Why the answer is the answer. Shown after a miss, never after every
+   * answer: explanatory feedback beats corrective feedback, and feedback
+   * nobody reads beats neither.
+   */
+  explanation?: string | null
+  /** Pages of the source document this card came from, when it came from one. */
+  sourcePages?: number[]
+  /**
+   * Which fields were machine-derived rather than written by a person, so the
+   * UI can say so. A generated example is a prompt; it is never an authority.
+   */
+  generated?: string[]
+}
+
+export type QuizAnswerKind = 'text' | 'numeric' | 'set'
+
+export interface QuizCardMedia {
+  kind: 'image' | 'audio'
+  url: string
+  alt: string
 }
 
 /**
@@ -167,6 +262,18 @@ export interface QuizCard {
  */
 export interface QuizDeck {
   id: string
+  /**
+   * The ability pool this set belongs to. Null means General — filing is an
+   * upgrade, never a gate, and a parent pasting twenty words is asked nothing.
+   */
+  track?: TrackId | null
+  /**
+   * What this set teaches, as stable objective ids. Written now and read by
+   * nothing: it is the join key that lets two people's independently made
+   * content be recognised as alternatives for the same goal, and backfilling
+   * it later would mean revisiting every set anyone ever made.
+   */
+  objectives?: string[]
   title: string
   description: string
   tags: string[]
@@ -182,6 +289,8 @@ export interface QuizDeck {
 
 export interface CustomWordList {
   id: string
+  track?: TrackId | null
+  objectives?: string[]
   title: string
   subject: Subject
   grade: number | null
@@ -204,6 +313,18 @@ export interface ProgressSnapshot {
 
 export function masteryKey(subject: Subject, itemKey: string): string {
   return `${subject}:${itemKey}`
+}
+
+/**
+ * The key for one learner's ability in one pool.
+ *
+ * Spelling and typing pass no track: their curriculum *is* the pool, and an
+ * absolute scale that means something outside the app cannot be split without
+ * ceasing to mean it. Study sets pass theirs, which is the whole point — one
+ * number spanning Spanish and biology was an average of unrelated things.
+ */
+export function skillKey(subject: Subject, track?: TrackId | null): string {
+  return track ? `${subject}:${track}` : subject
 }
 
 export function listKey(subject: Subject, listId: string): string {
@@ -233,9 +354,10 @@ export function emptySnapshot(): ProgressSnapshot {
   }
 }
 
-export function defaultSkillState(subject: Subject): SkillState {
+export function defaultSkillState(subject: Subject, track?: TrackId | null): SkillState {
   return {
     subject,
+    ...(track ? { track } : {}),
     // Spelling starts the learner at second grade, as requested; typing and
     // quiz have no grade band so they just track a relative ability number.
     // Quiz starts mid-scale because deck difficulty is relative to the deck.
@@ -282,6 +404,16 @@ export function daysBetween(from: DayString, to: DayString): number {
  */
 export interface ProgressChange {
   skill?: SkillState
+  /**
+   * Ability moved in more than one pool.
+   *
+   * A round pinned to one deck touches one pool, and `skill` says it. A review
+   * round crosses decks by design, and each answer is evidence about its own
+   * subject — folding them into one number is the averaging problem tracks
+   * exist to fix. Both fields are applied; `skill` is kept because every
+   * caller that only ever touches one pool should not have to build an array.
+   */
+  skills?: SkillState[]
   mastery?: ItemMastery[]
   session?: SessionRecord
   attempts?: Attempt[]
@@ -394,6 +526,8 @@ export type AssignmentStatus = 'open' | 'done' | 'cancelled'
 export interface Assignment {
   id: string
   setId: string
+  /** Present when this is a goal. Closed by a state, never by one session. */
+  goal?: AssignmentGoal | null
   learnerId: string
   createdBy: string | null
   subject: Subject
@@ -448,9 +582,23 @@ export interface AssignmentSetSummary {
 }
 
 /** What a grown-up sends to set a task. Everything else is decided here or by evidence. */
+/**
+ * A goal, rather than an activity.
+ *
+ * "Master this set" instead of "do Learn on this deck" — which stops a parent
+ * having to choose between Learn and Test, a pedagogical decision they should
+ * never have been handed.
+ */
+export interface AssignmentGoal {
+  kind: 'mastery'
+  /** Share of the set that must be mastered. Defaults to 0.9. */
+  fraction?: number
+}
+
 export interface AssignmentDraft {
   subject: Subject
   activity: string
+  goal?: AssignmentGoal | null
   targetId?: string | null
   size?: number | null
   title: string

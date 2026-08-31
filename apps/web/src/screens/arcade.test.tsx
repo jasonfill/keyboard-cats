@@ -20,6 +20,24 @@ import GamePlay from '../components/GamePlay'
 
 const navigate = spies.navigate
 
+/**
+ * Word spawning picks a word, an x position, a speed and a colour at random.
+ * Left alone that makes "three lives are lost within N frames" a coin toss —
+ * a slow spawn sequence passes, a fast one fails, and the suite goes red on
+ * somebody else's machine. Raising the frame cap only makes the flake rarer,
+ * which is worse: rare failures are the ones nobody can reproduce.
+ *
+ * So the randomness is seeded too. The sequence is arbitrary but fixed, which
+ * is all determinism needs.
+ */
+function seedRandom() {
+  let seed = 0x2f6e2b1
+  return () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff
+    return seed / 0x7fffffff
+  }
+}
+
 /** Drive the animation loop by hand: real frames never fire under jsdom. */
 let frames: Array<(t: number) => void> = []
 let now = 0
@@ -43,6 +61,7 @@ beforeEach(() => {
   })
   vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
   vi.spyOn(performance, 'now').mockImplementation(() => now)
+  vi.spyOn(Math, 'random').mockImplementation(seedRandom())
 })
 
 afterEach(() => {

@@ -432,3 +432,42 @@ describe('word lists', () => {
     expect((screen.getByText('➕ New word list') as HTMLButtonElement).disabled).toBe(true)
   })
 })
+
+// Filing a set into a subject. The whole design rests on this being optional:
+// a deck with no subject is a working deck, and anything that makes filing feel
+// mandatory costs us the "paste it and go" promise.
+describe('filing a set into a subject', () => {
+  const renderEditor = () => render(<DeckEditor navigate={navigate} />)
+
+  it('offers subjects, and defaults to not choosing one', () => {
+    renderEditor()
+    const picker = screen.getByLabelText(/Subject/) as HTMLSelectElement
+    expect(picker.value).toBe('')
+    expect(screen.getByText('Not sure yet')).toBeTruthy()
+  })
+
+  it('groups them by area so the list is readable', () => {
+    renderEditor()
+    const picker = screen.getByLabelText(/Subject/)
+    expect(picker.querySelectorAll('optgroup').length).toBeGreaterThan(3)
+  })
+
+  it('does not offer General, because that is what not choosing means', () => {
+    renderEditor()
+    const values = [...screen.getByLabelText(/Subject/).querySelectorAll('option')].map(
+      (o) => (o as HTMLOptionElement).value,
+    )
+    expect(values).not.toContain('general')
+  })
+
+  it('says why it is worth doing rather than just demanding it', () => {
+    renderEditor()
+    expect(screen.getByText(/keeps this set/i)).toBeTruthy()
+  })
+
+  it('records the choice on the deck', () => {
+    renderEditor()
+    fireEvent.change(screen.getByLabelText(/Subject/), { target: { value: 'science.biology' } })
+    expect((screen.getByLabelText(/Subject/) as HTMLSelectElement).value).toBe('science.biology')
+  })
+})

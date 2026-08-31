@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { useAuth } from '../../auth/AuthProvider'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { Button, Card, Pill } from '../../components/ui'
-import { limitsFor } from '../../lib/plans'
+import { useCoverage } from '../../lib/billing/coverage'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import type { CustomWordList } from '../../lib/progress/types'
 import type { Navigate } from '../../routes'
@@ -33,9 +32,8 @@ function newId(): string {
 }
 
 export default function CustomListsScreen({ navigate }: { navigate: Navigate }) {
-  const { profile } = useAuth()
-  const { snapshot, saveCustomLists, deleteCustomList } = useProgress()
-  const limits = limitsFor(profile?.plan ?? 'free')
+    const { snapshot, saveCustomLists, deleteCustomList } = useProgress()
+  const coverage = useCoverage()
 
   const [editing, setEditing] = useState<CustomWordList | null>(null)
   const [title, setTitle] = useState('')
@@ -43,7 +41,7 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
   const [busy, setBusy] = useState(false)
 
   const lists = snapshot.customLists
-  const atLimit = lists.length >= limits.customLists && !editing
+  const atLimit = lists.length >= coverage.wordListLimit && !editing
 
   const startNew = () => {
     setEditing({
@@ -135,8 +133,8 @@ export default function CustomListsScreen({ navigate }: { navigate: Navigate }) 
       {atLimit && (
         <Card className="mb-4">
           <p className="font-bold text-amber-700">
-            The free plan saves {limits.customLists} custom{' '}
-            {limits.customLists === 1 ? 'list' : 'lists'}.{' '}
+            The free plan saves {coverage.wordListLimit} custom{' '}
+            {coverage.wordListLimit === 1 ? 'list' : 'lists'}.{' '}
             <button className="underline" onClick={() => navigate({ name: 'upgrade' })}>
               Family Pro
             </button>{' '}

@@ -1,3 +1,4 @@
+import { useCoverage } from '../../lib/billing/coverage'
 import { useEffect, useState } from 'react'
 import type { LibraryResponse } from '@whizzo/shared'
 import { useAuth } from '../../auth/AuthProvider'
@@ -5,7 +6,7 @@ import MyTutorCode from '../../components/suite/MyTutorCode'
 import ScreenHeader from '../../components/suite/ScreenHeader'
 import { loadLibrary } from '../../lib/assignments/library'
 import { Button, Card, Pill } from '../../components/ui'
-import { PLANS, allows } from '../../lib/plans'
+import { PLANS } from '../../lib/plans'
 import { useProgress } from '../../lib/progress/ProgressProvider'
 import type { Navigate } from '../../routes'
 import { exportProgressCsv } from '../../lib/progress/export'
@@ -34,6 +35,8 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
   }, [status])
 
   const plan = profile?.plan ?? 'free'
+
+  const coverage = useCoverage()
   const planDef = PLANS[plan]
 
   if (status !== 'signed-in') {
@@ -158,9 +161,9 @@ export default function AccountScreen({ navigate }: { navigate: Navigate }) {
           <Button
             variant="secondary"
             onClick={() => exportProgressCsv(snapshot)}
-            disabled={!allows(plan, 'dataExport')}
+            disabled={!coverage.can('dataExport')}
           >
-            ⬇️ Export as CSV{!allows(plan, 'dataExport') && ' (Pro)'}
+            ⬇️ Export as CSV{!coverage.can('dataExport') && ' (Pro)'}
           </Button>
           <Button
             variant="danger"

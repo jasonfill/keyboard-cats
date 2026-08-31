@@ -32,7 +32,7 @@ vi.mock('../lib/learners/api', async (orig) => ({
 }))
 
 import { aGame, spies } from '../test/mockProviders'
-import { signIn, testState } from '../test/state'
+import { goPro, signIn, testState } from '../test/state'
 import { emptySnapshot } from '../lib/progress/types'
 import AccountScreen from './suite/AccountScreen'
 import SettingsScreen from './SettingsScreen'
@@ -243,7 +243,7 @@ describe('the account screen', () => {
   })
 
   it('thanks a paying account instead of selling to it again', () => {
-    testState.profile = { ...testState.profile!, plan: 'pro' }
+    goPro()
     render(<AccountScreen navigate={navigate} />)
     expect(screen.getByText(/Thank you for supporting the project/)).toBeTruthy()
     expect(screen.queryByText('✨ See what Family Pro adds')).toBeNull()
@@ -257,7 +257,7 @@ describe('the account screen', () => {
   })
 
   it('exports for a paying account', () => {
-    testState.profile = { ...testState.profile!, plan: 'pro' }
+    goPro()
     const createObjectURL = vi.fn(() => 'blob:x')
     const revokeObjectURL = vi.fn()
     Object.assign(URL, { createObjectURL, revokeObjectURL })

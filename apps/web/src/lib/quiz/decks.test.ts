@@ -219,3 +219,57 @@ describe('importing cards that carry maths and figures', () => {
     )
   })
 })
+
+// The fields that let one pasted list be practised many ways. A normalise
+// must not quietly lose them — editing a deck would otherwise cost the
+// learner every activity the enrichment had unlocked.
+describe('enrichment survives a normalise', () => {
+  function deckWith(card: Partial<QuizDeck['cards'][number]>): QuizDeck {
+    return {
+      ...emptyDeck(),
+      title: 'Cells',
+      cards: [{ ...makeCard('mitochondrion', 'powerhouse of the cell'), ...card }],
+    }
+  }
+
+  it('keeps every field it was given', () => {
+    const [card] = normalizeDeck(
+      deckWith({
+        category: 'organelles',
+        example: 'The mitochondrion makes ATP.',
+        order: 2,
+        answerKind: 'text',
+        altAnswers: ['mitochondria'],
+        explanation: 'It releases energy from glucose.',
+        sourcePages: [4],
+        generated: ['example'],
+      }),
+    ).cards
+    expect(card).toMatchObject({
+      category: 'organelles',
+      example: 'The mitochondrion makes ATP.',
+      order: 2,
+      altAnswers: ['mitochondria'],
+      explanation: 'It releases energy from glucose.',
+      sourcePages: [4],
+      generated: ['example'],
+    })
+  })
+
+  it('turns a blank category into nothing, so Sort is not offered an empty bucket', () => {
+    const [card] = normalizeDeck(deckWith({ category: '   ', example: '  ' })).cards
+    expect(card.category).toBeNull()
+    expect(card.example).toBeNull()
+  })
+
+  it('trims a category rather than treating two spellings as two buckets', () => {
+    const [card] = normalizeDeck(deckWith({ category: '  organelles ' })).cards
+    expect(card.category).toBe('organelles')
+  })
+
+  it('leaves a plain card with no enrichment at all', () => {
+    const [card] = normalizeDeck(deckWith({})).cards
+    expect(card.category).toBeNull()
+    expect(card.example).toBeNull()
+  })
+})

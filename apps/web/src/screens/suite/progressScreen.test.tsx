@@ -32,7 +32,7 @@ vi.mock('../../lib/assignments/api', async (orig) => ({
 
 import { aGame, spies } from '../../test/mockProviders'
 import { anAssignment, signIn, skill, testState } from '../../test/state'
-import { addDays, emptySnapshot, todayString } from '../../lib/progress/types'
+import { addDays, emptySnapshot, masteryKey, todayString } from '../../lib/progress/types'
 import type { ProgressSnapshot, SessionRecord } from '../../lib/progress/types'
 import ProgressScreen from './ProgressScreen'
 
@@ -258,5 +258,62 @@ describe('work the grown-up has set', () => {
     if (!assign) return
     fireEvent.click(assign)
     expect(navigate).toHaveBeenCalledWith({ name: 'library' })
+  })
+})
+
+// The panel that turns one meaningless average into something a parent can act
+// on. It is deliberately absent for a learner with only one pool: a list of one
+// is not a comparison, and a screen that grows a section for nothing is noise.
+describe('progress by subject', () => {
+  function studying(entries: Array<[string, string | null, number, number]>) {
+    const decks = entries.map(([id, track]) => ({
+      id,
+      track,
+      title: id,
+      description: '',
+      tags: [],
+      cards: [{ id: 'c1', term: 't', definition: 'd', hint: null, difficulty: 2 }],
+      source: 'user' as const,
+      termLabel: 'Term',
+      definitionLabel: 'Definition',
+      createdAt: 0,
+      updatedAt: 0,
+    }))
+    const mastery: Record<string, unknown> = {}
+    entries.forEach(([id, , score]) => {
+      const itemKey = `${id}:c1`
+      mastery[masteryKey('quiz', itemKey)] = {
+        subject: 'quiz', itemKey, listId: id, difficulty: 2, mastery: score, reps: 4,
+        lapses: 0, correctStreak: score >= 0.8 ? 3 : 0, totalAttempts: 4, totalCorrect: 3,
+        intervalDays: 2, dueOn: null, firstSeenAt: 1, lastSeenAt: 2,
+      }
+    })
+    testState.snapshot = { ...testState.snapshot, decks: decks as never, mastery: mastery as never }
+  }
+
+  it('breaks the score out once there is more than one subject', () => {
+    studying([['bio', 'science.biology', 0.9, 1], ['esp', 'world.spanish', 0.4, 1]])
+    render(<ProgressScreen game={aGame()} navigate={navigate} />)
+    expect(screen.getByText('By subject')).toBeTruthy()
+    expect(screen.getByText('Biology')).toBeTruthy()
+    expect(screen.getByText('Spanish')).toBeTruthy()
+  })
+
+  it('says how much of each is mastered', () => {
+    studying([['bio', 'science.biology', 0.9, 1], ['esp', 'world.spanish', 0.4, 1]])
+    render(<ProgressScreen game={aGame()} navigate={navigate} />)
+    expect(screen.getByText('1 of 1 mastered')).toBeTruthy()
+  })
+
+  it('stays out of the way for a learner with one subject', () => {
+    studying([['bio', 'science.biology', 0.9, 1]])
+    render(<ProgressScreen game={aGame()} navigate={navigate} />)
+    expect(screen.queryByText('By subject')).toBeNull()
+  })
+
+  it('files unfiled decks under General rather than hiding them', () => {
+    studying([['misc', null, 0.5, 1], ['bio', 'science.biology', 0.5, 1]])
+    render(<ProgressScreen game={aGame()} navigate={navigate} />)
+    expect(screen.getByText('General')).toBeTruthy()
   })
 })

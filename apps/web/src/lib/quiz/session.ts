@@ -8,6 +8,7 @@
 // forty cards at forty different stages and every question still lands at the
 // right level.
 
+import { supportLevelFromMastery } from '@whizzo/shared'
 import { isDue, MASTERED_THRESHOLD, overdueBy } from '../adaptive'
 import {
   cardKey,
@@ -147,9 +148,22 @@ function resolveDirection(setting: DirectionSetting, index: number): Direction {
 }
 
 /**
- * The escalation ladder. `poolSize` matters because multiple choice needs other
- * cards to draw wrong answers from — on a three-card deck everything is written
- * from the start, which is harder but honest.
+ * What format to ask this card in.
+ *
+ * Now a thin wrapper over the ladder: `supportLevelFromMastery` decides which
+ * rung the item is on and this decides how to ask a question at that rung. One
+ * place now knows what a rung means, instead of three.
+ *
+ * One behaviour did change, and it is an improvement. Reaching free recall now
+ * needs a correct streak as well as a high mastery number — the same pair
+ * `masteryBand` has always used to decide what "mastered" means. So a card the
+ * learner just missed drops back to a scaffolded question instead of handing
+ * them a blank page immediately after they got it wrong, which is both kinder
+ * and better practice.
+ *
+ * `poolSize` still matters because multiple choice needs other cards to draw
+ * wrong answers from; on a three-card deck everything is written from the
+ * start, which is harder but honest.
  */
 export function kindFor(
   mastery: ItemMastery | undefined,
@@ -157,12 +171,21 @@ export function kindFor(
   rng: () => number = Math.random,
 ): QuestionKind {
   if (poolSize < 4) return 'written'
-  const score = mastery?.mastery ?? 0
-  const reps = mastery?.reps ?? 0
 
-  if (reps === 0 || score < 0.35) return 'multiple-choice'
-  if (score < 0.7) return rng() < 0.65 ? 'multiple-choice' : 'true-false'
-  return 'written'
+  switch (supportLevelFromMastery(mastery)) {
+    case 0:
+    case 1:
+      // Encounter and recognition: pick it out from among others.
+      return 'multiple-choice'
+    case 2:
+      // Cued recall — and this is the rung that used to be missing. It was
+      // answered with multiple choice, which is *recognition*: the learner
+      // never produced anything, so nothing bridged the gap to a blank page.
+      // Both kinds here ask for the answer, with support.
+      return rng() < 0.5 ? 'letter-hint' : 'word-bank'
+    default:
+      return 'written'
+  }
 }
 
 /** Test papers mix formats regardless of mastery, the way a real one does. */

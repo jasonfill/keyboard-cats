@@ -21,6 +21,7 @@ export function toLearner(row: any): Learner {
     authUserId: row.auth_user_id ?? null,
     createdAt: epoch(row.created_at),
     theme: row.theme ?? null,
+    covered: Boolean(row.covered),
   }
 }
 

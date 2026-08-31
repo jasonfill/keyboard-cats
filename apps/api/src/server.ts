@@ -15,6 +15,8 @@ import { pendingMigrations, runMigrations } from './migrate.js'
 import { childLoginAdminRoutes, childLoginPublicRoutes } from './routes/childLogin.js'
 import { devLoginRoutes } from './routes/devLogin.js'
 import { inviteRoutes, learnerRoutes } from './routes/learners.js'
+import { callerOf } from './auth.js'
+import { contentRoutes } from './routes/content.js'
 import { progressRoutes } from './routes/progress.js'
 
 export async function buildServer() {
@@ -130,6 +132,19 @@ export async function buildServer() {
   await app.register(learnerRoutes, { prefix: '/api' })
   await app.register(progressRoutes, { prefix: '/api' })
   await app.register(childLoginAdminRoutes, { prefix: '/api' })
+
+  // Ingestion gets its own rate-limit scope. The global 300/min is irrelevant
+  // here — a handful of jobs an hour is the shape, because each one costs real
+  // money and the global limit would let somebody spend a month's credits in a
+  // minute.
+  await app.register(async (scoped) => {
+    await scoped.register(rateLimit, {
+      max: 12,
+      timeWindow: '1 hour',
+      keyGenerator: (request) => callerOf(request)?.id ?? request.ip,
+    })
+    await scoped.register(contentRoutes, { prefix: '/api' })
+  })
 
   // Redeeming is a guess surface: a short code, typed by a human. The database
   // refuses expired and used codes, but nothing there slows down someone trying
